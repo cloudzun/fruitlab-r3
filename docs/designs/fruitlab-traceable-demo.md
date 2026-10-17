@@ -98,7 +98,7 @@ Review: PASS after 3 rounds; 8/10; 0 blocking, 4 minor concerns recorded below
   同一提示。移除商品是清空数量的唯一方式。
 - 所有金额使用人民币和整数分存储：行小计为 `单价分 x 数量`，订单小计为全部
   行小计之和。没有税费、运费或折扣，不做浮点累加；页面固定显示两位小数。例如
-  `¥12.99 x 2 + ¥5.99 x 1 = ¥31.97`。
+  `¥12.99 x 2 + ¥8.99 x 1 = ¥34.97`。
 - 购物车为空时结账按钮禁用，并显示“购物车为空”；此时不能生成订单。
 - 结账生成格式为 `FL-YYYYMMDD-HHMMSS-XXXX` 的可读订单号，`XXXX` 是 4 位大写
   字母数字随机段。生成后必须与已存订单一并检查唯一性；碰撞时最多重新生成 10 次，
@@ -121,7 +121,7 @@ Review: PASS after 3 rounds; 8/10; 0 blocking, 4 minor concerns recorded below
 ### 2. Supported launch mode
 
 只支持一种启动方式：在仓库根目录运行 `node serve.mjs`，然后访问
-`http://127.0.0.1:4173`。`serve.mjs` 只使用 Node.js 18+ 内置模块提供当前目录的
+`http://127.0.0.1:4173`。`serve.mjs` 只使用 Node.js 22+ 内置模块提供当前目录的
 静态文件，不安装第三方依赖，不访问外网。固定回环地址和端口用于稳定
 `localStorage` 的 origin；`file://` 启动不受支持，也不计入验收。
 
@@ -195,7 +195,7 @@ README.md
 OFFICE_HOURS.md
 docs/designs/fruitlab-traceable-demo.md
 SPEC.md
-decisions/                 # autoplan 决策记录，保持其原生格式
+DECISIONS.md              # autoplan 决策记录，保持其原生格式
 review.md
 qa-report.md
 VERSION
@@ -265,7 +265,7 @@ evidence/
 ## Distribution Plan
 
 交付形式是可压缩、可直接复制的本地目录或仓库压缩包，不部署线上服务。接收方解压
-后安装 Node.js 18+，在根目录运行 `node serve.mjs`，再打开
+后安装 Node.js 22+，在根目录运行 `node serve.mjs`，再打开
 `http://127.0.0.1:4173`。没有 CI/CD、发布流水线、第三方包或托管依赖。
 
 `VERSION` 和 `CHANGELOG.md` 只服务于八环演示，不承诺语义化版本兼容。分享时应给出
@@ -273,7 +273,7 @@ evidence/
 
 ## Dependencies
 
-- Node.js 18+ 的本地静态服务器能力。
+- Node.js 22+ 的本地静态服务器能力。
 - 现代 Chromium 浏览器；干净目录验收必须使用全新 profile 或清空版本化存储键。
 - 用户在每个环结束后的明确批准，流程不得自动跨环。
 - review、QA 和 ship 的真实执行结果；没有执行就没有对应证据。

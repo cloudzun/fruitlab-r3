@@ -4,7 +4,7 @@ FruitLab 是一个本地教学演示：固定 10 种水果，浏览器内存购�
 
 ## 前置条件
 
-- Node.js 22+。本次实际测试版本记录在 [`evidence/clean-run.md`](evidence/clean-run.md)。
+- Node.js 22+。本次实际测试版本记录在 [`qa-report.md`](qa-report.md)。
 - 现代 Chromium。使用全新 profile，或按下方步骤清空本站订单数据。
 - 不需要运行 `npm install`，仓库中也没有 `package.json`。
 
@@ -62,7 +62,7 @@ localStorage.removeItem("fruitlab.orders.v1");
 node --test
 ```
 
-测试只使用 Node.js 内置 `node:test`、内存 fake storage 和 `127.0.0.1` 回环 HTTP 请求；不启动浏览器，不访问外网，不安装依赖。
+测试只使用 Node.js 内置 `node:test`、最小化内存 fake DOM/storage 和 `127.0.0.1` 回环 HTTP 请求；不启动真实浏览器，不访问外网，不安装依赖。
 
 ## 一个决策到证据的例子
 
@@ -72,7 +72,7 @@ node --test
 - 未选：读取时自动修复、去重或删除损坏行。
 - 依据：[`SPEC.md`](SPEC.md) 的 `Decision Resolution` 与 `Order Storage`。
 - 实现后果：`readOrders` 只解析和报告；`appendOrder` 把旧字符串整体作为新值前缀，不重写旧字节。
-- 验证：[`tests/order-store.test.mjs`](tests/order-store.test.mjs) 覆盖“旧原始前缀保留”和“读取不写入”；最终命令结果记录在 [`BUILD-LOG.md`](BUILD-LOG.md)。
+- 验证：[`tests/order-store.test.mjs`](tests/order-store.test.mjs) 覆盖“旧原始前缀保留”和“读取不写入”；构建阶段命令结果记录在 [`BUILD.md`](BUILD.md)。
 
 ## 错误与恢复
 
@@ -80,17 +80,18 @@ node --test
 
 ## 证据阅读顺序
 
-从 [`evidence/index.md`](evidence/index.md) 开始，按八环顺序阅读：
+`evidence/index.md` 尚未生成，因此当前没有统一的八环证据索引。已落盘的证据入口按顺序如下：
 
-1. `OFFICE_HOURS.md`
-2. `SPEC.md`
-3. `DECISIONS.md`
-4. build 产物：本 README、代码、测试、`BUILD-LOG.md`
-5. 当前尚未执行的 review、qa、ship、retro 行会明确标为 `NOT_RUN`
+1. [`OFFICE_HOURS.md`](OFFICE_HOURS.md)
+2. 设计文档：[`docs/designs/fruitlab-traceable-demo.md`](docs/designs/fruitlab-traceable-demo.md)
+3. [`SPEC.md`](SPEC.md) 与 [spec 质量门禁记录](evidence/spec-quality-gate.md)
+4. [`DECISIONS.md`](DECISIONS.md)
+5. build 产物：本 README、代码、测试、[`BUILD.md`](BUILD.md)、[`docs/error-catalog.md`](docs/error-catalog.md)、[`CHANGELOG.md`](CHANGELOG.md) 与 `VERSION` 记录
+6. review：[`review.md`](review.md)
+7. qa：[`qa-report.md`](qa-report.md)
+8. ship、retro：`NOT_RUN`
 
-[`evidence/clean-run.md`](evidence/clean-run.md) 记录干净目录复制文件集、per-file SHA-256、全新 profile/reset、就绪检查、停止方式、`node --test` 与服务器启动/停止状态、stderr 和本地链接检查。
-
-人工 Chromium 记录位于 [`evidence/manual-checks/browser.md`](evidence/manual-checks/browser.md)。
+`evidence/clean-run.md` 与 `evidence/manual-checks/browser.md` 尚未生成。当前自动化探针和环境记录见 `qa-report.md`；人工 Chromium M1-M16 仍为 `UNVERIFIED`，不能用自动检查替代。
 
 ## 证据表述规则
 
@@ -98,4 +99,4 @@ node --test
 
 > 本演示包未发生门禁阻断；它展示的是流程与检查记录，不证明门禁曾拦下问题。
 
-P5 教学价值仍为 `UNVERIFIED`。没有独立的 `evidence/learner-checks/post-build.md` 观察，不得宣称教学价值已经验证。
+P5 教学价值仍为 `UNVERIFIED`。预规格学员检查未观察到学员，记录见 [`evidence/learner-checks/pre-spec.md`](evidence/learner-checks/pre-spec.md)；没有独立的 `evidence/learner-checks/post-build.md` 观察，不得宣称教学价值已经验证。

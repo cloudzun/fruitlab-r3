@@ -63,9 +63,14 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
 | `assets/catalog.mjs` | 固定 10 种水果的快照数据 |
 | `assets/domain.mjs` | 数量、金额、订单号、校验和 NDJSON 解析等纯函数 |
 | `assets/order-store.mjs` | 基于可注入 `storage` 的订单读取和追加 |
+| `assets/controller.mjs` | 无 DOM 的购物车、结账和查单控制器与 reducer |
 | `assets/app.mjs` | DOM 事件、内存购物车、结账和查单流程 |
 | `tests/domain.test.mjs` | 纯领域函数测试 |
 | `tests/order-store.test.mjs` | 存储适配器测试，使用内存 fake，不依赖浏览器 |
+| `tests/controller.test.mjs` | 控制器、状态转换和存储错误映射测试 |
+| `tests/app.test.mjs` | 使用最小 fake DOM/storage 的应用事件边界测试 |
+| `tests/server.test.mjs` | 静态服务器 HTTP 与 CLI 行为测试 |
+| `tests/static-scan.test.mjs` | 运行时源码安全与依赖扫描测试 |
 | `serve.mjs` | Node 22+ 内置模块静态服务器 |
 | `README.md` | 固定启动步骤、验收脚本、存储重置方法和证据入口 |
 | `evidence/index.md` | 八环证据索引，只记录实际产物和实际状态 |
@@ -121,7 +126,7 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
   "orderNumber": "FL-20261017-131500-A7K2",
   "createdAt": "2026-10-17T05:15:00.000Z",
   "currency": "CNY",
-  "subtotalCents": 3117,
+  "subtotalCents": 3497,
   "items": [
     {
       "fruitId": "fuji-apple",
@@ -130,6 +135,14 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
       "unitPriceCents": 1299,
       "quantity": 2,
       "lineTotalCents": 2598
+    },
+    {
+      "fruitId": "banana",
+      "name": "海南香蕉",
+      "unit": "1kg",
+      "unitPriceCents": 899,
+      "quantity": 1,
+      "lineTotalCents": 899
     }
   ]
 }
@@ -165,7 +178,7 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
 - 订单小计：所有行小计之和。
 - 页面统一调用 `formatCny`，始终显示两位小数。
 - 不使用 `parseFloat` 后累加金额，不把格式化后的字符串重新转成数值参与计算。
-- 例：`¥12.99 x 2 + ¥5.99 x 1` 必须显示订单小计 `¥31.97`。
+- 例：`¥12.99 x 2 + ¥8.99 x 1` 必须显示订单小计 `¥34.97`。
 
 ### Checkout
 
@@ -186,7 +199,8 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
 | --- | --- |
 | 空购物车 | `购物车为空` |
 | 10 次订单号仍碰撞 | `订单号生成失败，请重试` |
-| `localStorage` 不可用、写入抛错或读回失败 | `订单未保存，请重试` |
+| `localStorage` 不可用、安全阻止、配额不足或写入抛错 | 按稳定错误码显示具体恢复文案，均以 `订单未保存，请重试。` 开头 |
+| 写入后读回失败、不匹配或唯一性无法确认 | `订单可能已保存，请先查询订单号，不要重复提交`，并冻结购物车等待人工确认 |
 | 损坏行 | `本地订单数据有损坏，已跳过 N 条` |
 | 同一订单号重复 | `本地订单数据存在重复订单号` |
 
@@ -220,7 +234,7 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
 8. 再次解析读回值，确认新订单有效且订单号在该次解析结果中只出现一次。
 9. 任一步失败都返回失败结果，不自动修复或删除任何数据。
 
-`storage.getItem`、`storage.setItem` 或访问 `localStorage` 抛错时，页面仍须允许浏览、加购、修改数量和移除商品。查单显示 `本地订单存储不可用`，结账显示 `订单未保存，请重试`。
+`storage.getItem`、`storage.setItem` 或访问 `localStorage` 抛错时，页面仍须允许浏览、加购、修改数量和移除商品。查单显示 `本地订单存储不可用`；结账按稳定错误码显示具体恢复文案。`setItem` 已返回但读回无法确认结果时，页面进入 `save-unknown`，提示先查询订单号并冻结购物车与本次快照。
 
 ### Lookup
 
@@ -228,6 +242,7 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
 
 - 输入先执行 `normalizeOrderNumber`。
 - 空输入显示 `请输入订单号`。
+- 输入格式不匹配时显示 `订单号格式不正确，应为 FL-YYYYMMDD-HHMMSS-XXXX，例如 FL-20261017-131500-A7K2`，不读取存储。
 - 存储不可用显示 `本地订单存储不可用`。
 - 输入命中 `duplicateNumbers` 时显示 `本地订单数据存在重复订单号`，不显示任何一条候选。
 - 没有命中显示 `未找到该订单`。
@@ -351,14 +366,14 @@ Storage.prototype.setItem = original;
 5. 数量输入对 1 和 99 成功，对 0、负数、小数、非数字、空值和大于 99 的值按规定恢复或钳制，并显示 `数量必须是 1-99 的整数`。
 6. 加号、减号和移除行为符合 1-99 边界，移除是清空商品行的唯一方式。
 7. 空购物车显示 `购物车为空`，结账按钮禁用，点击不会生成订单。
-8. 行小计和订单小计全部由整数分计算，页面固定显示两位小数；`¥12.99 x 2 + ¥5.99 x 1` 得到 `¥31.97`。
+8. 行小计和订单小计全部由整数分计算，页面固定显示两位小数；`¥12.99 x 2 + ¥8.99 x 1` 得到 `¥34.97`。
 9. 订单号匹配 `FL-YYYYMMDD-HHMMSS-XXXX`，`XXXX` 为 4 位大写字母数字。
 10. 订单号生成最多尝试 10 次；全部碰撞时显示 `订单号生成失败，请重试`，购物车保留。
 11. 结账只有在追加、严格读回验证和订单唯一性复核全部成功后，才清空购物车并显示成功收据。
-12. `localStorage` 不可用、`setItem` 抛错或读回不一致时，显示 `订单未保存，请重试`，不显示成功收据，购物车不变。
+12. `localStorage` 不可用、安全阻止、配额不足或 `setItem` 抛错时，显示对应稳定错误码的具体恢复文案；读回无法确认结果时显示 `订单可能已保存，请先查询订单号，不要重复提交` 并冻结购物车。任何失败都不得显示成功收据。
 13. 成功收据包含订单号、创建时间、商品快照、每行小计和订单小计，并提供可复制或手工选择的订单号。
 14. 刷新后可按订单号查回已保存订单；查单忽略首尾空格和字母大小写。
-15. 空输入显示 `请输入订单号`，未知订单显示 `未找到该订单`。
+15. 空输入显示 `请输入订单号`，格式错误显示规定格式提示，未知订单显示 `未找到该订单`。
 16. 非法 NDJSON 行被跳过并计入损坏数量，显示 `本地订单数据有损坏，已跳过 N 条`，有效订单仍可查询。
 17. 同一订单号出现多次时，查询该号显示 `本地订单数据存在重复订单号`，不返回任意一条。
 18. 读取订单不写入存储；追加订单后，旧原始字符串的全部字节仍是新字符串的前缀。
@@ -384,7 +399,7 @@ Storage.prototype.setItem = original;
 | T9 | Integration | 重复订单号、`getItem` 抛错、`setItem` 抛错、读回不一致 | `protects=checkout failure safety; fails_when=storage failure yields success or cart clearing; no_claim=does not prove visual state without manual checks` |
 | T10 | Manual E2E | M1-M16 浏览器闭环与异常检查 | `protects=real Chromium behavior; fails_when=any recorded check fails or is omitted; no_claim=does not prove learner comprehension or P5` |
 
-最低要求：`node --test` 覆盖 T1-T9，并有至少 20 个独立断言场景；人工记录覆盖 T10。没有自动化 DOM 测试，这是 D1 已接受的覆盖缺口。
+最低要求：`node --test` 覆盖 T1-T9，并有至少 20 个独立断言场景；人工记录覆盖 T10。自动化测试使用最小 fake DOM/storage 覆盖应用事件边界，但不启动真实浏览器 DOM；真实浏览器交互仍是 D1 已接受的覆盖缺口。
 
 ## Rules for the Implementing Agent
 
@@ -425,9 +440,14 @@ Storage.prototype.setItem = original;
 | `assets/catalog.mjs` | 新增固定 10 种水果数据 |
 | `assets/domain.mjs` | 新增数量、金额、订单号、校验和 NDJSON 纯函数 |
 | `assets/order-store.mjs` | 新增非破坏性读取和只追加存储适配器 |
+| `assets/controller.mjs` | 新增无 DOM 的购物车、结账和查单控制器 |
 | `assets/app.mjs` | 新增内存购物车、结账和查单交互 |
 | `tests/domain.test.mjs` | 新增领域测试 |
 | `tests/order-store.test.mjs` | 新增存储 fake 测试 |
+| `tests/controller.test.mjs` | 新增控制器和状态转换测试 |
+| `tests/app.test.mjs` | 新增最小 fake DOM/storage 事件边界测试 |
+| `tests/server.test.mjs` | 新增静态服务器 HTTP 与 CLI 测试 |
+| `tests/static-scan.test.mjs` | 新增运行时源码安全和依赖扫描测试 |
 | `serve.mjs` | 新增固定回环地址静态服务器 |
 | `README.md` | 新增启动、验收、重置和证据说明 |
 | `evidence/index.md` | 新增八环证据索引 |
