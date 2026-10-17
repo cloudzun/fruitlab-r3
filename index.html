@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'"
+    >
+    <title>果子摊 FruitLab · 本地可追溯水果商城</title>
+    <meta name="description" content="十种水果、本地下单、按订单号查询。无账号、无服务端订单存储。">
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./assets/styles.css">
+    <script src="./assets/boot-guard.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#catalog">跳到水果摊位</a>
+
+    <header class="stall-header" aria-labelledby="site-title">
+      <div class="signboard">
+        <div class="signboard-tape signboard-tape-left" aria-hidden="true"></div>
+        <div class="signboard-tape signboard-tape-right" aria-hidden="true"></div>
+        <p class="brand-kicker">本地鲜果 · 今日开摊</p>
+        <h1 id="site-title"><span>果子摊</span><small>FruitLab</small></h1>
+        <p class="stall-note">十种鲜果，一台浏览器。无账号、无服务端订单存储。</p>
+        <div class="stall-stamp" aria-hidden="true">本地<br>演示</div>
+      </div>
+
+      <nav class="stall-nav" aria-label="页面导航">
+        <a href="#catalog">浏览水果</a>
+        <a href="#lookup">查订单</a>
+      </nav>
+
+      <p id="boot-status" class="boot-status" role="status" aria-live="polite">
+        正在加载商品...
+      </p>
+      <noscript>
+        <p class="noscript-note">本演示需要启用 JavaScript。</p>
+      </noscript>
+    </header>
+
+    <main class="market-shell">
+      <div class="market-grid">
+        <section class="catalog-section" aria-labelledby="catalog-title">
+          <div class="section-heading">
+            <p class="section-kicker">TODAY'S PICK</p>
+            <h2 id="catalog-title">今日果子</h2>
+            <p>按份挑选，价钱清清楚楚。购物车只在当前页面保留。</p>
+          </div>
+          <div id="catalog" class="catalog-grid" aria-busy="true"></div>
+        </section>
+
+        <aside id="cart" class="cart-panel" aria-labelledby="cart-title">
+          <div class="cart-heading">
+            <div>
+              <p class="section-kicker">YOUR BASKET</p>
+              <h2 id="cart-title">我的果篮</h2>
+            </div>
+            <span id="cart-count" class="cart-count">0 件</span>
+          </div>
+
+          <div id="cart-lines" class="cart-lines">
+            <p class="empty-cart">购物车为空</p>
+          </div>
+
+          <div class="cart-checkout-block">
+            <p id="cart-total" class="cart-total">合计 ¥0.00</p>
+            <p class="cart-fineprint">刷新页面会清空果篮，已保存订单仍可查询。</p>
+            <button id="checkout" class="primary-button" type="button" data-requires-js disabled>
+              去结账
+            </button>
+          </div>
+
+          <div id="checkout-message" class="checkout-message" role="status" aria-live="polite" aria-atomic="true"></div>
+          <div id="unknown-actions" class="unknown-actions" hidden></div>
+          <p id="cart-live" class="sr-only" aria-live="polite"></p>
+        </aside>
+      </div>
+
+      <section id="storage-notice" class="storage-notice" role="status" aria-live="polite" hidden></section>
+
+      <section id="order-success" class="receipt-panel" aria-labelledby="success-title" hidden></section>
+
+      <section id="lookup" class="lookup-panel" aria-labelledby="lookup-title">
+        <div class="lookup-copy">
+          <p class="section-kicker">FIND YOUR TICKET</p>
+          <h2 id="lookup-title">查订单</h2>
+          <p>订单保存在当前浏览器的本地存储里。输入订单号，找回这张果子票。</p>
+        </div>
+
+        <form id="lookup-form" class="lookup-form" novalidate>
+          <label for="lookup-input">订单号</label>
+          <div class="lookup-controls">
+            <input
+              id="lookup-input"
+              name="orderNumber"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="FL-YYYYMMDD-HHMMSS-XXXX"
+              aria-describedby="lookup-help"
+            >
+            <button id="lookup-submit" class="ink-button" type="submit" data-requires-js disabled>
+              查询
+            </button>
+          </div>
+          <p id="lookup-help" class="field-help">首尾空格和字母大小写会自动忽略。</p>
+        </form>
+
+        <div id="lookup-message" class="lookup-message" role="status" aria-live="polite" aria-atomic="true">
+          输入订单号查询已保存订单
+        </div>
+        <div id="lookup-result" class="lookup-result" aria-labelledby="lookup-result-title" hidden></div>
+      </section>
+    </main>
+
+    <div id="mobile-cart-bar" class="mobile-cart-bar" hidden>
+      <div>
+        <strong id="mobile-cart-count">0 件</strong>
+        <span id="mobile-cart-total">¥0.00</span>
+      </div>
+      <a href="#cart">查看果篮</a>
+    </div>
+
+    <footer class="page-footer">
+      <p>FruitLab 是本地教学演示，不是生产商城。数据只留在当前浏览器。</p>
+      <a href="./README.md">运行说明</a>
+      <a href="./evidence/index.md">证据索引</a>
+    </footer>
+
+    <script type="module" src="./assets/app.mjs"></script>
+  </body>
+</html>
