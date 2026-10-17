@@ -111,11 +111,18 @@ test("parseQuantityUpdate marks only actual quantity changes for redraw", () => 
 });
 
 test("checkoutNotWrittenMessage maps storage failures to specific recovery copy", () => {
-  assert.match(checkoutNotWrittenMessage("storage-unavailable"), /本地订单存储不可用/);
-  assert.match(checkoutNotWrittenMessage("storage-security-blocked"), /允许本站使用站点数据/);
-  assert.match(checkoutNotWrittenMessage("storage-quota-exceeded"), /存储空间已满/);
-  assert.match(checkoutNotWrittenMessage("storage-read-failed"), /不是文本/);
-  assert.match(checkoutNotWrittenMessage("storage-write-failed"), /检查浏览器存储权限/);
+  // Value: protects=checkout not-written copy is exact for every storage failure code; fails_when=a recovery sentence or code mapping changes; why_new=the existing test only matched fragments, so partial copy regressions passed; seam=none; no_claim=none beyond protects
+  const messages = {
+    "storage-unavailable": "订单未保存，请重试。本地订单存储不可用，请检查站点数据权限后重试。",
+    "storage-security-blocked": "订单未保存，请重试。浏览器阻止了本地订单存储，请允许本站使用站点数据后刷新。",
+    "storage-quota-exceeded": "订单未保存，请重试。本地订单存储空间已满，请先导出并检查现有订单数据。",
+    "storage-read-failed": "订单未保存，请重试。本地订单数据不是文本，无法读取，原始值未被修改。",
+    "storage-write-failed": "订单未保存，请重试。请检查浏览器存储权限和可用空间后重试。",
+  };
+
+  for (const [code, message] of Object.entries(messages)) {
+    assert.equal(checkoutNotWrittenMessage(code), message);
+  }
   assert.equal(checkoutNotWrittenMessage("unexpected-code"), "订单未保存，请重试");
 });
 
