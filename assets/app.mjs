@@ -5,6 +5,8 @@ import {
   createLookupState,
   isCartFrozen,
   lookupReducer,
+  checkoutNotWrittenMessage,
+  parseQuantityUpdate,
   performLookup,
   resolveUnknownCheckout,
   runCheckout,
@@ -12,7 +14,6 @@ import {
 import {
   formatCny,
   normalizeOrderNumber,
-  parseQuantity,
   subtotalCents,
 } from "./domain.mjs";
 import { readOrders } from "./order-store.mjs";
@@ -34,7 +35,6 @@ const MESSAGES = Object.freeze({
   idle: "",
   saving: "正在保存订单...",
   emptyCart: "购物车为空",
-  notWritten: "订单未保存，请重试",
   numberFailed: "订单号生成失败，请重试",
   saveUnknown: "订单可能已保存，请先查询订单号，不要重复提交",
   unknownAbsent: "已确认本次订单未保存，购物车已保留，可以重新结账",
@@ -242,7 +242,23 @@ function commitQuantity(fruitId, input) {
   const previous = cart.get(fruitId);
   if (!previous) return;
 
-  const parsed = parseQuantity(input.value, previous);
+  const parsed = parseQuantityUpdate(input.value, previous);
+  if (!parsed.changed) {
+    input.value = String(parsed.quantity);
+    if (parsed.error) {
+      quantityErrors.set(fruitId, parsed.error);
+    } else {
+      quantityErrors.delete(fruitId);
+    }
+    updateQuantityError(fruitId, parsed.error);
+    if (parsed.error) {
+      input.focus();
+      input.select();
+    }
+    setCartLive(parsed.error || `${catalogById.get(fruitId)?.name ?? "商品"}数量已更新为 ${parsed.quantity}`);
+    return;
+  }
+
   cart.set(fruitId, parsed.quantity);
   if (parsed.error) {
     quantityErrors.set(fruitId, parsed.error);
@@ -262,6 +278,21 @@ function commitQuantity(fruitId, input) {
     nextInput.select();
   }
   setCartLive(parsed.error || `${catalogById.get(fruitId)?.name ?? "商品"}数量已更新为 ${parsed.quantity}`);
+}
+
+function updateQuantityError(fruitId, error) {
+  const input = document.querySelector(`[data-quantity="${fruitId}"]`);
+  const errorNode = byId(`quantity-error-${fruitId}`);
+  if (input) {
+    input.setAttribute("aria-invalid", error ? "true" : "false");
+  }
+  if (!errorNode) return;
+  errorNode.textContent = error;
+  if (error) {
+    errorNode.setAttribute("role", "alert");
+  } else {
+    errorNode.removeAttribute("role");
+  }
 }
 
 function stepQuantity(fruitId, delta) {
@@ -449,7 +480,7 @@ function checkoutMessageText() {
     case "saving":
       return MESSAGES.saving;
     case "not-written":
-      return MESSAGES.notWritten;
+      return checkoutNotWrittenMessage(checkoutState.code);
     case "number-generation-failed":
     case "duplicate-order-number":
       return MESSAGES.numberFailed;

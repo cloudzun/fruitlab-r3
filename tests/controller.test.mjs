@@ -2,12 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  checkoutNotWrittenMessage,
   checkoutReducer,
   createCheckoutState,
   createCartItems,
   createLookupState,
   isCartFrozen,
   lookupReducer,
+  parseQuantityUpdate,
   performLookup,
   resolveUnknownCheckout,
   runCheckout,
@@ -90,6 +92,31 @@ test("createCartItems builds frozen catalog snapshots in insertion order", () =>
   ]);
   assert.equal(Object.isFrozen(items), true);
   assert.equal(Object.isFrozen(items[0]), true);
+});
+
+test("parseQuantityUpdate marks only actual quantity changes for redraw", () => {
+  assert.deepEqual(parseQuantityUpdate("2", 2), { quantity: 2, error: "", changed: false });
+  assert.deepEqual(parseQuantityUpdate("02", 2), { quantity: 2, error: "", changed: false });
+  assert.deepEqual(parseQuantityUpdate("3", 2), { quantity: 3, error: "", changed: true });
+  assert.deepEqual(parseQuantityUpdate("100", 99), {
+    quantity: 99,
+    error: "数量必须是 1-99 的整数",
+    changed: false,
+  });
+  assert.deepEqual(parseQuantityUpdate("abc", 2), {
+    quantity: 2,
+    error: "数量必须是 1-99 的整数",
+    changed: false,
+  });
+});
+
+test("checkoutNotWrittenMessage maps storage failures to specific recovery copy", () => {
+  assert.match(checkoutNotWrittenMessage("storage-unavailable"), /本地订单存储不可用/);
+  assert.match(checkoutNotWrittenMessage("storage-security-blocked"), /允许本站使用站点数据/);
+  assert.match(checkoutNotWrittenMessage("storage-quota-exceeded"), /存储空间已满/);
+  assert.match(checkoutNotWrittenMessage("storage-read-failed"), /不是文本/);
+  assert.match(checkoutNotWrittenMessage("storage-write-failed"), /检查浏览器存储权限/);
+  assert.equal(checkoutNotWrittenMessage("unexpected-code"), "订单未保存，请重试");
 });
 
 test("checkout and lookup factories expose the frozen initial state", () => {

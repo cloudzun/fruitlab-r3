@@ -63,6 +63,18 @@ test("dynamic quantity controls expose a stable id and name", async () => {
   assert.match(source, /name: `quantity-\$\{fruitId\}`/);
 });
 
+test("app skips unchanged quantity redraws and maps checkout failures by code", async () => {
+  const source = await readFile(path.join(ROOT, "assets/app.mjs"), "utf8");
+  assert.match(
+    source,
+    /if \(!parsed\.changed\) \{[\s\S]*?updateQuantityError\(fruitId, parsed\.error\);[\s\S]*?return;/,
+  );
+  assert.match(
+    source,
+    /case "not-written":\s*return checkoutNotWrittenMessage\(checkoutState\.code\);/,
+  );
+});
+
 test("project remains dependency-free and has no generated build directory", async () => {
   const rootEntries = await readdir(ROOT);
   assert.equal(rootEntries.includes("package.json"), false);

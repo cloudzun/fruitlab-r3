@@ -2,223 +2,143 @@
 
 ## 结论
 
-Pre-Landing Review: 5 issues (1 critical, 4 informational)
+Pre-Landing Review 已完成 ASK 裁决与收尾。
 
-- Review 状态：`issues_found`
-- 未决缺陷：5 项，均列在下方 ASK 清单中
-- 已解决：3 项 AUTO-FIX
-- 发布建议：当前不能声明验收完成，也不能进入可发布状态
-- 本轮只完成 review 收尾，没有进入 qa
+- Review 状态：`adjudicated`
+- 裁决结果：D2、D3 已修复；D4 已修订规格；D1 降级为已知限制；D5 保持 `UNVERIFIED`
+- Critical 缺陷：0
+- 本轮 ASK 中待修复项：0
+- 已知限制：1（D1，规格已排除）
+- 未验证验收项：验收 21、22（D5）
+- 发布建议：不能声明人工验收完成，也没有进入 qa
 
 ## 审查范围与方法
 
-- 审查基线：`ce1ae2b` (`build: 完成第 4 环 build 收尾`)
-- 审查对象：当前未提交工作区，即上述基线加上本轮 3 项 AUTO-FIX
-- 规格文件：`SPEC.md` 只读，未修改
-- `SPEC.md` SHA-256：`446886200d4fe3af37f83c65504d276c5a595d7ac9bee8c3d4a13ebd3a187b64`
+- 原始审查基线：`ce1ae2b`（`build: 完成第 4 环 build 收尾`）
+- 原始 review 提交：`0f8c640`（`review: 完成第 5 环 review 收尾`）
+- 收尾对象：`0f8c640` 之上的 D2、D3、D4 和 review 记录更新
+- 规格文件：`SPEC.md`，按 D4 裁决由 18+ 修订为 22+
+- 原始 `SPEC.md` SHA-256：`446886200d4fe3af37f83c65504d276c5a595d7ac9bee8c3d4a13ebd3a187b64`
+- 修订后 `SPEC.md` SHA-256：`11a6fda6c790131e7fb04c5d98c7d635e58cfe91749e34aa7b5bae4c52eb960a`
 - 代码范围：`index.html`、`serve.mjs`、`assets/`、`tests/`、`README.md`、`BUILD.md`、`DECISIONS.md`、`docs/error-catalog.md`
-- 审查重点：结构排雷、安全边界、数据持久化、错误恢复、规格偏差、测试覆盖与已有证据
-- 审查方式：读取完整 diff 和相关源码；复核 BUILD.md 的 5 个自报问题；运行单元与集成测试；使用本地 Chromium 做 review 探针；对照 SPEC 验收项和错误目录
-- Review Army specialist 流因小 diff 跳过；本轮外部 Claude Code 审查因模型配置不可用而没有形成有效覆盖
+- 审查方式：读取完整 diff 和相关源码；复核 BUILD.md 自报问题；运行单元与集成测试；沿用上一轮本地 Chromium 探针结果并明确区分人工验收证据
+- Review Army specialist 流因小 diff 跳过；外部 Claude Code 审查因模型配置不可用而没有形成有效覆盖
 
-## 未决问题（ASK）
+## ASK 裁决
 
-### D1 [CRITICAL] 跨标签页保存会发生丢失更新
+| ID | 裁决 | 当前状态 | 处理 |
+| --- | --- | --- | --- |
+| D1 | 不修，记为已知限制 | `KNOWN_LIMITATION` | `SPEC.md` 的 Out of Scope 已排除多标签页实时同步或冲突合并 |
+| D2 | 修复 | `FIXED` | 数量未实际变化时不再重绘购物车 |
+| D3 | 修复 | `FIXED` | 结账失败按稳定错误码显示具体存储提示 |
+| D4 | 修订规格 | `FIXED` | `SPEC.md` 的 Node.js 最低版本改为 22+，并记录修订原因与日期 |
+| D5 | 不补人工记录 | `UNVERIFIED` | 无可用人工受试者，不编造 M1-M16 结果 |
 
-问题描述：`appendOrder()` 先读取当前 NDJSON，再拼接新订单，最后把完整文本写回。两个标签页可以在这段读改写之间交错：两者都读到旧值 P，分别写出 P+A 和 P+B，并且各自读回成功。后写入的标签页覆盖先写入的订单，两个页面都会报告保存成功。当前没有跨标签锁定，也没有 `storage` 事件冲突检测。
+### D1 [KNOWN LIMITATION] 跨标签页保存可能发生丢失更新
 
-涉及文件与行号：
+原始问题：`appendOrder()` 先读取当前 NDJSON，再拼接新订单，最后把完整文本写回。两个标签页可以在这段读改写之间交错，后写入的标签页可能覆盖先写入的订单。当前没有跨标签锁定，也没有 `storage` 事件冲突检测。
 
-- `assets/order-store.mjs:54`：读取当前订单
-- `assets/order-store.mjs:84`：基于旧快照构造完整写入值
-- `assets/order-store.mjs:89`：直接覆盖整个存储键
-- `assets/order-store.mjs:101`：只验证本次写入的读回结果，无法发现另一个页面随后覆盖
+裁决：不修，记录为已知限制。
 
-可选项：
+依据：`SPEC.md` 的 Out of Scope 已明确列出“多标签页实时同步或冲突合并”（审查时位于 L446，D4 修订后行号可能偏移）。该场景已在规格中排除，因此不把本轮实现视为违反已批准范围。
 
-- A) 用 Web Locks 串行化“读取、校验、追加、读回”这一段（推荐）
-  - 利：保留多标签页使用方式，能直接消除同源并发覆盖。
-  - 利：锁内仍可沿用现有 append-only 和读回校验逻辑。
-  - 弊：需要增加并发回归测试，并为不支持 Web Locks 的环境准备降级策略。
-  - Completeness: 9/10
-- B) 限制同一时间只有一个标签页可以写入
-  - 利：改动面较小，不必实现跨标签事务。
-  - 利：可以把冲突变成明确提示，而不是静默覆盖。
-  - 弊：会明显降低正常多标签页体验，标签页异常退出时还需要恢复机制。
-  - Completeness: 7/10
-- C) 接受当前风险，不修改
-  - 利：不需要开发和测试成本。
-  - 弊：仍可能在真实用户操作中静默丢失订单，属于数据完整性缺陷。
-  - Completeness: 3/10
+定级说明：本轮审查曾将 D1 定为 `CRITICAL`，这与规格排除条款存在冲突，定级偏高。现降级为“已知限制（规格已排除）”，不再作为本轮阻断修复项。
 
-推荐项：A。`localStorage` 只能保证单次操作，不能保证读改写事务；优先用 Web Locks 保留现有使用方式，并补一个两个写入者交错的回归测试。
+保留风险：两个标签页同时结账时仍可能静默丢失其中一单；本演示不承诺多标签页并发数据完整性。
 
-### D2 [INFORMATIONAL] 数量输入框失焦会重绘整行，可能吞掉紧接的按钮点击
+### D2 [FIXED] 数量输入框失焦重绘可能吞掉紧接的按钮点击
 
-问题描述：数量输入框同时监听 `change` 和 `blur`。用户编辑数量后直接点击同一行的“移除”或加减按钮时，按钮的 `mousedown` 先让输入框失焦，`blur` 提交数量并调用 `renderCart()` 替换整棵购物车 DOM。原按钮在 `click` 之前已经被移除，点击可能丢失。浏览器探针已实际观察到该行为。
+问题描述：数量输入框同时监听 `change` 和 `blur`。用户编辑数量后直接点击同一行的“移除”或加减按钮时，输入框失焦会调用 `renderCart()` 替换购物车 DOM，原按钮在 `click` 之前可能已经被移除。
 
-涉及文件与行号：
+裁决：按推荐方案修复，仅在数量实际变化时重绘。
 
-- `assets/app.mjs:334`：创建提交回调
-- `assets/app.mjs:335`：监听 `change`
-- `assets/app.mjs:336`：监听 `blur`
-- `assets/app.mjs:255`：提交后重绘购物车
-- `assets/app.mjs:394`：`renderCart()` 重建所有购物车行
+实现：
 
-可选项：
+- `assets/controller.mjs` 新增 `parseQuantityUpdate()`，在解析结果中给出 `changed`，由实际数量比较决定是否重绘。
+- `assets/app.mjs` 在数量未变化时只原地规范化输入值和错误状态，不调用 `renderCart()`。
+- 数量实际变化时才更新购物车并重绘。
 
-- A) 仅当数量实际变化时才重绘；未变化时保留现有 DOM（推荐）
-  - 利：消除 `blur` 导致的按钮目标替换，点击和键盘焦点都更稳定。
-  - 利：能顺带减少无意义重绘，改动范围仍局限在购物车渲染。
-  - 弊：需要把原地更新和整行重绘的边界写清楚，并补浏览器交互测试。
-  - Completeness: 8/10
-- B) 把重绘延迟到当前点击结束后，再恢复焦点
-  - 利：改动看起来较小，可以保留现有提交流程。
-  - 利：能覆盖一部分“失焦后立即点击”的场景。
-  - 弊：依赖事件时序和焦点恢复，后续加按钮或改控件时容易再次退化。
-  - Completeness: 6/10
-- C) 接受当前行为，不修改
-  - 利：不需要改代码。
-  - 弊：用户仍可能点不到移除或加减按钮，键盘和辅助技术用户也受影响。
-  - Completeness: 3/10
+回归测试：
 
-推荐项：A。修复根因，不要在事件时序上打补丁。
+- `tests/controller.test.mjs` 覆盖相同数量、前导零、实际变化、超上限钳制和非法输入，确认只有实际数量变化时 `changed === true`。
+- 本轮没有重新执行浏览器点击探针，因此不把自动化单元测试表述为人工交互复验。
 
-### D3 [INFORMATIONAL] 结账保存失败时没有展示错误目录承诺的具体存储提示
+### D3 [FIXED] 结账失败未展示存储错误的具体提示
 
-问题描述：错误目录对配额、存储权限和读取失败给出了具体用户提示，但结账路径只显示通用的 `订单未保存，请重试`。`refreshStorageNotice()` 在结账后重新读取存储；如果 `setItem` 因配额或权限失败，而 `getItem` 仍能读取旧数据，页面无法得知刚才的写入错误，也就不会显示错误目录承诺的提示。
+问题描述：错误目录对配额、存储权限和读取失败给出了具体用户提示，但结账路径只显示通用的 `订单未保存，请重试`。
 
-涉及文件与行号：
+裁决：按推荐方案修复，按稳定错误码映射具体提示。
 
-- `assets/app.mjs:445`：结账状态文案映射
-- `assets/app.mjs:451`：`not-written` 统一显示通用重试文案
-- `assets/app.mjs:769`：结账后只通过重新读取刷新存储提示
-- `assets/app.mjs:799`：`refreshStorageNotice()` 只反映读取状态
-- `docs/error-catalog.md:59` 到 `docs/error-catalog.md:109`：文档承诺 `storage-unavailable`、`storage-security-blocked`、`storage-quota-exceeded` 等提示
+实现：
 
-可选项：
+- `assets/controller.mjs` 新增 `checkoutNotWrittenMessage()`。
+- `assets/app.mjs` 的 `not-written` 状态改为按 `checkoutState.code` 选择提示。
+- `storage-unavailable`、`storage-security-blocked`、`storage-quota-exceeded`、`storage-read-failed`、`storage-write-failed` 均有对应恢复文案。
+- 未知错误码仍回退到通用 `订单未保存，请重试`。
+- `docs/error-catalog.md` 已同步结账路径实际展示的文案。
 
-- A) 保存失败后按稳定错误码展示对应提示（推荐）
-  - 利：与错误目录和 DECISIONS 中 DX4 的意图一致。
-  - 利：用户能区分配额不足、权限阻止和普通写入失败。
-  - 弊：需要增加结账错误到提示区域的映射及相应测试。
-  - Completeness: 8/10
-- B) 保留通用结账提示，同时把错误目录改成只承诺通用恢复文案
-  - 利：代码改动较少，SPEC 的最低文案要求仍可满足。
-  - 利：可以避免维护多套用户可见恢复文案。
-  - 弊：会丢失已经设计并记录的具体恢复指引。
-  - Completeness: 6/10
-- C) 接受当前差异，不修改
-  - 利：不需要改代码或文档。
-  - 弊：实现与错误目录继续不一致，用户仍不知道配额或权限问题该怎样处理。
-  - Completeness: 3/10
+回归测试：
 
-推荐项：A。先修实现，使文档中的恢复路径真实可达。
+- `tests/controller.test.mjs` 覆盖五类存储错误码的具体文案和未知错误码回退。
 
-### D4 [INFORMATIONAL] Node.js 最低版本与规格冲突
+### D4 [FIXED] Node.js 最低版本已修订为 22+
 
-问题描述：`SPEC.md` 多处要求 Node.js 18+，但 `serve.mjs` 明确拒绝低于 22 的版本，README 和错误目录也写成 22+。仅把版本检查降到 18 还不够，因为 `tests/server.test.mjs` 和 `tests/static-scan.test.mjs` 使用了 Node.js 20.11 才提供的 `import.meta.dirname`。
+原问题：`SPEC.md` 多处要求 Node.js 18+，但 `serve.mjs` 明确拒绝低于 22 的版本，README、错误目录和测试基线也与 22+ 一致。
 
-涉及文件与行号：
+裁决：保留 Node.js 22+ 实现，修订规格。
 
-- `SPEC.md:67`、`SPEC.md:261`、`SPEC.md:283`：要求 Node.js 18+
-- `serve.mjs:237` 到 `serve.mjs:240`：最低版本判定为 22
-- `serve.mjs:318` 到 `serve.mjs:320`：低于 22 时直接退出
-- `README.md:7`：文档写 Node.js 22+
-- `docs/error-catalog.md:379` 到 `docs/error-catalog.md:381`：错误目录写 Node.js 22+
-- `DECISIONS.md:40`、`DECISIONS.md:110`：计划评审曾接受 Node.js 22+
-- `tests/server.test.mjs:16`、`tests/static-scan.test.mjs:6`：使用 `import.meta.dirname`
+实现：
 
-可选项：
+- `SPEC.md` 文件布局中的服务器要求改为 Node.js 22+。
+- Static Server 要求改为只使用 Node.js 22+ 内置模块。
+- README 前置条件改为 Node.js 22+。
+- `SPEC.md` 顶部加入 2026-10-17 修订记录，注明原因：项目基线为 Node.js 22，`serve.mjs` 有意拒绝更低版本，现有实现与测试按该基线验证。
 
-- A) 保留 Node.js 22+，正式修订规格并记录这是已接受的产品决定
-  - 利：现有代码、测试、README 和错误目录已经一致。
-  - 利：可以避免为旧运行时增加未经验证的兼容工作。
-  - 弊：修改了当前只读规格所承诺的最低版本，需要规格所有者明确批准。
-  - Completeness: 8/10
-- B) 恢复到规格承诺的 Node.js 18+（推荐）
-  - 利：直接消除规格与实现的偏差，不需要修改 `SPEC.md`。
-  - 利：能覆盖规格明确要求的 18+ 环境。
-  - 弊：需要改版本检查、README、错误目录、测试根路径写法，并在 Node 18 上真实运行验证。
-  - Completeness: 7/10
-- C) 保留冲突，仅记录为已知未决项
-  - 利：本轮不需要改代码。
-  - 弊：验收项继续失败，用户按规格安装 Node 18 后仍无法启动。
-  - Completeness: 3/10
+结果：本轮发现的规格与实现版本漂移已消除。
 
-推荐项：B。当前任务的约束是 `SPEC.md` 只读，因此优先让实现回归规格；如果规格所有者明确接受 22+，再改选 A 并正式修订规格。
+### D5 [UNVERIFIED] 缺少人工 Chromium 的 M1-M16 记录
 
-### D5 [INFORMATIONAL] 验收 21、22 失败，缺少要求的人工浏览器证据
+原始问题：`evidence/index.md` 和 `evidence/manual-checks/browser.md` 不存在，README 和页面仍链接这些路径，M1-M16 没有符合规格要求的人工 Chromium 记录。
 
-问题描述：`evidence/index.md` 和 `evidence/manual-checks/browser.md` 不存在，README 和页面仍链接这些路径，`serve.mjs` 仍把它们列入允许访问清单，但请求会返回 404。M1-M16 没有符合 SPEC 要求的人工 Chromium 记录，因此验收项 21、22 不能通过。
+裁决：记为 `UNVERIFIED`，不补造人工记录。
 
-涉及文件与行号：
+原因：没有可用的人工受试者执行并签署 M1-M16 检查。本轮没有把自动化探针、源码检查或单元测试冒充为人工验收结果，也没有编造日期、环境、操作过程或通过状态。
 
-- `SPEC.md:305` 到 `SPEC.md:324`：M1-M16 的必查内容
-- `SPEC.md:365` 到 `SPEC.md:366`：验收项 21、22
-- `README.md:83`、`README.md:93`：README 链接缺失的证据文件
-- `index.html:129`：页面链接缺失的 `evidence/index.md`
-- `serve.mjs:27`、`serve.mjs:29`：允许清单仍包含这些不存在的路径
-- `BUILD.md:55`：build 阶段已经自报这两个验收项未通过
-
-可选项：
-
-- A) 补齐真实证据文件并完成 M1-M16 记录（推荐）
-  - 利：直接恢复验收项 21、22，README 和页面入口不再失效。
-  - 利：能把自动化探针与规格要求的人工结果明确区分。
-  - 弊：需要在全新 profile 中逐项执行并如实记录，不能用本轮探针代替。
-  - Completeness: 10/10
-- B) 保持阻断，不补证据
-  - 利：不伪造任何未执行的人工结果。
-  - 利：报告会如实反映当前不能验收。
-  - 弊：项目仍不能完成第 5 环后的验收，也不能进入发布流程。
-  - Completeness: 5/10
-- C) 申请正式豁免并修改验收范围
-  - 利：可以让后续流程有明确的书面依据。
-  - 利：避免留下“文件缺失但默认放行”的隐性规则。
-  - 弊：需要规格所有者批准，且会偏离当前已经批准的验收标准。
-  - Completeness: 4/10
-
-推荐项：A。证据缺失是当前最明确的验收阻断项，补齐真实记录比修改标准更直接。
+当前影响：验收项 21、22 仍为 `UNVERIFIED`。缺失证据入口和不存在的证据文件仍是公开的文档缺口，不能据此声明人工验收完成。
 
 ## AUTO-FIX 修复清单
 
 ### 1. 动态数量控件补充稳定的 `id` 和 `name`
 
-- 文件：`assets/app.mjs:316`、`assets/app.mjs:320`
-- 问题：DevTools 报告动态数量输入框没有稳定 `id` 或 `name`
+- 文件：`assets/app.mjs`
 - 修复：添加 `id="quantity-${fruitId}"` 和 `name="quantity-${fruitId}"`
-- 回归：`tests/static-scan.test.mjs:60` 检查源码中的两个属性
-- 验证：本地 Chromium 探针确认 10 个加购行都生成了对应 `id` 和 `name`
+- 回归：`tests/static-scan.test.mjs` 检查源码中的两个属性
 
 ### 2. 拒绝空白的 `--port` 参数
 
-- 文件：`serve.mjs:252`、`serve.mjs:266`
-- 问题：`--port=`、`--port ""` 或空白字符串会被 `Number("")` 解析为 0，绕过“缺少值”的错误
+- 文件：`serve.mjs`
 - 修复：对 `--port` 和 `--port=` 的值先做 `trim()` 空值检查
-- 回归：`tests/server.test.mjs:195`、`tests/server.test.mjs:196`
-- 验证：`parseCliArgs(["--port="])` 和 `parseCliArgs(["--port", " "])` 均返回 `invalid`
+- 回归：`tests/server.test.mjs` 覆盖 `--port=` 和 `--port " "`
 
 ### 3. 删除 EOF 多余空行
 
 - 文件：`assets/controller.mjs`
-- 问题：文件末尾有多余空行
-- 修复：删除行尾空行
+- 修复：删除文件末尾多余空行
 - 验证：`git diff --check` 无输出
 
 ## BUILD.md 自报问题复核
 
-| BUILD 项 | 复核结果 | 说明 |
+| BUILD 项 | 复核结果 | 当前说明 |
 | --- | --- | --- |
-| 1. 缺少 `evidence/index.md` 和 `evidence/manual-checks/browser.md` | 属实 | 验收 21、22 失败，见 D5 |
-| 2. README 引用不存在的 `BUILD-LOG.md` 和 `evidence/clean-run.md` | 属实 | `README.md:75`、`README.md:91` 仍会形成失效入口 |
-| 3. Node.js 18+ 规格与 22+ 实现冲突 | 属实且影响更大 | 除版本检查外，测试还依赖 Node.js 20.11+ 的 `import.meta.dirname`，见 D4 |
-| 4. 动态数量输入框缺少 `id` 或 `name` | 属实 | 已 AUTO-FIX，见上方修复清单 |
+| 1. 缺少 `evidence/index.md` 和 `evidence/manual-checks/browser.md` | 属实 | D5 记录为 `UNVERIFIED` |
+| 2. README 引用不存在的 `BUILD-LOG.md` 和 `evidence/clean-run.md` | 属实 | 仍是公开文档入口缺口，本轮裁决未要求补造证据 |
+| 3. Node.js 18+ 规格与 22+ 实现冲突 | 已处理 | D4 已将规格修订为 Node.js 22+ |
+| 4. 动态数量输入框缺少 `id` 或 `name` | 已处理 | AUTO-FIX 已修复并有静态回归测试 |
 | 5. P5 教学价值仍为 `UNVERIFIED` | 属实 | 没有 `evidence/learner-checks/post-build.md`，不能宣称已验证 |
 
 ## 未发现问题的方面
 
-除上述未决项外，本轮未发现以下方面的新缺陷：
+除上述事项外，本轮未发现以下方面的新缺陷：
 
 - 未发现 SQL 注入、命令注入或 LLM 信任边界问题，项目没有对应执行面
 - 未发现路径穿越、私有文件暴露、symlink 逃逸或 MIME 绕过
@@ -230,27 +150,25 @@ Pre-Landing Review: 5 issues (1 critical, 4 informational)
 
 ## 验证结果
 
-- `node --test`：57 项，56 通过，0 失败，1 跳过
+- `node --test`：60 项，59 通过，0 失败，1 跳过
 - 跳过项：Windows 当前 profile 不允许创建 symlink，symlink 逃逸测试按设计 skip
 - `git diff --check`：通过，无空白错误
-- 本地 Chromium：10 种水果加购、360px 无横向滚动、动态数量控件 `id`/`name` 可见
-- 本地 Chromium：注入 `Storage.prototype.setItem` 配额异常后，不显示成功收据，购物车保留
-- 本地 Chromium：数量输入框失焦重绘会吞掉紧接的移除按钮点击，见 D2
-- 本地 HTTP：缺失的 evidence 入口返回 404
+- D2 回归：`parseQuantityUpdate` 测试确认只有实际数量变化才标记重绘，静态扫描确认未变化分支提前返回
+- D3 回归：五类存储错误码均映射到具体结账提示，静态扫描确认 `not-written` 路径按错误码取文案
 - Node.js 当前实测运行时：22.20.0
+- 本轮收尾没有进入 qa，也没有重新执行人工 Chromium 检查
 
 ## Exploratory QA and Verification Results
 
-本轮 review 使用了本地 Chromium 探针和回环 HTTP 检查，但没有启动 `/qa`，也没有把自动化探针写成人工验收证据。
+上一轮 review 使用了本地 Chromium 探针和回环 HTTP 检查，但没有启动 `/qa`，也没有把自动化探针写成人工验收证据。
 
 - 通过：桌面与 360px 布局基础检查
 - 通过：10 种水果加购基础流程
 - 通过：配额失败时不显示成功且购物车保留
 - 通过：本地页面无未处理控制台异常
-- 观察到：数量输入框失焦后立即点击移除按钮可能丢失点击
-- 未覆盖：全新 profile 下的 M1-M16 人工逐项记录
-- 未覆盖：真实 Node.js 18 运行验证
-- 未覆盖：双标签页竞态的动态复现，D1 来自源码路径分析
+- 上一轮观察到：数量输入框失焦后立即点击移除按钮可能丢失点击；本轮已按 D2 裁决修改源码并补纯函数回归测试
+- 未覆盖：全新 profile 下的 M1-M16 人工逐项记录，状态为 `UNVERIFIED`
+- 未覆盖：双标签页竞态的主动复现；D1 来自读改写路径分析，并按规格排除条款记为已知限制
 
 ## Gate edits
 
@@ -258,10 +176,10 @@ Gate edits: none detected (5 listed, 0 read; patterns: RH-1,RH-3,RH-4,RH-12,RH-1
 
 ## 诚实边界
 
-- 本报告基于上一轮已完成的核心审查和本轮收尾核对，没有重新开展一轮完整审查
+- 本报告基于上一轮已完成的核心审查和本轮裁决收尾，没有重新开展一轮完整审查
 - 没有有效的外部模型 review，Claude Code 因 `unrecognized_model` 和超时未返回结果
-- 没有真实用户的 M1-M16 人工 Chromium 记录，因此不能把自动化探针当成验收 22
-- 没有在 Node.js 18 上运行，不能承诺 D4 的 B 方案无需额外适配
-- 没有执行双标签页竞态复现，D1 是由读改写路径直接推导出的高风险缺陷
+- 没有真实人工受试者的 M1-M16 Chromium 记录，因此 D5 保持 `UNVERIFIED`
+- D1 没有执行双标签页竞态复现，且按 `SPEC.md` 的 Out of Scope 条款不作为本轮修复项
+- D2 已补源码和纯函数测试，但没有重新执行浏览器点击探针
 - 没有执行完整的无障碍、视觉设计或性能审查
 - 没有运行 qa、ship 或 retro，也没有声明这些环节通过

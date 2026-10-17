@@ -6,6 +6,8 @@ Date: 2026-10-17
 Status: APPROVED, 已获用户批准  
 Source design: `docs/designs/fruitlab-traceable-demo.md`
 
+修订记录：2026-10-17，D4 将 Node.js 最低版本要求由 18+ 修订为 22+。原因是本项目基线为 Node.js 22，`serve.mjs` 有意拒绝更低版本，且现有实现与测试按该基线验证；本次修订用于消除规格与实现的版本漂移。
+
 ## Context
 
 本项目是 Hackathon / 教学演示交付物，不是生产商城。交付目标同时包含两件事：
@@ -64,7 +66,7 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
 | `assets/app.mjs` | DOM 事件、内存购物车、结账和查单流程 |
 | `tests/domain.test.mjs` | 纯领域函数测试 |
 | `tests/order-store.test.mjs` | 存储适配器测试，使用内存 fake，不依赖浏览器 |
-| `serve.mjs` | Node 18+ 内置模块静态服务器 |
+| `serve.mjs` | Node 22+ 内置模块静态服务器 |
 | `README.md` | 固定启动步骤、验收脚本、存储重置方法和证据入口 |
 | `evidence/index.md` | 八环证据索引，只记录实际产物和实际状态 |
 | `evidence/manual-checks/browser.md` | 实施后人工 Chromium 检查记录 |
@@ -258,7 +260,7 @@ Source design: `docs/designs/fruitlab-traceable-demo.md`
 
 `node serve.mjs` 必须：
 
-- 只使用 Node.js 18+ 内置模块。
+- 只使用 Node.js 22+ 内置模块。
 - 监听 `127.0.0.1:4173`。
 - 根路径返回 `index.html`。
 - 支持 `GET` 和 `HEAD`；其他方法返回 405。
@@ -280,7 +282,7 @@ node serve.mjs
 
 `README.md` 必须包含：
 
-1. Node.js 18+ 和现代 Chromium 的前置条件。
+1. Node.js 22+ 和现代 Chromium 的前置条件。
 2. 启动命令、地址和停止方式。
 3. 完整的“浏览 -> 下单 -> 查单”验收步骤。
 4. `localStorage.removeItem("fruitlab.orders.v1")` 的重置方法。

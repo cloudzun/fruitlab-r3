@@ -60,7 +60,7 @@ Order append uses this precedence:
 
 - Surface: order store / lookup / checkout
 - Meaning: `localStorage` is missing or inaccessible without a more specific `SecurityError` or quota signal.
-- User text: lookup `本地订单存储不可用`; checkout `订单未保存，请重试`.
+- User text: lookup `本地订单存储不可用`; checkout `订单未保存，请重试。本地订单存储不可用，请检查站点数据权限后重试。`
 - Fix: leave private browsing or restricted-storage mode; allow site data for `127.0.0.1`.
 - Recovery: refresh after storage becomes readable.
 - Side effect: cart browsing and mutation remain available; no order is confirmed.
@@ -73,7 +73,7 @@ Order append uses this precedence:
 
 - Surface: order store / storage notice
 - Meaning: the browser raised a security-class storage error.
-- User text: storage notice `浏览器阻止了本地订单存储。请允许本站使用站点数据后刷新。`; checkout keeps `订单未保存，请重试`.
+- User text: storage notice `浏览器阻止了本地订单存储。请允许本站使用站点数据后刷新。`; checkout `订单未保存，请重试。浏览器阻止了本地订单存储，请允许本站使用站点数据后刷新。`
 - Fix: allow site data for the served origin and disable blocking extensions for the demo.
 - Recovery: refresh and confirm the storage notice clears.
 - Side effect: cart remains editable; no false success is shown.
@@ -86,7 +86,7 @@ Order append uses this precedence:
 
 - Surface: order store / storage notice
 - Meaning: the browser reported a quota-class failure.
-- User text: storage notice `本地订单存储空间已满。请先导出并检查现有订单数据。`; checkout keeps `订单未保存，请重试`.
+- User text: storage notice `本地订单存储空间已满。请先导出并检查现有订单数据。`; checkout `订单未保存，请重试。本地订单存储空间已满，请先导出并检查现有订单数据。`
 - Fix: export the raw key, inspect it, and remove only data you intentionally choose to discard.
 - Recovery: retry after storage capacity is restored.
 - Side effect: existing bytes are not automatically deleted or repaired.
@@ -99,7 +99,7 @@ Order append uses this precedence:
 
 - Surface: order store
 - Meaning: `setItem` failed without a recognized quota or security name.
-- User text: `订单未保存，请重试`.
+- User text: `订单未保存，请重试。请检查浏览器存储权限和可用空间后重试。`
 - Fix: inspect browser storage permissions and available site data.
 - Recovery: retry after storage access/write recovers.
 - Side effect: `not-written`; cart and prior raw bytes are preserved.
@@ -110,9 +110,9 @@ Order append uses this precedence:
 
 ### `storage-read-failed`
 
-- Surface: order store / lookup
+- Surface: order store / lookup / checkout
 - Meaning: the stored value is not a string.
-- User text: lookup falls back to `本地订单存储不可用`; storage notice explains the value is not text.
+- User text: lookup falls back to `本地订单存储不可用`; checkout `订单未保存，请重试。本地订单数据不是文本，无法读取，原始值未被修改。`; storage notice explains the value is not text.
 - Fix: export or inspect the raw value manually; do not let the app rewrite it.
 - Recovery: restore a valid string value or intentionally remove the key after backup.
 - Side effect: no write occurs.
