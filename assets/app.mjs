@@ -313,9 +313,11 @@ function createCartLine(fruitId, quantity) {
   });
 
   const quantityInput = element("input", {
+    id: `quantity-${fruitId}`,
     className: "quantity-input",
     attrs: {
       type: "number",
+      name: `quantity-${fruitId}`,
       min: "1",
       max: "99",
       step: "1",

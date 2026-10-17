@@ -192,6 +192,8 @@ test("CLI argument parsing, version check, help, and unknown-argument exit code 
   assert.deepEqual(parseCliArgs(["--help"]), { kind: "help" });
   assert.deepEqual(parseCliArgs(["--version"]), { kind: "version" });
   assert.equal(parseCliArgs(["--bogus"]).kind, "invalid");
+  assert.equal(parseCliArgs(["--port="]).kind, "invalid");
+  assert.equal(parseCliArgs(["--port", " "]).kind, "invalid");
   assert.equal(parseCliArgs(["--port", "70000"]).kind, "invalid");
 
   const help = spawnSync(process.execPath, ["serve.mjs", "--help"], {

@@ -414,4 +414,3 @@ export function resolveUnknownCheckout({ state, storage }) {
     state: checkoutReducer(state, { type: "UNKNOWN_ABSENT" }),
   };
 }
-

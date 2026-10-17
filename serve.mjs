@@ -249,7 +249,7 @@ export function parseCliArgs(argv) {
 
     if (arg === "--port") {
       const value = argv[index + 1];
-      if (value === undefined || value.startsWith("-")) {
+      if (value === undefined || value.trim() === "" || value.startsWith("-")) {
         return { kind: "invalid", message: "--port requires a value" };
       }
       index += 1;
@@ -263,6 +263,9 @@ export function parseCliArgs(argv) {
 
     if (arg.startsWith("--port=")) {
       const value = arg.slice("--port=".length);
+      if (value.trim() === "") {
+        return { kind: "invalid", message: "--port requires a value" };
+      }
       const parsed = Number(value);
       if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65_535) {
         return { kind: "invalid", message: "--port must be an integer from 0 to 65535" };

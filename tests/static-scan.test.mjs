@@ -57,6 +57,12 @@ test("HTML does not introduce inline script, style, or event-handler sinks", asy
   assert.equal(/\son[a-z]+\s*=/i.test(html), false);
 });
 
+test("dynamic quantity controls expose a stable id and name", async () => {
+  const source = await readFile(path.join(ROOT, "assets/app.mjs"), "utf8");
+  assert.match(source, /id: `quantity-\$\{fruitId\}`/);
+  assert.match(source, /name: `quantity-\$\{fruitId\}`/);
+});
+
 test("project remains dependency-free and has no generated build directory", async () => {
   const rootEntries = await readdir(ROOT);
   assert.equal(rootEntries.includes("package.json"), false);
