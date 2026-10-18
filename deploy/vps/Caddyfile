@@ -1,0 +1,15 @@
+# 宿主机 Caddy：TLS 终止 + 反代到本机 4175（web 容器的 Caddy）
+# 安装/更新：sudo cp Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+{
+    email admin@example.com
+}
+
+fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:4175
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}

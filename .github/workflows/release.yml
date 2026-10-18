@@ -1,0 +1,131 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v3.5.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "version without v (e.g. 3.5.0.0)"
+        required: true
+        default: "3.5.0.0"
+      deploy:
+        description: "deploy to Azure VM after publish"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_API: chengzh/fruitlab-r3
+  IMAGE_WEB: chengzh/fruitlab-r3-web
+  GHCR_API: ghcr.io/cloudzun/fruitlab-r3
+  GHCR_WEB: ghcr.io/cloudzun/fruitlab-r3-web
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: version
+        name: resolve image tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.version }}"
+          else
+            TAG="${GITHUB_REF_NAME#v}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "image tag: $TAG"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: build and push api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_API }}:${{ steps.version.outputs.tag }}
+            ${{ env.GHCR_API }}:${{ steps.version.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: build and push web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.web
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_WEB }}:${{ steps.version.outputs.tag }}
+            ${{ env.GHCR_WEB }}:${{ steps.version.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: verify remote manifests + record digests
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          docker buildx imagetools inspect "$IMAGE_API:$TAG" | tee "digest-api-$TAG.txt"
+          docker buildx imagetools inspect "$IMAGE_WEB:$TAG" | tee "digest-web-$TAG.txt"
+          {
+            echo "## R3.5 images ($TAG)"
+            echo '```'
+            grep -E 'Name:|Digest:' "digest-api-$TAG.txt" || true
+            grep -E 'Name:|Digest:' "digest-web-$TAG.txt" || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-digests-${{ steps.version.outputs.tag }}
+          path: digest-*.txt
+
+  deploy:
+    needs: build-push
+    if: github.event_name == 'push' || inputs.deploy == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: deploy to Azure VM over SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          TAG: ${{ needs.build-push.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" \
+            "cd /opt/fruitlab && ./deploy.sh '$TAG'"

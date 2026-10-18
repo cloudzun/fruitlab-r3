@@ -173,3 +173,16 @@
 | D-106 | 迁移 `pg_advisory_xact_lock` + checksum；并发 migrate 测试 | 无锁 | E-12：并发迁移争写 | db/测试 | accepted |
 | D-107 | 路径规范化：尾斜杠/编码/空段→404，`%zz`→400 `invalid-path`，405 表驱动 | 各分支自行判断 | E-13：400/404/405 漂移 | router/测试 | accepted |
 | D-108 | preflight + `verify --quick/--full`；CLI 矩阵；镜像 digest/engines；路径可移植/PS 包装 | 文档口头说明 | DX-01/06/07/08/09：干净 checkout 不可运行 | 脚本/文档/verify | accepted |
+
+## R3.5 部署与 CI/CD 决策
+
+| ID | 决策 | 被否的选项 | 理由 | 落点 | 状态 |
+|---|---|---|---|---|---|
+| D-109 | 代码 MIT + 文档/证据 CC BY-NC-SA 4.0；GitHub public | 全部 private / 无 License | 课程展示与复用；明确授权边界 | LICENSE、LICENSE-DOCS | accepted |
+| D-110 | CI 用 GitHub Actions + Postgres service（55432） | 只本地跑 / Docker-in-Docker | runner 原生 Docker；与本地端口约定一致 | `.github/workflows/ci.yml` | accepted |
+| D-111 | 镜像发布 tag 触发，推 Docker Hub + GHCR；版本 tag 不复用 | 只推 Docker Hub / Docker Hub autobuild | 双通道冗余；Actions 可审计 | `release.yml` | accepted |
+| D-112 | 沿用现有 Docker Hub token（用户决定不轮换），只存 GitHub Secret | 轮换新 token | 用户明确要求；风险记录在方案/CHANGELOG | GitHub Secrets | accepted（风险已知） |
+| D-113 | 第一部署目标 Azure VM（B2s/eastasia）+ 宿主机 Caddy TLS | PaaS / K8s / Vercel | 用户选择 VPS；改动最小、可教学 | `deploy/vps/` | accepted |
+| D-114 | 生产 compose 仅发布 127.0.0.1:4175，api/db 不暴露；新卷 `fruitlab-r3-prod-pgdata` | 直接暴露 4175 / 复用开发卷 | TLS 由宿主机 Caddy；避免 classroom 污染 | `docker-compose.prod.yml` | accepted |
+| D-115 | 部署前备份 + 健康检查 + 失败自动回滚；部署后记录 `.last_good_tag` | 直接 up / 无回滚 | 单 VM 的最低可恢复性 | `deploy.sh`/`rollback.sh` | accepted |
+| D-116 | R3.5 走轻量四环（spec → build/deploy → review+qa → ship），版本 `3.5.0.0` | 重跑完整七环 | 小版本、范围仅部署与流水线 | 本文件/PRD-R3.5 | accepted |

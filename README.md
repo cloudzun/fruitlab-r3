@@ -1,13 +1,14 @@
-# FruitLab R3 · Postgres + 三层架构 + 可部署
+# FruitLab R3.5 · Postgres + 三层架构 + 可部署 + CI/CD
 
 [![ci](https://github.com/cloudzun/fruitlab-r3/actions/workflows/ci.yml/badge.svg)](https://github.com/cloudzun/fruitlab-r3/actions/workflows/ci.yml)
+[![release](https://github.com/cloudzun/fruitlab-r3/actions/workflows/release.yml/badge.svg)](https://github.com/cloudzun/fruitlab-r3/actions/workflows/release.yml)
 [![docker](https://img.shields.io/badge/docker-chengzh%2Ffruitlab--r3-blue)](https://hub.docker.com/r/chengzh/fruitlab-r3)
 
-> **版本**：`3.0.0.0`（`VERSION`；npm 包版本 `3.0.0`，见 `package.json`）
+> **版本**：`3.5.0.0`（`VERSION`；npm 包版本 `3.5.0`，见 `package.json`）
 > **仓库**：<https://github.com/cloudzun/fruitlab-r3>（public）
 > **形态**：PostgreSQL 16 + L1（router → services → repositories）+ L2（Caddy web / Node api / Postgres db）
 > **依赖**：运行时恰好 `{pg}`（R1/R2 仍为零依赖，互不影响）
-> **对应课程**：GStack 七环迭代第三幕（spec → autoplan → build → review → qa → ship → retro）
+> **对应课程**：GStack 七环迭代第三幕 + R3.5 部署收口（spec → build/deploy → review+qa → ship）
 
 ## 1. 三个版本（课堂并排）
 
@@ -16,6 +17,8 @@
 | R1（升级前，永久冻结） | `..\r1-fruitlab` | 4173 | `localStorage` | `node serve.mjs` |
 | R2（第二次升级，冻结） | `..\r2-fruitlab` | 4174 | `data/fruitlab.db`（SQLite） | `node cli.mjs dev` |
 | **R3（本轮）** | 本目录 | **4175** | Postgres volume `fruitlab-r3-pgdata` | `docker compose up --build` |
+
+> R3.5 在 R3 基础上只加部署与 CI/CD：GitHub public 仓库、GitHub Actions CI、tag 触发 Docker Hub/GHCR 发布、Azure VM + Caddy 生产部署、备份/回滚。见 [`docs/ci-cd.md`](docs/ci-cd.md)、[`docs/deploy-azure.md`](docs/deploy-azure.md)。
 
 三版本同时启动、互不共享数据；R3 不修改 R1/R2。一键启动：`node scripts/start-all.mjs`（R2 使用仓库外临时 SQLite 文件，重启不丢数据）。
 

@@ -1,0 +1,10 @@
+[Unit]
+Description=FruitLab R3.5 PostgreSQL backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=azureuser
+WorkingDirectory=/opt/fruitlab
+ExecStart=/opt/fruitlab/backup.sh

@@ -1,6 +1,6 @@
 {
   "name": "fruitlab-r3",
-  "version": "3.0.0",
+  "version": "3.5.0",
   "private": true,
   "description": "FruitLab R3 - Postgres, layered architecture, deployable classroom demo",
   "type": "module",

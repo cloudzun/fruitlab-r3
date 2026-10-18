@@ -1,0 +1,70 @@
+name: fruitlab-r3-prod
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fruitlab
+      POSTGRES_DB: fruitlab
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - fruitlab-r3-prod-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fruitlab -d fruitlab"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    restart: unless-stopped
+
+  api:
+    image: chengzh/fruitlab-r3:${IMAGE_TAG:-3.5.0.0}
+    environment:
+      DATABASE_URL: postgres://fruitlab:${POSTGRES_PASSWORD:?}@db:5432/fruitlab
+      APP_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      SERVE_STATIC: "0"
+      PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL is required}
+      TRUST_PROXY: "1"
+      COOKIE_SECURE: "1"
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-86400}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    restart: unless-stopped
+
+  web:
+    image: chengzh/fruitlab-r3-web:${IMAGE_TAG:-3.5.0.0}
+    ports:
+      - "127.0.0.1:4175:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    restart: unless-stopped
+
+volumes:
+  fruitlab-r3-prod-pgdata:
+    name: fruitlab-r3-prod-pgdata

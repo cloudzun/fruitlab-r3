@@ -2,6 +2,36 @@
 
 FruitLab 的用户可见变更记录。
 
+## [3.5.0.0] - 2026-10-19
+
+> R3.5：不改业务模型，只做「可部署收口 + 发布流水线」。
+
+### Added
+
+- **public GitHub 仓库**：<https://github.com/cloudzun/fruitlab-r3>；代码 MIT、文档/证据 CC BY-NC-SA 4.0。
+- **CI**：`.github/workflows/ci.yml`，Node 22 + Postgres 16 服务容器，138 项测试 + 机械校验。
+- **镜像发布**：`.github/workflows/release.yml`，tag `v3.5.*` 构建并推送 Docker Hub + GHCR，记录 digest。
+- **生产部署资产**：`deploy/vps/`（生产 compose、Caddyfile、备份/恢复/部署/回滚脚本、systemd timer）。
+- **Azure VM 部署**：Ubuntu 24.04 + Docker + 宿主机 Caddy 自动 HTTPS；GitHub Actions SSH 部署。
+- **文档**：`docs/ci-cd.md`、`docs/deploy-azure.md`、`PRD-R3.5.md`。
+
+### Changed
+
+- `VERSION` → `3.5.0.0`；`package.json` → `3.5.0`。
+- 生产部署默认只发布 `127.0.0.1:4175`，由宿主机 Caddy 终止 TLS；api/db 不暴露端口。
+- 部署前自动 `pg_dump` 备份；健康检查失败自动回滚上一版。
+
+### Fixed
+
+- 修复 `npm ci` 在 GitHub Actions 访问 npmmirror 504 的问题：lockfile 的 `resolved` 改为 `registry.npmjs.org`。
+
+### Known Issues（如实记录）
+
+- 单 VM，无高可用；部署窗口内短暂中断。
+- Docker Hub token 未轮换（用户决定），仅存 GitHub Secret。
+- 未做 PaaS、K8s、多架构镜像、CI 中的 `verify --full`（当前 CI 为 tests + `--quick`）。
+- 人工无障碍/对比度/实体手机仍为 `UNVERIFIED`（沿用 R3 结论）。
+
 ## [3.0.0.0] - 2026-10-18
 
 > R3：从单机 SQLite 应用升级为 **PostgreSQL 16 + L1 逻辑三层 + L2 三容器 + 可备份恢复** 的可部署形态；关闭 R2 补测的 11 个缺陷；三版本并排。
