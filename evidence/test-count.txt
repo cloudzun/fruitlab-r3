@@ -1,32 +1,32 @@
 # 测试计数（唯一权威来源）
 
 - 命令: node --test
-- 时间: 2026-10-18T01:29:34.803Z
-- git: ef71077a95073411d12b68241bb4e1242948e52a
+- 时间: 2026-10-18T01:39:10.370Z
+- git: 17a1c0e497fb5b21555816c7f208ff0928c72711
 - 结果: tests=96 pass=96 fail=0 skipped=0 todo=0
 
 ## 原始输出（尾部）
 
 ```text
-  duration_ms: 1.3241
+  duration_ms: 1.4547
   type: 'test'
   ...
 # Subtest: product cards use local photos, alt text, and stable quantity controls
 ok 94 - product cards use local photos, alt text, and stable quantity controls
   ---
-  duration_ms: 0.7687
+  duration_ms: 0.9405
   type: 'test'
   ...
 # Subtest: retired frontend modules are gone and no file imports them
 ok 95 - retired frontend modules are gone and no file imports them
   ---
-  duration_ms: 1.3773
+  duration_ms: 1.5337
   type: 'test'
   ...
 # Subtest: project remains dependency-free and has no generated build directory
 ok 96 - project remains dependency-free and has no generated build directory
   ---
-  duration_ms: 0.3267
+  duration_ms: 0.3393
   type: 'test'
   ...
 1..96
@@ -37,7 +37,7 @@ ok 96 - project remains dependency-free and has no generated build directory
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 2537.8275
+# duration_ms 2539.3209
 ```
 
 > 其它文档出现计数时必须引用本文件；不得手写数字。

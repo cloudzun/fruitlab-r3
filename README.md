@@ -19,6 +19,16 @@ node cli.mjs dev
 > 数据库文件在 `data/fruitlab.db`（已 gitignore，可随时用 `node cli.mjs db reset --yes` 重建）。
 > `data/` 只在首次 `dev` / `db init` 时创建。
 
+## 课堂并排演示（R1 + R2 同时启动）
+
+`powershell
+node scripts/start-both.mjs
+`
+
+- R1（冻结展品）→ http://127.0.0.1:4173
+- R2（升级后）→ http://127.0.0.1:4174
+- Ctrl+C 同时停止两边；脚本只启动进程，不修改 R1 任何文件。
+
 ## 演示账号（仅演示，非生产）
 
 | 账号 | 口令 | 角色 |

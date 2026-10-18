@@ -1086,6 +1086,24 @@ button:disabled {
   }
 }
 
+/* --------------------------------------------------- mobile nav (QA-01 fix) */
+
+/* 窄屏不再依赖横向滑动：导航折行，全部入口（含购物袋）可见。 */
+@media (max-width: 719.98px) {
+  .header-inner {
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
+    padding-block: var(--space-2);
+  }
+
+  .site-nav {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 4px;
+    column-gap: var(--space-3);
+  }
+}
+
 /* ------------------------------------------------------------ motion pref */
 
 @media (prefers-reduced-motion: reduce) {

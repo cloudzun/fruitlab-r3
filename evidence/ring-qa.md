@@ -84,6 +84,15 @@ apple price: 1111 stock: 5
 | `evidence/visual/home-390-top.png` | 390px 首屏 |
 | `evidence/visual/home-390-cart.png` | 390px 加购后（紧凑购物袋条） |
 
+## 2.7 QA-01 修复后复测（2026-10-18）
+
+`	ext
+390px: nav.clientWidth=325 nav.scrollWidth=325 flexWrap=wrap
+headerHeight=88  cartVisible=true  cartRect.left=283 right=349
+`
+
+结论：导航折行，无横向滚动，购物袋入口可见。修复前 clientWidth=242 / scrollWidth=357 / cart 在视口外。
+
 ## 5. 诚实边界
 
 - 人工无障碍（读屏器、完整键盘路径、对比度仪器）未做，`UNVERIFIED`。

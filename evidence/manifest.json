@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T01:29:34.855Z",
+  "generatedAt": "2026-10-18T01:39:10.425Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -53,7 +53,7 @@
     },
     {
       "file": "evidence/manual-checks/browser.md",
-      "sha256": "2138d726b7cd2214947fe338b1a4f61f7c829e4d732336d411df5e3986f72afe",
+      "sha256": "a57d3f087cf0368777316a39dc77cef91636bedf13aae90b089e82ad9c248657",
       "bytes": 1952
     },
     {
@@ -68,8 +68,8 @@
     },
     {
       "file": "evidence/ring-qa.md",
-      "sha256": "1855abe98a51f3655093c358ceccb4ef8ab34b93c9a132b307b9d89d5b18bea5",
-      "bytes": 3714
+      "sha256": "3e88a298007c602a0f7684cbadee84e2f83d324b96987e10b621aba174ac8e69",
+      "bytes": 4027
     },
     {
       "file": "evidence/ring-retro.md",
@@ -98,7 +98,7 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "f7920f7c71a2c259d232247a1f0655ea444d73ad88e3557185c7b240a700caa1",
+      "sha256": "567150145a6e16d77ae324c97dbe462573a06bd68606630bcaa2662ec9055bea",
       "bytes": 1065
     },
     {

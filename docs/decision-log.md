@@ -89,3 +89,8 @@
 |---|---|---|---|
 | D-44 | 图片授权策略扩展为 CC0 / CC BY / CC BY-SA / Public Domain | 真实图库可用性所迫；逐张在 docs/assets-credits.md 记录作者与授权，CC BY/BY-SA 署名；作为对 SPEC §5.8「仅 CC0/BY」的**降级**记录 | accepted |
 | D-45 | 页面标题由 R1「果子摊」改为「FruitLab · 按份买水果」 | 视觉方向变更后的文案一致性 | accepted |
+## 2026-10-18 · QA-01 修复
+
+| 编号 | 决策 | 说明 | 状态 |
+|---|---|---|---|
+| D-46 | ≤720px 导航折行，替代横向滚动 | 横向滚动虽符合 SPEC §5.7，但初始看不到购物袋；折行后全部入口可见，实测 scrollWidth==clientWidth。 | accepted |

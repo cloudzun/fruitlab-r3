@@ -14,9 +14,9 @@
 | Performance | 90（provisional） | 全本地资源、无失败请求；未做指标采集 |
 | Content | 96 | 文案克制、金额/时间/合计正确；标题已从 R1 修正 |
 | Accessibility | 92（provisional） | alt 齐全、焦点可见、`aria-invalid`/`aria-describedby`、`aria-live`；未做读屏人工审查 |
-| UX | 92 | 主流程顺畅；390px 导航需横向滑动才能看到「购物袋」 |
+| UX | 96 | 主流程顺畅；移动端导航已折行，全部入口（含购物袋）可见 |
 | Links | 100 | 页面与图片请求全部 200；页脚证据/授权链接可解析 |
-| **加权健康分** | **94** | 无 Critical / High；2 个 Medium、2 个 Low（见 §3） |
+| **加权健康分** | **95** | 无 Critical / High；1 个 Medium（已记录）、2 个 Low（已修） |
 
 ## 2. 实测通过项
 
@@ -44,7 +44,7 @@
 
 | # | 严重度 | 发现 | 处置 |
 |---:|---|---|---|
-| QA-01 | Medium | 390px 导航为横向滚动，初始看不到「购物袋」入口（规范允许滚动，但可发现性弱） | **OPEN**：建议折行或缩短文案；本轮不阻塞发布，记录 |
+| QA-01 | Medium | 390px 导航为横向滚动，初始看不到「购物袋」入口 | **已修**：≤720px 导航折行；实测 scrollWidth == clientWidth、购物袋可见（2026-10-18 复测） |
 | QA-02 | Medium | 图片授权策略扩展为 CC0 / CC BY / CC BY-SA / Public Domain（SPEC §5.8 原写仅 CC0/BY） | **已记录**：`docs/assets-credits.md` 逐张署名；测试允许值同步；作为**降级项**记录 |
 | QA-03 | Low | `index.html` meta CSP 的 `frame-ancestors` 被浏览器忽略并报错 | **已修**：meta 中移除该指令，HTTP 头仍下发 |
 | QA-04 | Low | 页面标题仍是 R1「果子摊」 | **已修**：改为「FruitLab · 按份买水果」 |
@@ -61,4 +61,4 @@
 
 ## 5. 结论
 
-**无 Critical / High；可进入 ship 环。** 2 个 Medium（移动导航可发现性、图片授权策略扩展）与 2 个 Low 已记录/已修，不掩盖。
+**无 Critical / High。** 图片授权扩展（Medium）已记录为降级；移动导航已修；2 个 Low 已修。不掩盖。
