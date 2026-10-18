@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T01:11:36.613Z",
+  "generatedAt": "2026-10-18T01:14:17.546Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -43,8 +43,8 @@
     },
     {
       "file": "evidence/index.md",
-      "sha256": "9f98746702c57e84a3d7f1c598c992f26e070d0c621c7729ab4f00455759c7a8",
-      "bytes": 2084
+      "sha256": "14bd55e1912b84526d9104579a33b9cf4a26efd89a13aa4f494f1176cf98b097",
+      "bytes": 2182
     },
     {
       "file": "evidence/learner-checks/pre-spec.md",
@@ -67,6 +67,11 @@
       "bytes": 4134
     },
     {
+      "file": "evidence/ring-review.md",
+      "sha256": "81e9c46f9f5fd4021edb55b3d532936004866b11ad42b74e163d5f4f3d105a63",
+      "bytes": 2710
+    },
+    {
       "file": "evidence/ring-spec.md",
       "sha256": "618dbe1c4351901040f0457c2c94624f0dca81838e222a6800aeaf45824679f9",
       "bytes": 9550
@@ -78,8 +83,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "c466da4fc0ba1d8b41925ccd8972dac8dddc80e4b972145b24f79fefa36b4025",
-      "bytes": 1065
+      "sha256": "0fe49da02de9a9933d9f128213e0dff39d05f240ac22ce4ef80a5c28e2cf8d4e",
+      "bytes": 1064
     }
   ]
 }

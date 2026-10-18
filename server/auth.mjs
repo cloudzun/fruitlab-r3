@@ -70,7 +70,11 @@ export function parseCookies(header = "") {
     if (index === -1) continue;
     const key = part.slice(0, index).trim();
     if (!key) continue;
-    out[key] = decodeURIComponent(part.slice(index + 1).trim());
+    try {
+      out[key] = decodeURIComponent(part.slice(index + 1).trim());
+    } catch {
+      // 非法百分号编码的 Cookie 直接忽略，不抛错（review 环修复）
+    }
   }
   return out;
 }

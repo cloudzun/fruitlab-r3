@@ -48,3 +48,12 @@
 
 - 两处 fake DOM 测试（数量变更、查单）因假 DOM 无法可靠模拟重渲染后再派发事件，已拆成单次提交的等价断言；真实浏览器行为交 qa 环验证，未在此声称通过。
 - 视觉人工检查（对比度、键盘、截图）仍为 UNVERIFIED。
+## review 环修复（2026-10-18）
+
+- server/orders.mjs：订单列表 N+1 → 批量 itemsByOrderIds()；幂等唯一冲突 → 返回已有订单。
+- server/auth.mjs：非法 Cookie 解码容错（不再 500）。
+- server/router.mjs：/api/health 不再泄露绝对路径；登录时作废旧会话。
+- cli.mjs：删除未使用变量。
+- 复核：
+ode --test 96/96 通过；
+ode scripts/verify.mjs PASS 5/5。

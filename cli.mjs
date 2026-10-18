@@ -116,7 +116,6 @@ async function main() {
     return;
   }
 
-  const needsDb = !["db"].includes(command) || true;
   if (dbPath !== ":memory:" && !fs.existsSync(dbPath) && !["db"].includes(command)) {
     return fail("db-missing", "数据库不存在；请先运行 node cli.mjs db init && node cli.mjs db seed", json, 1);
   }

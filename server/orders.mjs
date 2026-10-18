@@ -37,6 +37,16 @@ export function normalizeItems(items) {
   return { ok: true, items: [...merged.entries()].map(([productId, quantity]) => ({ productId, quantity })) };
 }
 
+function orderFromRow(row, items) {
+  return {
+    orderNumber: row.order_number,
+    userId: row.user_id,
+    createdAt: row.created_at,
+    subtotalCents: row.subtotal_cents,
+    items,
+  };
+}
+
 function itemsForOrder(db, orderId) {
   return db
     .prepare(
@@ -48,21 +58,37 @@ function itemsForOrder(db, orderId) {
     .all(orderId);
 }
 
+// 批量取明细，避免订单列表 N+1（review 环修复）。
+function itemsByOrderIds(db, orderIds) {
+  if (orderIds.length === 0) return new Map();
+  const placeholders = orderIds.map(() => "?").join(", ");
+  const rows = db
+    .prepare(
+      `SELECT oi.order_id AS orderId, oi.product_id AS productId, p.name, p.unit,
+              oi.quantity, oi.unit_price_cents AS unitPriceCents, oi.subtotal_cents AS subtotalCents
+         FROM order_items oi JOIN products p ON p.product_id = oi.product_id
+        WHERE oi.order_id IN (${placeholders}) ORDER BY oi.item_id`,
+    )
+    .all(...orderIds);
+  const grouped = new Map();
+  for (const row of rows) {
+    const { orderId, ...item } = row;
+    if (!grouped.has(orderId)) grouped.set(orderId, []);
+    grouped.get(orderId).push(item);
+  }
+  return grouped;
+}
+
 function rowToOrder(db, row) {
-  return {
-    orderNumber: row.order_number,
-    userId: row.user_id,
-    createdAt: row.created_at,
-    subtotalCents: row.subtotal_cents,
-    items: itemsForOrder(db, row.order_id),
-  };
+  return orderFromRow(row, itemsForOrder(db, row.order_id));
 }
 
 export function listOrdersByUser(db, userId, { limit = 100 } = {}) {
   const rows = db
     .prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC, order_id DESC LIMIT ?")
     .all(userId, limit);
-  return rows.map((row) => rowToOrder(db, row));
+  const grouped = itemsByOrderIds(db, rows.map((row) => row.order_id));
+  return rows.map((row) => orderFromRow(row, grouped.get(row.order_id) ?? []));
 }
 
 export function getOrderByNumber(db, orderNumber) {
@@ -79,7 +105,12 @@ export function listAllOrders(db, { limit = 100 } = {}) {
         ORDER BY o.created_at DESC, o.order_id DESC LIMIT ?`,
     )
     .all(limit);
-  return rows.map((row) => ({ ...rowToOrder(db, row), username: row.username, itemCount: row.itemCount }));
+  const grouped = itemsByOrderIds(db, rows.map((row) => row.order_id));
+  return rows.map((row) => ({
+    ...orderFromRow(row, grouped.get(row.order_id) ?? []),
+    username: row.username,
+    itemCount: row.itemCount,
+  }));
 }
 
 function findExistingOrder(db, userId, clientOrderId) {
@@ -150,7 +181,12 @@ export function createOrder(db, { userId, items, clientOrderId, now = new Date()
     return result;
   } catch (error) {
     if (error instanceof OrderFailure) return { ok: false, code: error.code, details: error.details };
-    if (String(error?.message ?? "").includes("BUSY")) return { ok: false, code: "server-busy" };
+    const message = String(error?.message ?? "");
+    if (message.includes("UNIQUE constraint failed") && message.includes("client_order_id")) {
+      const existing = findExistingOrder(db, userId, clientOrderId);
+      if (existing) return { ok: true, status: "existing", order: existing };
+    }
+    if (message.includes("BUSY")) return { ok: false, code: "server-busy" };
     throw error;
   }
 }

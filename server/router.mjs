@@ -1,6 +1,7 @@
 // API 路由：统一信封 {ok:true,...} / {ok:false,code,message}。
 // 静态层错误仍用 problem+json（见 serve.mjs）；两者边界在 docs/contracts.md。
 import crypto from "node:crypto";
+import path from "node:path";
 import { createSession, deleteSession, findUserByUsername, getSessionUser, listUsers, createUser, sessionCookie, clearSessionCookie, parseCookies, COOKIE_NAME, verifyPassword, validateCredentials } from "./auth.mjs";
 import { getProduct, listProducts, updateProduct } from "./products.mjs";
 import { createOrder, getOrderByNumber, listAllOrders, listOrdersByUser } from "./orders.mjs";
@@ -80,6 +81,14 @@ function currentUser(db, req) {
   return getSessionUser(db, cookies[COOKIE_NAME]);
 }
 
+// 健康检查只暴露相对路径，避免把绝对文件系统路径发给客户端（review 环修复）。
+function publicDbPath(dbPath) {
+  if (!dbPath || dbPath === ":memory:") return dbPath;
+  const relative = path.relative(process.cwd(), dbPath);
+  if (relative && !relative.startsWith("..") && !path.isAbsolute(relative)) return relative.split(path.sep).join("/");
+  return path.basename(dbPath);
+}
+
 export function createApiHandler({ db, version = "2.0.0.0", dbPath = "", port = 0, startedAt = Date.now() }) {
   const portValue = () => (typeof port === "function" ? port() : port);
   return async function handleApi(req, res) {
@@ -102,7 +111,7 @@ export function createApiHandler({ db, version = "2.0.0.0", dbPath = "", port = 
           ok: true,
           version,
           schemaVersion: schemaVersion(db),
-          dbPath,
+          dbPath: publicDbPath(dbPath),
           port: portValue(),
           seeded: isSeeded(db),
           uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
@@ -136,6 +145,9 @@ export function createApiHandler({ db, version = "2.0.0.0", dbPath = "", port = 
         if (!found || !verifyPassword(password, found.passwordHash)) {
           return sendJson(res, 401, errorBody("auth-invalid-credentials")), true;
         }
+        // 登录时作废旧会话，避免会话行堆积（review 环修复）。
+        const previousToken = parseCookies(req.headers.cookie ?? "")[COOKIE_NAME];
+        if (previousToken) deleteSession(db, previousToken);
         const token = createSession(db, found.id);
         return sendJson(res, 200, { ok: true, user: { id: found.id, username: found.username, role: found.role } }, {
           "Set-Cookie": sessionCookie(token),
