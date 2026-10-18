@@ -1,6 +1,10 @@
 # FruitLab R3 · Postgres + 三层架构 + 可部署
 
+[![ci](https://github.com/cloudzun/fruitlab-r3/actions/workflows/ci.yml/badge.svg)](https://github.com/cloudzun/fruitlab-r3/actions/workflows/ci.yml)
+[![docker](https://img.shields.io/badge/docker-chengzh%2Ffruitlab--r3-blue)](https://hub.docker.com/r/chengzh/fruitlab-r3)
+
 > **版本**：`3.0.0.0`（`VERSION`；npm 包版本 `3.0.0`，见 `package.json`）
+> **仓库**：<https://github.com/cloudzun/fruitlab-r3>（public）
 > **形态**：PostgreSQL 16 + L1（router → services → repositories）+ L2（Caddy web / Node api / Postgres db）
 > **依赖**：运行时恰好 `{pg}`（R1/R2 仍为零依赖，互不影响）
 > **对应课程**：GStack 七环迭代第三幕（spec → autoplan → build → review → qa → ship → retro）
@@ -46,7 +50,7 @@ node cli.mjs dev --port 4175        # 静态 + API（SERVE_STATIC 默认 false�
 
 ```powershell
 node scripts/pgctl.mjs up        # 测试 Postgres（WSL 或原生 Docker）
-node --test --test-concurrency=4 # 128 项：真实 PG + 纯逻辑 + fake DOM + 客户端
+node --test --test-concurrency=4 # 138 项：真实 PG + 纯逻辑 + fake DOM + 客户端
 node scripts/record-test-count.mjs
 node scripts/verify.mjs --quick  # 纯逻辑/静态/编号/链接（无需 Docker）
 node scripts/verify.mjs          # preflight + 测试 + 全部机械检查 + compose 配置
@@ -89,3 +93,8 @@ node scripts/verify.mjs          # preflight + 测试 + 全部机械检查 + com
 - 本轮规格与评审：[`SPEC.md`](SPEC.md)（v1.2）、[`DECISIONS.md`](DECISIONS.md)（42 条义务）
 - 构建：[`BUILD.md`](BUILD.md)；复核：[`review.md`](review.md)；QA：[`qa-report.md`](qa-report.md)；复盘：[`retro.md`](retro.md)
 - 项目总交接：`通用AI_Coding课程与教材/HANDOFF.md` 第七节
+
+## 9. License
+
+- **代码**（`server/`、`assets/`、`scripts/`、`*.mjs`、`*.html`、`*.css` 等）：[MIT](LICENSE)
+- **文档与证据**（`docs/`、`evidence/`、`SPEC.md`、`DECISIONS.md`、`BUILD.md`、`review.md`、`qa-report.md`、`retro.md` 等）：[CC BY-NC-SA 4.0](LICENSE-DOCS)

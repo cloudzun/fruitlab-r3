@@ -1,0 +1,9 @@
+FruitLab 课程文档与证据（docs/、evidence/、SPEC/DECISIONS/BUILD/review/qa/report 等非代码内容）
+采用 Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+（CC BY-NC-SA 4.0）许可。
+
+你可以：共享、改编，需署名、非商业用途、相同方式共享。
+完整许可文本：https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+许可摘要：https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+代码部分（server/、assets/、scripts/、*.mjs、*.html、*.css 等）按 MIT License（见 LICENSE）。
