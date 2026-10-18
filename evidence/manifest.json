@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T04:12:51.019Z",
+  "generatedAt": "2026-10-18T23:33:09.127Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -327,6 +327,61 @@
       "bytes": 1432
     },
     {
+      "file": "evidence/r3.5/README.md",
+      "sha256": "cfc7b1fa3bc67fa6396506100b534ff594c55e716d7652a828c4b038f96d75e7",
+      "bytes": 2097
+    },
+    {
+      "file": "evidence/r3.5/azure-vm.json",
+      "sha256": "795bde6e0f0017cb7a9560ad70377c88f5f74d6a4fbe32242d389a4fe4585b7b",
+      "bytes": 213
+    },
+    {
+      "file": "evidence/r3.5/backup-restore.txt",
+      "sha256": "019d2752f5fd2a88be1fbea4c5930b9746c1976acfee8d4f04eb0afc65574ff5",
+      "bytes": 789
+    },
+    {
+      "file": "evidence/r3.5/digests.txt",
+      "sha256": "24b1c1f4db267ee6de3e32340c6499d6c2b67d6fe86d034ce3789cccca05235e",
+      "bytes": 878
+    },
+    {
+      "file": "evidence/r3.5/github-actions.md",
+      "sha256": "df86cad6998a9a4bd6a25d7d8550397d2d48b71243a7a410ba43d92a30ead9c3",
+      "bytes": 2747
+    },
+    {
+      "file": "evidence/r3.5/github-actions.txt",
+      "sha256": "61ea21d96b3adf13b1a5c0bde0cf49b262824e01c880e3b97eb4cfefeb27c5bd",
+      "bytes": 932
+    },
+    {
+      "file": "evidence/r3.5/prod-smoke.txt",
+      "sha256": "1a54fa85a259e94ab0e777bf32681627c4a3f451ffb1d04351850eaaca43f83a",
+      "bytes": 604
+    },
+    {
+      "file": "evidence/r3.5/release-notes.md",
+      "sha256": "4b324abf9d575975ba661d46a59bcc7e46ef2d29e260262d935fb675d827474d",
+      "bytes": 2028
+    },
+    {
+      "file": "evidence/r3.5/rollback.txt",
+      "sha256": "58b2f29f22e5119eb94fa5252908f158a1ad8af93f295f9f7eda4513ff384553",
+      "bytes": 2134
+    },
+    {
+      "file": "evidence/r3.5/tls.txt",
+      "sha256": "53b1dfcae22ba50a8dadeab04aa9d39f405dad63e076e9bbe6f56098546c91d4",
+      "bytes": 620
+    },
+    {
+      "file": "evidence/r3.5/vm-state.txt",
+      "sha256": "a3d2edd42faa61322d064788e73a205ef503da358722a5a95181ad82ab5ab9e1",
+      "bytes": 878
+    },
+    {
       "file": "evidence/review-md-r3.md",
       "sha256": "d0067fba806279a5941da37154773c03259125670288b180f80f120f516dd177",
       "bytes": 7376
@@ -398,8 +453,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "b80d5a87baf28966698ed7f19c143b2b21e22adf1f3a17d37e7fa3eaaac1ccf7",
-      "bytes": 1703
+      "sha256": "b1d21c8a8b1149c359c4c615d6bfcf8c63f184e211b08ab88f9d3a804e7d9572",
+      "bytes": 1694
     },
     {
       "file": "evidence/toolchain-recon.md",
