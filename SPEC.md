@@ -1,6 +1,6 @@
 # FruitLab R2 规格：从单机演示到带角色的持久化系统（含视觉重塑）
 
-> **状态**：`APPROVED`（2026-10-18 项目负责人确认；Phase 4.5a 语义审查通过、4.5b 本地脱敏扫描通过、4.5c 跨模型门禁 `unavailable`（宿主无独立模型家族），已用同族二次审阅补强并记录残余风险）
+> **状态**：`APPROVED v1.1`（2026-10-18 项目负责人确认 v1.0；同日 autoplan 终门批准后并入修订，见 §15）
 > **文档定位**：本文件替代 R1 的 `SPEC.md`。R1 原始版本由 git 标签 `r1-baseline`（commit `c1167e0`）与 `D:\vibecoding\easyvibe\r1-fruitlab` 双重保留，本文件不覆盖历史、只推进当前实现。
 > **上游输入**：`PRD-R2.md`（替代 office-hours）、R1 八环产物、`R1-义务覆盖率核查.md`、`R1-八环讲解记录.md`、`R1-操作经验教训.md`
 > **下游**：`DECISIONS.md`（autoplan）→ `BUILD.md` → `review.md` → `qa-report.md` → `CHANGELOG.md` → `retro.md`
@@ -11,6 +11,7 @@
 | 日期 | 版本 | 变更 |
 |---|---|---|
 | 2026-10-18 | v1.0-draft | spec 环节产出：R2 规格初稿。含数据模型、API、CLI、Apple 风格视觉规范、义务追溯与文档证据形态、降级边界 |
+| 2026-10-18 | v1.1 | 并入 autoplan 四阶段接受的 42 条义务修订：工时/里程碑、AC-31 拆分（访客查单按 U2=A 移除）、管理端商品接口、下单幂等、会话登出、CLI 契约（dev/health/--json/退出码/--password-stdin）、错误单源、Origin/Host 规则、单写者队列、图片 fallback、verify 入口、CSP 单源、校验上限等。**§15 覆盖前文冲突条款** |
 
 ---
 
@@ -469,7 +470,7 @@ node cli.mjs --help | --version
 | AC-28 | 数据库内无明文口令；口令哈希带盐；日志与 CLI 输出不含口令 | 安全 |
 | AC-29 | 会话令牌不可预测（32 字节随机）；退出登录后旧令牌失效 | 安全 |
 | AC-30 | 仓库中无密钥/口令明文（种子口令只出现在 README 演示口令表，且标注非生产） | 安全 |
-| AC-31 | R1 的 8 条交互契约全部成立（5.6 逐条验证） | 兼容 |
+| AC-31 | R1 的 8 条交互契约全部成立（5.6 逐条验证）；**访客查单按 U2=A 移除**：查单需登录、只能查自己的订单，breaking 变更写入 README/CHANGELOG | 兼容 |
 | AC-32 | `tests/domain.test.mjs` 原样通过（领域层未被破坏） | 兼容 |
 | AC-33 | `docs/decision-log.md` 存在且为追加式，覆盖本规格 D-01～D-32 与后续各环决策 | 文档 |
 | AC-34 | 每个环节有 `evidence/ring-*.md`，含真实命令、原始输出、门禁行为、决策记录、环境坑 | 文档 |
@@ -479,6 +480,14 @@ node cli.mjs --help | --version
 | AC-38 | 10 种 R1 商品的 `id/name/unit/price` 与 R1 一致（迁入数据库不丢数据） | 功能 |
 | AC-39 | 下单事务原子性：库存不足时订单与明细均不落库；并发两次下单只有一次成功、库存不为负 | 正确性 |
 | AC-40 | 请求体超过 64 KiB 返回 413 `payload-too-large`；非法 JSON 返回 400 `invalid-json` | 安全 |
+| AC-41 | **端到端用户旅程**：新用户注册→登录→浏览 14 商品→加购→下单→「我的订单」看到该单，全程不超过 3 分钟（真实 Chromium 记录） | Outcome |
+| AC-42 | `evidence/demo-script.md` 存在，可照做的 5 分钟演示脚本（含预期截图位） | Outcome |
+| AC-43 | `node cli.mjs dev` 一键启动（自动 init+seed+serve）；`GET /api/health` 返回 200 且含 `version/schemaVersion/dbPath/seeded`；README 有 60 秒快速开始 | DX |
+| AC-44 | 同一 `clientOrderId` 并发两次下单只产生一单、库存只扣一次 | 正确性 |
+| AC-45 | `GET /api/admin/products` 返回含下架商品的全量列表，admin 可据此重新上架 | 功能 |
+| AC-46 | 登出后旧 Cookie 访问 `/api/auth/me` 返回 401（服务端会话行已删除） | 安全 |
+| AC-47 | `docs/error-catalog.md` 为唯一真源；`tests/contracts.test.mjs` 断言实现错误码集合与其一致 | 契约 |
+| AC-48 | CLI `--json` 输出稳定形状；退出码 0/1/2/3/4 正确；`--help` 与文档命令集合一致 | DX |
 
 **AC-15～AC-18 的验证方式（D-24）**：qa 环用真实 Chromium 在 1440/1068/834/600/390 五个断点截图，逐条对照 5.7 判定；截图存入 `evidence/`。无法自动判定的布局项由人工确认并在证据文件签字，记为 `manual-verified`；**不得**用 fake DOM 断言冒充视觉验收。
 
@@ -518,13 +527,17 @@ node cli.mjs --help | --version
 | 环节 | 预估（agent 工时） | 说明 |
 |---|---|---|
 | spec | 0.5 天 | 本文件 + 门禁 |
-| autoplan | 0.5～1 天 | 四阶段串行；跨模型评审可能 `unavailable` |
-| build | 2～3 天 | DB/认证/API/CLI/前端/视觉/图片/测试/文档 |
+| autoplan | 0.5～1 天 | 四阶段串行；跨模型评审 `unavailable` |
+| build M1 | 3～5 小时 | `node:sqlite` spike + 建库/迁移 + 认证/会话 + DB/auth 测试 |
+| build M2 | 3～5 小时 | 订单事务/幂等 + API 路由 + CLI（dev/init/seed/user/product/orders/db check）+ API/CLI 测试 |
+| build M3 | 2～4 小时 | 前端接入：api-client、登录/我的订单/查单、商品列表接入 |
+| build M4 | 2～3 小时 | 管理端两面板（订单/商品）与状态 |
+| build M5 | 4～6 小时 | Apple 视觉重写 + 14 张图与台账 + 治理/文档/证据 |
 | review | 0.5 天 | 结构排雷 + 安全（`/cso` 视可用性） |
-| qa | 0.5 天 | 真实 HTTP + 浏览器面（人工项 `UNVERIFIED`） |
+| qa | 0.5 天 | 真实 HTTP + Chromium 五断点截图（人工项 `UNVERIFIED`） |
 | ship | 0.3 天 | 覆盖率审计 + 文档同步 + 版本 |
 | retro | 0.2 天 | Git 量化复盘 |
-| **合计** | **约 4.5～5.5 天** | 不含等待审批时间 |
+| **合计** | **约 15～25 agent 工时** | 不含等待审批；里程碑各自可验收、可回退 |
 
 ## 11. Files Reference
 
@@ -556,4 +569,31 @@ PRD 第 7 节全部非目标，另加：会话过期/续期与清理、CSRF、�
 - `R1-八环讲解记录.md`、`R1-义务覆盖率核查.md`、`R1-操作经验教训.md` — R1 证据与教训
 - `通用AI_Coding课程与教材/HANDOFF.md` 第六节 — R2 计划与硬约束
 - `01_通用AI_Coding课程配套示范应用程序设计规范（全知识点映射与八环埋点蓝本）.md` — 4+1 表契约的精神来源
-- `DECISIONS.md`（R2 autoplan 将产出）— 义务编号 `OB-*` 的定义处
+- `DECISIONS.md` — autoplan 产出：四阶段发现、42 条义务 `OB-*` 的定义处、终门记录
+
+## 15. autoplan 修订并入（v1.1，优先于前文冲突条款）
+
+> 本节为 v1.1 新增。四阶段评审（CEO 6.5 / Design 7.0 / DX 5.7 / Eng 6.5，均 FAIL）接受的问题转为 42 条义务；本节把**会改变规格文字**的部分并入。**与 §1–§14 冲突时以本节为准**；施工依据是本节 + `DECISIONS.md` 的 OB 清单。
+
+| # | 涉及条款 | v1.0 原状 | v1.1 修订 | 依据 |
+|---|---|---|---|---|
+| 1 | §10 | 4.5–5.5 天 | **15–25 agent 工时**，按 M1–M5 里程碑交付 | OB-CEO-01 |
+| 2 | §6 | 40 条机制 AC | 增 **AC-41 用户旅程 / AC-42 demo 脚本 / AC-43 health+TTHW / AC-44 幂等 / AC-45 管理商品接口 / AC-46 登出失效 / AC-47 错误单源 / AC-48 CLI JSON+退出码** | OB-CEO-02 |
+| 3 | §5.6、AC-31 | R1 访客查单保留 | **访客查单移除**（U2=A）；拆为「交互契约保留」与「权限行为变更（breaking）」 | OB-CEO-03 |
+| 4 | §5.2 | 无健康检查、无管理商品列表 | 增 `GET /api/health`、`GET /api/admin/products`（含下架） | OB-DX-01、OB-ENG-02 |
+| 5 | §5.1、§5.2 | 无幂等 | `orders` 增 `client_order_id`；唯一约束 `(user_id, client_order_id)`；重复请求返回原订单。**supersede D-30** | OB-DX-07 |
+| 6 | §5.3 | 登出仅清 Cookie | 登出 **`DELETE FROM sessions`**；会话无过期（PRD 边界） | OB-CEO-09 |
+| 7 | §5.5 | 三步启动、CLI 0/1/2 | `node cli.mjs dev` 一键启动；`db reset --yes` + 自动备份 + 持锁检测；`--password-stdin`；`product list/unlist/relist` 拆分；`orders show`、`db check`；全局 `--json`；退出码 0/1/2/3/4 | OB-DX-01..06、OB-CEO-13 |
+| 8 | §5.2、§5.9 | 错误形态可能混用 | API 用 `{ok:false}`；静态层用 `problem+json`；`docs/error-catalog.md` 唯一真源，测试断言集合一致 | OB-DX-11 |
+| 9 | §5.3 | 「校验 Origin」一句 | 精确矩阵：`Host ∈ {127.0.0.1:4174, localhost:4174}`；`Origin` 存在须精确同源；`Sec-Fetch-Site ∈ {same-origin, none}`；缺失头放行非浏览器客户端并记录风险 | OB-ENG-04 |
+| 10 | §5.1 | `busy_timeout=5000` + 同步重试 | **单写者队列** + `busy_timeout` 250–500ms + 异步退避；文档化单进程假设 | OB-ENG-01 |
+| 11 | §5.8 | Openverse 单点 | fallback：Openverse → Wikimedia Commons → 停止并上报；禁止 AI 图/插画冒充 | OB-CEO-05 |
+| 12 | §5.11 | 5 个独立脚本 | 增 `scripts/verify.mjs` 单一验证入口，串联测试与全部机械检查 | OB-CEO-06 |
+| 13 | §5.2 | 校验规则不全 | 单笔 `maxItems=10`；重复 `productId` 合并数量；非 JSON/缺失 Content-Type → 415；username 3–32、password 8–128 | OB-ENG-03、OB-CEO-10 |
+| 14 | §5.2 | 列表无上限 | 列表默认上限 100 | OB-ENG-08 |
+| 15 | §5.6 | 购物车未说明 | **仅内存、刷新清空**（与 R1 一致） | OB-ENG-09 |
+| 16 | §5.9 | CSP 双写 | CSP 以 **HTTP 响应头为唯一来源**（`index.html` meta 仅兼容） | OB-ENG-06 |
+| 17 | §5.7、§6 | 状态与视觉证据不足 | 商品卡六态；无障碍补 skip/键盘/焦点/错误汇总；视觉证据固定路径 + commit + 复核人 | OB-DES-02..06、OB-CEO-12/14 |
+| 18 | §3 | D-01～D-32 | 增 **D-33～D-42**（见 `docs/decision-log.md`） | autoplan |
+| 19 | §4 | — | 5 项 TODOS：取消/回补、审计、会话过期、分页、scrypt 升级 | `DECISIONS.md` |
+| 20 | §13 | U1/U2 待定 | **U1=A（全量 + 里程碑）、U2=A（移除访客查单）**，2026-10-18 项目负责人确认 | 终门 |

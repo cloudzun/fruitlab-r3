@@ -7,7 +7,8 @@ Status: **FINAL APPROVAL GATE `gate_rev=1` — PENDING USER APPROVAL. NO BUILD S
 
 ## Hard Constraints
 
-- `SPEC.md` 是只读输入。本轮结束时其 SHA-256 为 `FF3BAAFCF99738344AE54AB2E487B677131CA884A052A53990E416DC13074B1B`，559 行，与 spec 环批准的版本一致，未被本环修改。
+- 评审输入：`SPEC.md` **v1.0**（559 行，SHA-256 `FF3BAAFCF99738344AE54AB2E487B677131CA884A052A53990E416DC13074B1B`），四阶段评审期间未被修改。
+- 终门批准后按项目负责人指示形成 **SPEC v1.1**（599 行，SHA-256 `BE00459DEBF6EEE0DA7D3C379CC741AA931A4C79B76B1727F5109D0C3EE7EA3B`），把会改变规格文字的修订并入 §15；v1.0 由 git 历史保留。
 - 四阶段按 CEO → Design → DX → Eng **串行**执行；每阶段只采纳一轮评审结论，**未把失败评审退回重审**。
 - 每阶段的「外部声音」由本机 `claude` CLI 提供，实际模型 `deepseek-v4-flash`，**与本地同族，不构成跨模型对抗**；因此跨模型共识一律记 `N/A（覆盖缺失）`，不冒充跨模型结论。
 - **环境偏差（如实记录）**：Design 与 Eng 的外部声音各尝试了两次——第一次分别返回偏题内容（CEO 视角）与卡住的元回复，未形成评审；第二次才得到可用评审。官方 `gstack-autoplan` 运行件（bun snapshot/plan-reality 工具链）在本宿主不可用，流程按技能文档手动执行。
@@ -237,15 +238,15 @@ Native result: **6.5/10, FAIL / issues_open**。核心判断：架构方向正�
 
 ```text
 gate_rev=1
-status=PENDING_USER_APPROVAL
+status=APPROVED (2026-10-18, project owner: U1=A, U2=A)
 decisions_auto=11
-user_challenges=2 (U1 范围与工时, U2 访客查单移除)
+user_challenges=2 -> U1=A (全量 + M1–M5 里程碑), U2=A (移除访客查单)
 taste_decisions=0 (DV1 已由项目负责人于 2026-10-18 决定)
 fail_phases=4 of 4
-build_started=no
+build_started=no (本记录定稿时)
 ```
 
-本门禁若获批准，只表示「评审后的计划与义务清单被接受」，**不表示任何实现、测试或人工检查已经通过**，也不启动 build。
+本门禁已于 2026-10-18 获项目负责人批准（**U1=A、U2=A**）。批准后按指示先生成 **SPEC v1.1** 并入修订，再进入 build。门禁只表示「评审后的计划与义务清单被接受」，**不表示任何实现、测试或人工检查已经通过**。
 
 ## What Already Exists（复用，不重做）
 
