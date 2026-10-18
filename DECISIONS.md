@@ -113,8 +113,8 @@ Native result: **5.7/10, FAIL / issues_open**。核心判断：项目由 agent �
 | DX-11 | Medium | 错误响应形态可能自相矛盾（`{ok:false}` 与 `problem+json` 混用） | **接受**：API 用 `{ok:false}`，静态层用 `problem+json`；目录唯一真源；OB-DX-11 |
 | DX-12 | Medium | 缺失 `Origin`/`Sec-Fetch-Site` 时行为未定义（curl/测试会被误杀或误放） | **接受**：明确矩阵；OB-ENG-04 |
 | DX-13 | Medium | 缺统一 `verify` 入口 | **接受**：OB-CEO-06 |
-| DX-14 | Medium | R1 测试迁移与共享夹具未规划 | **接受**：`tests/helpers/`；OB-DX-13 |
-| DX-15 | Low | Windows 细节（ExperimentalWarning、WAL 下删目录 EBUSY、路径引用） | **接受**：OB-DX-14 |
+| DX-14 | Medium | R1 测试迁移与共享夹具未规划 | **接受**：`tests/helpers/`；OB-DX-12 |
+| DX-15 | Low | Windows 细节（ExperimentalWarning、WAL 下删目录 EBUSY、路径引用） | **接受**：OB-DX-13 |
 | DX-16 | Low | 预算会优先砍掉 DX 面 | 已在里程碑中前置 M2 的 DX 项 |
 
 ## Phase 3: Eng（工程可实施性）

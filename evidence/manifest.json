@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-10-18T01:11:36.613Z",
+  "files": [
+    {
+      "file": "evidence/assets-manifest.json",
+      "sha256": "fed995f51f2a097b65b7f6d3563075f2e2726e07bb6b7f93cd84dfeec0817277",
+      "bytes": 7385
+    },
+    {
+      "file": "evidence/autoplan-voices/ceo.txt",
+      "sha256": "04c85f5c23b1c4b5cd91ff555cee734abbbfb334b9d096041f0e417248deeca2",
+      "bytes": 9914
+    },
+    {
+      "file": "evidence/autoplan-voices/design.txt",
+      "sha256": "a477cd51d382b29f476dd5ff1c8c1b90026951791a19c845c12951318f5d0e4a",
+      "bytes": 7749
+    },
+    {
+      "file": "evidence/autoplan-voices/dx.txt",
+      "sha256": "7a758567f4eee1cc6ff96b0e79a235a4d2e482356ab4ac848c404b4b25b052ea",
+      "bytes": 17344
+    },
+    {
+      "file": "evidence/autoplan-voices/eng.txt",
+      "sha256": "a9a724af235bea130dbf78cbefb3d8fb24a2b005b58a1246f896e7a32343dd89",
+      "bytes": 10957
+    },
+    {
+      "file": "evidence/clean-run.md",
+      "sha256": "e7069c08d75895c5bed5301addaa7e3e042cd4667bf213ee84d1f8c4c0cd86fb",
+      "bytes": 1096
+    },
+    {
+      "file": "evidence/demo-script.md",
+      "sha256": "6d707648e4cbd0e9277f0115fed9c6d4f2fe3e763a4ed50be5b0caee749f0f96",
+      "bytes": 1681
+    },
+    {
+      "file": "evidence/g7-release-merge.txt",
+      "sha256": "c6fee498c3a640ff5f85f40469dc7cc5b34892f1758ea2a1896681b7c7611f2b",
+      "bytes": 539
+    },
+    {
+      "file": "evidence/index.md",
+      "sha256": "9f98746702c57e84a3d7f1c598c992f26e070d0c621c7729ab4f00455759c7a8",
+      "bytes": 2084
+    },
+    {
+      "file": "evidence/learner-checks/pre-spec.md",
+      "sha256": "224e805a3b5d7ee4d88eb05b7e0a66c573ece4d0d2edf23f8a19213d53238d3d",
+      "bytes": 802
+    },
+    {
+      "file": "evidence/manual-checks/browser.md",
+      "sha256": "26ba2874499e7b2e3c66dde6fab430a07fc4a31221c07b776046e74c5df68cf2",
+      "bytes": 1327
+    },
+    {
+      "file": "evidence/ring-autoplan.md",
+      "sha256": "5bc00faf81bbde37c64aef8c2f5b13755739eef649ccfbbd83ba731fdf6b9189",
+      "bytes": 4880
+    },
+    {
+      "file": "evidence/ring-build.md",
+      "sha256": "981096d5a1885944a6c37a21fee92e118cbb2543d8cc9def30462730178d4b01",
+      "bytes": 4134
+    },
+    {
+      "file": "evidence/ring-spec.md",
+      "sha256": "618dbe1c4351901040f0457c2c94624f0dca81838e222a6800aeaf45824679f9",
+      "bytes": 9550
+    },
+    {
+      "file": "evidence/spec-quality-gate.md",
+      "sha256": "00842761f02ea860a97413df22b191ac74c4625cf8c150fdad97e08cd967e573",
+      "bytes": 2107
+    },
+    {
+      "file": "evidence/test-count.txt",
+      "sha256": "c466da4fc0ba1d8b41925ccd8972dac8dddc80e4b972145b24f79fefa36b4025",
+      "bytes": 1065
+    }
+  ]
+}

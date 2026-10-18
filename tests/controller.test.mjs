@@ -2,358 +2,299 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  checkoutNotWrittenMessage,
+  adminProductsReducer,
+  authReducer,
+  cartSubtotalCents,
+  catalogReducer,
   checkoutReducer,
-  createCheckoutState,
+  createAdminProductsState,
+  createAuthState,
+  createCatalogState,
   createCartItems,
+  createCheckoutState,
   createLookupState,
+  createOrderItems,
+  createOrdersListState,
+  findOrderByClientOrderId,
+  isAdmin,
+  isAuthenticated,
   isCartFrozen,
+  isCheckoutBusy,
+  isPurchasable,
   lookupReducer,
+  ordersListReducer,
   parseQuantityUpdate,
-  performLookup,
-  resolveUnknownCheckout,
-  runCheckout,
+  productCardState,
 } from "../assets/controller.mjs";
-import { ORDER_KEY } from "../assets/order-store.mjs";
-import { catalogById } from "../assets/catalog.mjs";
 
-const NOW = new Date("2026-10-17T05:15:00.000Z");
-const ORDER_NUMBER = "FL-20261017-131500-A7K2";
+const QUANTITY_ERROR = "数量必须是 1-99 的整数";
 
-function makeCart() {
+function productsById() {
   return new Map([
-    ["fuji-apple", 2],
-    ["banana", 1],
+    ["fuji-apple", { id: "fuji-apple", name: "红富士苹果", unit: "500g", unitPriceCents: 1299, stock: 5 }],
+    ["banana", { id: "banana", name: "海南香蕉", unit: "1kg", unitPriceCents: 899, stock: 0 }],
   ]);
 }
 
-function makeOrder(overrides = {}) {
-  return {
-    orderNumber: ORDER_NUMBER,
-    createdAt: NOW.toISOString(),
-    currency: "CNY",
-    subtotalCents: 3497,
-    items: [
-      {
-        fruitId: "fuji-apple",
-        name: "红富士苹果",
-        unit: "500g",
-        unitPriceCents: 1299,
-        quantity: 2,
-        lineTotalCents: 2598,
-      },
-      {
-        fruitId: "banana",
-        name: "海南香蕉",
-        unit: "1kg",
-        unitPriceCents: 899,
-        quantity: 1,
-        lineTotalCents: 899,
-      },
-    ],
-    ...overrides,
-  };
-}
-
-class FakeStorage {
-  constructor(value = null) {
-    this.value = value;
-    this.getCount = 0;
-    this.writeCount = 0;
-    this.throwGet = false;
-    this.throwSet = false;
-    this.throwReadback = false;
-    this.staleReadback = false;
-  }
-
-  getItem(key) {
-    assert.equal(key, ORDER_KEY);
-    this.getCount += 1;
-    if (this.throwGet) throw new Error("blocked");
-    if (this.throwReadback && this.writeCount > 0) throw new Error("readback blocked");
-    if (this.staleReadback && this.writeCount > 0) return this.staleValue;
-    return this.value;
-  }
-
-  setItem(key, value) {
-    assert.equal(key, ORDER_KEY);
-    if (this.throwSet) throw new Error("quota");
-    if (this.staleReadback) this.staleValue = this.value;
-    this.value = value;
-    this.writeCount += 1;
-  }
-}
-
-test("createCartItems builds frozen catalog snapshots in insertion order", () => {
-  const items = createCartItems(makeCart(), catalogById);
-  assert.deepEqual(items.map(({ fruitId, quantity, lineTotalCents }) => [fruitId, quantity, lineTotalCents]), [
-    ["fuji-apple", 2, 2598],
-    ["banana", 1, 899],
-  ]);
-  assert.equal(Object.isFrozen(items), true);
-  assert.equal(Object.isFrozen(items[0]), true);
-});
-
-test("parseQuantityUpdate marks only actual quantity changes for redraw", () => {
+test("parseQuantityUpdate keeps R1 semantics: unchanged values do not redraw", () => {
   assert.deepEqual(parseQuantityUpdate("2", 2), { quantity: 2, error: "", changed: false });
   assert.deepEqual(parseQuantityUpdate("02", 2), { quantity: 2, error: "", changed: false });
   assert.deepEqual(parseQuantityUpdate("3", 2), { quantity: 3, error: "", changed: true });
   assert.deepEqual(parseQuantityUpdate("100", 99), {
     quantity: 99,
-    error: "数量必须是 1-99 的整数",
+    error: QUANTITY_ERROR,
     changed: false,
   });
   assert.deepEqual(parseQuantityUpdate("abc", 2), {
     quantity: 2,
-    error: "数量必须是 1-99 的整数",
+    error: QUANTITY_ERROR,
     changed: false,
   });
 });
 
-test("checkoutNotWrittenMessage maps storage failures to specific recovery copy", () => {
-  // Value: protects=checkout not-written copy is exact for every storage failure code; fails_when=a recovery sentence or code mapping changes; why_new=the existing test only matched fragments, so partial copy regressions passed; seam=none; no_claim=none beyond protects
-  const messages = {
-    "storage-unavailable": "订单未保存，请重试。本地订单存储不可用，请检查站点数据权限后重试。",
-    "storage-security-blocked": "订单未保存，请重试。浏览器阻止了本地订单存储，请允许本站使用站点数据后刷新。",
-    "storage-quota-exceeded": "订单未保存，请重试。本地订单存储空间已满，请先导出并检查现有订单数据。",
-    "storage-read-failed": "订单未保存，请重试。本地订单数据不是文本，无法读取，原始值未被修改。",
-    "storage-write-failed": "订单未保存，请重试。请检查浏览器存储权限和可用空间后重试。",
-  };
-
-  for (const [code, message] of Object.entries(messages)) {
-    assert.equal(checkoutNotWrittenMessage(code), message);
-  }
-  assert.equal(checkoutNotWrittenMessage("unexpected-code"), "订单未保存，请重试");
+test("productCardState covers normal, sold-out, and unlisted cards", () => {
+  assert.equal(productCardState({ id: "a", stock: 3, listed: 1 }), "normal");
+  assert.equal(productCardState({ id: "a", stock: 0, listed: 1 }), "sold-out");
+  assert.equal(productCardState({ id: "a", stock: 3, soldOut: true, listed: 1 }), "sold-out");
+  assert.equal(productCardState({ id: "a", stock: 3, listed: 0 }), "unlisted");
+  assert.equal(productCardState({ id: "a", stock: 3, listed: false }), "unlisted");
+  assert.equal(productCardState(null), "unlisted");
+  assert.equal(isPurchasable({ id: "a", stock: 1, listed: 1 }), true);
+  assert.equal(isPurchasable({ id: "a", stock: 0, listed: 1 }), false);
 });
 
-test("checkout and lookup factories expose the frozen initial state", () => {
+test("catalogReducer exposes loading, ready, empty, and error states", () => {
+  assert.deepEqual(createCatalogState(), { status: "loading", products: [], code: null });
+
+  const ready = catalogReducer(createCatalogState(), {
+    type: "CATALOG_LOADED",
+    products: [{ id: "fuji-apple" }],
+  });
+  assert.equal(ready.status, "ready");
+  assert.equal(ready.products.length, 1);
+
+  const empty = catalogReducer(ready, { type: "CATALOG_LOADED", products: [] });
+  assert.equal(empty.status, "empty");
+
+  const failed = catalogReducer(createCatalogState(), {
+    type: "CATALOG_FAILED",
+    code: "server-busy",
+  });
+  assert.equal(failed.status, "error");
+  assert.equal(failed.code, "server-busy");
+});
+
+test("cart items use integer cents, product snapshots, and reject invalid carts", () => {
+  const cart = new Map([
+    ["fuji-apple", 2],
+    ["banana", 1],
+  ]);
+  const items = createCartItems(cart, productsById());
+  assert.deepEqual(
+    items.map(({ productId, quantity, lineTotalCents }) => [productId, quantity, lineTotalCents]),
+    [["fuji-apple", 2, 2598], ["banana", 1, 899]],
+  );
+  assert.equal(Object.isFrozen(items), true);
+  assert.equal(Object.isFrozen(items[0]), true);
+  assert.equal(cartSubtotalCents(cart, productsById()), 3497);
+
+  const orderItems = createOrderItems(cart, productsById());
+  assert.deepEqual(orderItems.map((item) => ({ ...item })), [
+    { productId: "fuji-apple", quantity: 2 },
+    { productId: "banana", quantity: 1 },
+  ]);
+
+  assert.throws(() => createCartItems(new Map([["missing", 1]]), productsById()), TypeError);
+  assert.throws(() => createCartItems(new Map([["fuji-apple", 100]]), productsById()), TypeError);
+});
+
+test("checkout reducer freezes save-unknown and never retries automatically", () => {
   assert.deepEqual(createCheckoutState(), {
     status: "idle",
     frozen: false,
     code: null,
-    orderNumber: null,
-    attemptedOrder: null,
+    clientOrderId: null,
+    attemptedItems: null,
     receipt: null,
-  });
-  assert.deepEqual(createLookupState(), {
-    status: "idle",
-    code: null,
-    order: null,
     orderNumber: null,
-    invalidCount: 0,
-    duplicateNumbers: [],
   });
-});
 
-test("lookupReducer replaces results and clears stale results on input", () => {
-  const found = lookupReducer(createLookupState(), {
-    type: "LOOKUP_RESULT",
-    status: "found",
-    code: "lookup-found",
-    order: makeOrder(),
-    orderNumber: ORDER_NUMBER,
+  const saving = checkoutReducer(createCheckoutState(), {
+    type: "CHECKOUT_STARTED",
+    clientOrderId: "11111111-1111-4111-8111-111111111111",
+    items: [{ productId: "fuji-apple", quantity: 1 }],
   });
-  assert.equal(found.status, "found");
-  assert.equal(found.order.orderNumber, ORDER_NUMBER);
-  assert.deepEqual(lookupReducer(found, { type: "INPUT_CHANGED" }), createLookupState());
-});
+  assert.equal(saving.status, "saving");
+  assert.equal(isCheckoutBusy(saving), true);
+  assert.equal(isCartFrozen(saving), false);
 
-test("checkout reducer freezes save-unknown and ignores cart mutation while frozen", () => {
-  const unknown = checkoutReducer(
-    createCheckoutState(),
-    { type: "CHECKOUT_SAVE_UNKNOWN", order: makeOrder(), code: "storage-readback-mismatch" },
-  );
+  const unknown = checkoutReducer(saving, {
+    type: "CHECKOUT_SAVE_UNKNOWN",
+    code: "network-error",
+  });
   assert.equal(unknown.status, "save-unknown");
+  assert.equal(unknown.frozen, true);
+  assert.equal(unknown.clientOrderId, saving.clientOrderId);
   assert.equal(isCartFrozen(unknown), true);
+  assert.equal(isCheckoutBusy(unknown), true);
 
-  const afterMutation = checkoutReducer(unknown, { type: "CART_CHANGED" });
-  assert.equal(afterMutation, unknown);
+  const afterCartChange = checkoutReducer(unknown, { type: "CART_CHANGED" });
+  assert.equal(afterCartChange, unknown, "frozen state must survive cart edits");
+
+  const released = checkoutReducer(unknown, { type: "SAVE_UNKNOWN_RESOLVED_ABSENT" });
+  assert.equal(released.status, "idle");
+  assert.equal(released.code, "save-unknown-absent");
+  assert.equal(released.clientOrderId, saving.clientOrderId);
+  assert.equal(isCartFrozen(released), false);
+  assert.equal(isCheckoutBusy(released), false);
 });
 
-test("checkout reducer invalidates a saved receipt on cart mutation", () => {
+test("checkout reducer drops stale receipts on cart changes and saves receipts on success", () => {
+  const order = { orderNumber: "FL-20261018-120000-A7K2", items: [] };
   const saved = checkoutReducer(
-    createCheckoutState(),
-    { type: "CHECKOUT_SAVED", order: makeOrder() },
+    checkoutReducer(createCheckoutState(), { type: "CHECKOUT_STARTED", clientOrderId: "id" }),
+    { type: "CHECKOUT_SAVED", order },
   );
   assert.equal(saved.status, "saved");
+  assert.equal(saved.receipt, order);
+
   const changed = checkoutReducer(saved, { type: "CART_CHANGED" });
   assert.equal(changed.status, "idle");
   assert.equal(changed.receipt, null);
 });
 
-test("runCheckout saves a valid order and returns the exact saved snapshot", () => {
-  const storage = new FakeStorage(null);
-  const result = runCheckout({
-    cart: makeCart(),
-    catalogById,
-    storage,
-    now: NOW,
-    suffixFactory: () => "A7K2",
+test("findOrderByClientOrderId only matches an explicit clientOrderId", () => {
+  const orders = [
+    { orderNumber: "FL-20261018-120000-AAAA", clientOrderId: "abc" },
+    { orderNumber: "FL-20261018-120000-BBBB" },
+  ];
+  assert.equal(findOrderByClientOrderId(orders, "abc")?.orderNumber, "FL-20261018-120000-AAAA");
+  assert.equal(findOrderByClientOrderId(orders, "zzz"), null);
+  assert.equal(findOrderByClientOrderId(orders, ""), null);
+  assert.equal(findOrderByClientOrderId(null, "abc"), null);
+});
+
+test("auth reducer covers anonymous, submitting, failure, and authenticated states", () => {
+  assert.deepEqual(createAuthState(), {
+    status: "anonymous",
+    mode: null,
+    user: null,
+    code: null,
   });
 
-  assert.equal(result.status, "saved");
-  assert.deepEqual(result.order, makeOrder());
-  assert.equal(result.state.status, "saved");
-  assert.equal(storage.value.endsWith(`${JSON.stringify(makeOrder())}\n`), true);
-});
+  const submitting = authReducer(createAuthState(), { type: "AUTH_SUBMITTED", mode: "login" });
+  assert.equal(submitting.status, "submitting");
+  assert.equal(submitting.mode, "login");
 
-test("runCheckout refuses an empty cart before touching storage", () => {
-  const storage = new FakeStorage(null);
-  const result = runCheckout({
-    cart: new Map(),
-    catalogById,
-    storage,
-    now: NOW,
-    suffixFactory: () => "A7K2",
+  const failed = authReducer(submitting, {
+    type: "AUTH_FAILED",
+    code: "auth-invalid-credentials",
+    mode: "login",
   });
+  assert.equal(failed.status, "error");
+  assert.equal(failed.code, "auth-invalid-credentials");
 
-  assert.equal(result.status, "empty-cart");
-  assert.equal(storage.getCount, 0);
-  assert.equal(storage.writeCount, 0);
+  const user = { username: "admin", role: "admin" };
+  const loggedIn = authReducer(failed, { type: "AUTH_LOGGED_IN", user });
+  assert.equal(loggedIn.status, "authenticated");
+  assert.equal(isAuthenticated(loggedIn), true);
+  assert.equal(isAdmin(loggedIn), true);
+
+  assert.equal(authReducer(loggedIn, { type: "AUTH_LOGGED_OUT" }).status, "anonymous");
+  assert.equal(authReducer(loggedIn, { type: "SESSION_LOADED", user: null }).status, "anonymous");
 });
 
-test("runCheckout maps setItem failure to not-written and keeps cart state editable", () => {
-  const storage = new FakeStorage(null);
-  storage.throwSet = true;
-  const result = runCheckout({
-    cart: makeCart(),
-    catalogById,
-    storage,
-    now: NOW,
-    suffixFactory: () => "A7K2",
+test("lookup reducer clears stale results on input and distinguishes not-found", () => {
+  const found = lookupReducer(createLookupState(), {
+    type: "LOOKUP_FOUND",
+    order: { orderNumber: "FL-20261018-120000-A7K2" },
   });
-
-  assert.equal(result.status, "not-written");
-  assert.equal(result.code, "storage-write-failed");
-  assert.equal(isCartFrozen(result.state), false);
-});
-
-test("runCheckout freezes a save-unknown attempt with its order number", () => {
-  const storage = new FakeStorage(null);
-  storage.staleReadback = true;
-  const result = runCheckout({
-    cart: makeCart(),
-    catalogById,
-    storage,
-    now: NOW,
-    suffixFactory: () => "A7K2",
-  });
-
-  assert.equal(result.status, "save-unknown");
-  assert.equal(result.state.orderNumber, ORDER_NUMBER);
-  assert.deepEqual(result.state.attemptedOrder, makeOrder());
-  assert.equal(isCartFrozen(result.state), true);
-});
-
-test("runCheckout reports number exhaustion without writing", () => {
-  const taken = Array.from({ length: 10 }, (_, index) => ({
-    ...makeOrder(),
-    orderNumber: `FL-20261017-131500-A00${index}`,
-  }));
-  const storage = new FakeStorage(taken.map((order) => JSON.stringify(order)).join("\n"));
-  let calls = 0;
-  const result = runCheckout({
-    cart: makeCart(),
-    catalogById,
-    storage,
-    now: NOW,
-    suffixFactory: () => `A00${calls++}`,
-  });
-
-  assert.equal(result.status, "number-generation-failed");
-  assert.equal(calls, 10);
-  assert.equal(storage.writeCount, 0);
-});
-
-test("resolveUnknownCheckout finds an exact saved order and clears the frozen state", () => {
-  const storage = new FakeStorage(null);
-  storage.staleReadback = true;
-  const unknownResult = runCheckout({
-    cart: makeCart(),
-    catalogById,
-    storage,
-    now: NOW,
-    suffixFactory: () => "A7K2",
-  });
-  storage.staleReadback = false;
-
-  const resolved = resolveUnknownCheckout({ state: unknownResult.state, storage });
-  assert.equal(resolved.status, "saved");
-  assert.equal(resolved.state.status, "saved");
-  assert.equal(isCartFrozen(resolved.state), false);
-});
-
-test("resolveUnknownCheckout permits retry only after clean absence is proven", () => {
-  const storage = new FakeStorage(null);
-  storage.staleReadback = true;
-  const unknownResult = runCheckout({
-    cart: makeCart(),
-    catalogById,
-    storage,
-    now: NOW,
-    suffixFactory: () => "A7K2",
-  });
-  storage.staleReadback = false;
-  storage.value = "";
-
-  const resolved = resolveUnknownCheckout({ state: unknownResult.state, storage });
-  assert.equal(resolved.status, "absent");
-  assert.equal(resolved.state.status, "idle");
-  assert.equal(isCartFrozen(resolved.state), false);
-});
-
-test("resolveUnknownCheckout stays frozen for corrupt, duplicate, unavailable, and mismatched data", () => {
-  const initial = checkoutReducer(
-    createCheckoutState(),
-    { type: "CHECKOUT_SAVE_UNKNOWN", order: makeOrder(), code: "storage-readback-mismatch" },
-  );
-
-  const corruptStorage = new FakeStorage("{bad line");
-  assert.equal(resolveUnknownCheckout({ state: initial, storage: corruptStorage }).status, "inconclusive");
-  assert.equal(isCartFrozen(resolveUnknownCheckout({ state: initial, storage: corruptStorage }).state), true);
-
-  const duplicateStorage = new FakeStorage(
-    [JSON.stringify(makeOrder()), JSON.stringify(makeOrder())].join("\n"),
-  );
-  assert.equal(resolveUnknownCheckout({ state: initial, storage: duplicateStorage }).status, "duplicate");
-  assert.equal(isCartFrozen(resolveUnknownCheckout({ state: initial, storage: duplicateStorage }).state), true);
-
-  const unavailableStorage = new FakeStorage(null);
-  unavailableStorage.throwGet = true;
-  assert.equal(resolveUnknownCheckout({ state: initial, storage: unavailableStorage }).status, "unavailable");
-
-  const different = makeOrder({ subtotalCents: 1299, items: [makeOrder().items[0]] });
-  const mismatchStorage = new FakeStorage(JSON.stringify(different));
-  assert.equal(resolveUnknownCheckout({ state: initial, storage: mismatchStorage }).status, "inconclusive");
-});
-
-test("performLookup returns malformed and empty states before storage access", () => {
-  const storage = new FakeStorage(null);
-  assert.equal(performLookup({ input: "", storage }).status, "empty");
-  assert.equal(performLookup({ input: "FL-2026-A7K2", storage }).status, "malformed");
-  assert.equal(storage.getCount, 0);
-});
-
-test("performLookup covers found, not-found, corrupt, duplicate, and unavailable states", () => {
-  const order = makeOrder();
-  const foundStorage = new FakeStorage(`${JSON.stringify(order)}\n{bad`);
-  const found = performLookup({ input: `  ${ORDER_NUMBER.toLowerCase()}  `, storage: foundStorage });
   assert.equal(found.status, "found");
-  assert.equal(found.invalidCount, 1);
-  assert.equal(found.order.orderNumber, ORDER_NUMBER);
+  assert.equal(found.orderNumber, "FL-20261018-120000-A7K2");
 
-  const missing = performLookup({
-    input: "FL-20261017-131500-ZZZZ",
-    storage: new FakeStorage(JSON.stringify(order)),
+  assert.deepEqual(lookupReducer(found, { type: "INPUT_CHANGED" }), createLookupState());
+
+  const notFound = lookupReducer(found, {
+    type: "LOOKUP_FAILED",
+    code: "order-not-found",
+    orderNumber: "FL-20261018-120000-ZZZZ",
   });
-  assert.equal(missing.status, "not-found");
+  assert.equal(notFound.status, "not-found");
+  assert.equal(notFound.order, null);
 
-  const duplicateStorage = new FakeStorage(
-    [JSON.stringify(order), JSON.stringify(order)].join("\n"),
+  const forbidden = lookupReducer(found, { type: "LOOKUP_FAILED", code: "order-not-owned" });
+  assert.equal(forbidden.status, "error");
+  assert.equal(forbidden.code, "order-not-owned");
+
+  const submitting = lookupReducer(createLookupState(), { type: "LOOKUP_STARTED", orderNumber: "x" });
+  assert.equal(submitting.status, "submitting");
+});
+
+test("orders list reducer models loading, ready, empty, and error states", () => {
+  assert.deepEqual(createOrdersListState(), { status: "idle", orders: [], code: null });
+
+  const loading = ordersListReducer(createOrdersListState(), { type: "ORDERS_LOADING" });
+  assert.equal(loading.status, "loading");
+
+  const ready = ordersListReducer(loading, {
+    type: "ORDERS_LOADED",
+    orders: [{ orderNumber: "FL-20261018-120000-A7K2" }],
+  });
+  assert.equal(ready.status, "ready");
+  assert.equal(ready.orders.length, 1);
+
+  const empty = ordersListReducer(ready, { type: "ORDERS_LOADED", orders: [] });
+  assert.equal(empty.status, "empty");
+
+  const failed = ordersListReducer(loading, { type: "ORDERS_FAILED", code: "server-busy" });
+  assert.equal(failed.status, "error");
+  assert.equal(failed.code, "server-busy");
+});
+
+test("admin products reducer replaces rows, tracks saving, and exposes row errors", () => {
+  assert.deepEqual(createAdminProductsState(), {
+    status: "idle",
+    products: [],
+    code: null,
+    savingId: null,
+    rowCode: null,
+  });
+
+  const loaded = adminProductsReducer(createAdminProductsState(), {
+    type: "ADMIN_PRODUCTS_LOADED",
+    products: [
+      { id: "fuji-apple", unitPriceCents: 1299, stock: 3, listed: 1 },
+      { id: "durian", unitPriceCents: 4999, stock: 0, listed: 0 },
+    ],
+  });
+  assert.equal(loaded.status, "ready");
+  assert.equal(loaded.products.length, 2);
+
+  const saving = adminProductsReducer(loaded, { type: "PRODUCT_SAVING", productId: "fuji-apple" });
+  assert.equal(saving.savingId, "fuji-apple");
+
+  const saved = adminProductsReducer(saving, {
+    type: "PRODUCT_SAVED",
+    product: { id: "fuji-apple", unitPriceCents: 1399, stock: 3, listed: 1 },
+  });
+  assert.equal(saved.savingId, null);
+  assert.equal(saved.products.find((product) => product.id === "fuji-apple").unitPriceCents, 1399);
+  assert.equal(saved.products.find((product) => product.id === "durian").listed, 0);
+
+  const failed = adminProductsReducer(saving, {
+    type: "PRODUCT_SAVE_FAILED",
+    productId: "fuji-apple",
+    code: "invalid-price",
+  });
+  assert.equal(failed.savingId, null);
+  assert.equal(failed.rowCode, "invalid-price");
+
+  assert.equal(
+    adminProductsReducer(loaded, { type: "ADMIN_PRODUCTS_LOADED", products: [] }).status,
+    "empty",
   );
-  assert.equal(performLookup({ input: ORDER_NUMBER, storage: duplicateStorage }).status, "duplicate");
-
-  const unavailable = new FakeStorage(null);
-  unavailable.throwGet = true;
-  assert.equal(performLookup({ input: ORDER_NUMBER, storage: unavailable }).status, "unavailable");
+  assert.equal(
+    adminProductsReducer(loaded, { type: "ADMIN_PRODUCTS_FAILED", code: "server-busy" }).status,
+    "error",
+  );
 });

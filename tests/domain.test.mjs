@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { FRUITS, catalogById } from "../assets/catalog.mjs";
+// R2：catalog 数据源改为数据库种子（assets/catalog.mjs 已退役）；领域函数本身未改。
+import { PRODUCT_SEED } from "../server/db.mjs";
+
+const FRUITS = PRODUCT_SEED.map(({ id, name, unit, unitPriceCents, description }) => ({ id, name, unit, unitPriceCents, description }));
+const catalogById = new Map(FRUITS.map((fruit) => [fruit.id, fruit]));
 import {
   createOrderNumber,
   formatCny,
@@ -46,9 +50,9 @@ function makeOrder(overrides = {}) {
   };
 }
 
-test("catalog: 10 unique fruits with positive integer-cent prices", () => {
-  assert.equal(FRUITS.length, 10);
-  assert.equal(new Set(FRUITS.map((fruit) => fruit.id)).size, 10);
+test("catalog: 14 unique fruits with positive integer-cent prices", () => {
+  assert.equal(FRUITS.length, 14);
+  assert.equal(new Set(FRUITS.map((fruit) => fruit.id)).size, 14);
 
   for (const fruit of FRUITS) {
     assert.equal(typeof fruit.name, "string");
@@ -71,6 +75,10 @@ test("catalog: 10 unique fruits with positive integer-cent prices", () => {
       ["peach", 1899],
       ["blueberry", 2199],
       ["red-dragon-fruit", 1399],
+      ["cherry", 3999],
+      ["mango", 1599],
+      ["kiwi", 1299],
+      ["strawberry", 2599],
     ],
   );
 });

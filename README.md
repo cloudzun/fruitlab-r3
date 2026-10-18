@@ -1,193 +1,97 @@
-# FruitLab · 教学演示应用（R2 工作区）
+# FruitLab R2 · 教学演示应用（升级后）
 
-> 本目录是 **R2（升级后）** 的工作区。**R1（升级前）** 在 `D:\vibecoding\easyvibe\r1-fruitlab`，**已冻结，不得改动**。
-> **下一步**：R2 从 **spec** 环节开始，输入是 [`PRD-R2.md`](PRD-R2.md)。**不要**重跑 office-hours。
+> **R1（升级前）** 在 `D:\vibecoding\easyvibe\r1-fruitlab`，**已冻结，不得改动**。
+> 本目录是 **R2（升级后）**：服务端数据库、用户与会话、权限、管理员、命令行、14 种商品、Apple 式商品版式。
+> 课堂用途：R1/R2 **同时启动并排对比**（R1 默认 `4173`，R2 默认 `4174`）。
 
----
+## 快速开始（60 秒）
 
-## 1. 这是什么
-
-一个卖水果的电商演示应用，用途是作为课程 **GStack 八环工作流**的教学演示载体。
-
-它分两轮迭代，两轮都是"真实执行、留下证据"的：
-
-| 轮次 | 定位 | 状态 | 目录 |
-|---|---|---|---|
-| **R1** | **升级前**的展品 | **已完成** | `D:\vibecoding\easyvibe\r1-fruitlab`（冻结） |
-| **R2** | **升级后**的成果 | **待开发** | 本目录 |
-
-**为什么要两个目录**：课堂上需要**同时**展示升级前后并排对比。切分支时同一目录只有一个版本在场，做不到并排，所以用两个独立目录。
-
----
-
-## 2. R1 是什么样（升级前）
-
-一句话：**固定 10 种水果，浏览器内存购物车，订单存在当前浏览器的 `localStorage`，没有账号、数据库、服务端订单 API、第三方依赖或构建步骤。**
-
-| 项 | 值 |
-|---|---|
-| 版本 | `1.0.0.0` |
-| 提交 | 15 个，`main` 分支 |
-| 测试 | 62 项（61 通过、1 平台跳过、0 失败） |
-| 依赖 | 零第三方依赖，无 `package.json` |
-| 服务端 | `serve.mjs` 仅做静态托管，只接受 GET / HEAD |
-| 监听 | `127.0.0.1:4173` |
-
-R1 的八环产物（`OFFICE_HOURS.md`、`SPEC.md`、`DECISIONS.md`、`BUILD.md`、`review.md`、`qa-report.md`、`CHANGELOG.md`、`retro.md`）在本目录中，**是本目录的起点状态**。
-
----
-
-## 3. R2 要做什么（升级后）
-
-| 方向 | 内容 |
-|---|---|
-| 持久化 | 服务端数据库，商品与订单落库 |
-| 用户与身份 | 注册登录、预置 `userA` / `userB` / `admin`、口令哈希、**服务端会话 + Cookie** |
-| 权限 | 用户只能查自己的订单，管理员可查全部 |
-| 管理员 | 改库存、改价格、上架下架 |
-| 命令行 | 运维与管理员命令行能力 |
-| 商品 | 从 10 种**扩展到 14 种** |
-| 视觉 | **废弃 R1 的手写果摊招牌方向**，改为真实商品照片 + 专业电商版式 |
-| 流程机制 | 新增**义务追溯**，修补 R1 暴露的追溯链断裂 |
-
-**完整需求见 [`PRD-R2.md`](PRD-R2.md)。**
-
----
-
-## 4. R1 留下的已知缺口（R2 必须收敛）
-
-| # | 缺口 |
-|---|---|
-| G1 | 4 个失效链接：`/BUILD-LOG.md`、`/evidence/clean-run.md`、`/evidence/index.md`、`/evidence/manual-checks/browser.md` |
-| G2 | 证据包从未生成（逐文件哈希、拷贝清单） |
-| G3 | 契约冻结不完整（导出签名、精确失败形状、分支矩阵） |
-| G4 | `aria-invalid` 只加在数量输入框，同类输入未覆盖 |
-| G5 | 规格引用了不存在的检查项编号（M18/M19，规格只到 M16） |
-| G6 | 测试计数三处不一致（`BUILD.md` 56、review/qa 60、实测 62） |
-| G7 | R1 发布分支未合并回 `main`（已完成） |
-
-**根因**：R1 的追溯链只对规格、不对义务，导致"文档类义务无落点即掉队"。该缺口被 build、review、qa 各自发现一次，**三环均未修复**。
-
----
-
-## 5. 如何继续开发（给下一个会话）
-
-| 步骤 | 做什么 |
-|---|---|
-| 1 | 读 [`PRD-R2.md`](PRD-R2.md)，它替代 office-hours |
-| 2 | 从 **spec** 环节开始，产出 R2 的 `SPEC.md` |
-| 3 | 依次走 autoplan → build → review → qa → ship → retro（共 7 环） |
-| 4 | 每环边界停下汇报产出，得到明确许可才流转 |
-
-**硬约束**：
-
-- **`r1-fruitlab` 目录一行都不得改动。** 它是课堂展品。
-- 两个目录必须**能同时启动并各自访问**，因此 **R2 的监听端口需与 R1 的 `4173` 区分**。
-- R2 的产出**不得写回** R1 目录。
-- 本目录保留 R1 的完整 Git 历史，因此"改了哪些地方"始终可出 diff。
-
-**诚实工程红线**（R1 全程遵守，R2 必须继续）：
-
-- 一切代码、输出、日志与指标必须来自真实执行，不得伪造。
-- 门禁不可用就写"不可用"，**不得换模型充数、不得把"未覆盖"写成"通过"**。
-- 没有发现问题就写"未发现"，**不得为凑数编造缺陷**。
-- 需要人工受试者的项**如实记 `UNVERIFIED`**，不得编造记录。
-
----
-
-## 6. R1 的操作说明（R2 开发期间仍然有效）
-
-### 前置条件
-
-- Node.js 22+。实际测试版本记录在 [`qa-report.md`](qa-report.md)。
-- 现代 Chromium。使用全新 profile，或按下方步骤清空本站订单数据。
-- 不需要 `npm install`，仓库中没有 `package.json`。
-
-### 启动与停止
-
-在仓库根目录执行：
+前置：Node.js 22+（本项目在 `v22.20.0` 实测）。
 
 ```powershell
-node serve.mjs
+node cli.mjs dev
 ```
 
-访问 `http://127.0.0.1:4173`。停止：在启动它的终端按 `Ctrl+C`。
+`dev` 会自动建库、写入种子（14 商品 + 3 个演示账号）并启动服务。访问 **http://127.0.0.1:4174**。
 
-服务器只监听回环地址 `127.0.0.1`，`file://` 不是受支持的启动方式。诊断 CLI 可运行 `node serve.mjs --help`。
+停止：在启动它的终端按 `Ctrl+C`。
 
-### 走查：浏览到下单到查单
+> 数据库文件在 `data/fruitlab.db`（已 gitignore，可随时用 `node cli.mjs db reset --yes` 重建）。
+> `data/` 只在首次 `dev` / `db init` 时创建。
 
-1. 打开 `http://127.0.0.1:4173`，确认页面显示 10 种水果。
-2. 将"红富士苹果"加入购物车两次，将"海南香蕉"加入一次。
-3. 确认苹果行显示 `¥12.99 × 2 = ¥25.98`，香蕉行显示 `¥8.99 × 1 = ¥8.99`，合计 `¥34.97`。
-4. 点击"去结账"。成功收据应显示订单号、本地时间、规范 UTC 时间、商品快照、行小计与合计。
-5. 复制或手工选中订单号，刷新页面。
-6. 在"查订单"输入订单号。首尾空格与字母大小写会被忽略，应找回同一张收据。
+## 演示账号（仅演示，非生产）
 
-购物车只在当前页面内存中保留，刷新后清空；已成功保存的订单仍可查询。
+| 账号 | 口令 | 角色 |
+|---|---|---|
+| `userA` | `demo1234` | user |
+| `userB` | `demo1234` | user |
+| `admin` | `demo1234` | admin |
 
-### 重置订单数据
+口令以 `scrypt` + 随机盐哈希存储；上面的明文只用于课堂演示。生产环境不应存在此表。
 
-重置必须在受支持页面 `http://127.0.0.1:4173` 的 DevTools Console 中执行，因为 `localStorage` 按 origin 隔离。
+## 能演示什么
 
-先导出原始值并保存到可信位置：
+1. **浏览到下单**：14 种水果（照片卡）、加入购物袋、结账；库存实时扣减。
+2. **身份与权限**：登录后「我的订单」；`userA` 看不到 `userB` 的订单；`admin` 可查全部。
+3. **管理员**：改价格、改库存、上架/下架（面板在导航「管理」）。
+4. **查订单**：顶层入口，登录后按订单号查自己的订单；失焦重绘不吞点击、焦点落在结果标题。
+5. **持久化**：重启服务，订单与库存仍在。
+6. **命令行**：`node cli.mjs --help`；`db init/seed/reset/check`、`user`、`product`、`orders`。
 
-```js
-const rawOrders = localStorage.getItem("fruitlab.orders.v1");
-console.log(rawOrders);
-```
-
-确认已备份后再执行：
-
-```js
-localStorage.removeItem("fruitlab.orders.v1");
-```
-
-此操作不可撤销。应用不会自动修复、去重、重排或删除损坏的订单字节。也可改用全新 Chromium profile 获得空白站点存储。
-
-### 测试
+## 测试
 
 ```powershell
 node --test
 ```
 
-测试只使用 Node.js 内置 `node:test`、最小化内存 fake DOM/storage 与 `127.0.0.1` 回环 HTTP 请求；不启动真实浏览器，不访问外网，不安装依赖。
+测试只使用 Node 内置 `node:test`、临时 SQLite 库、最小 fake DOM 与 `127.0.0.1` 回环 HTTP；不启动真实浏览器、不访问外网、不安装依赖。
+**测试计数的唯一权威来源是 [`evidence/test-count.txt`](evidence/test-count.txt)**（由 `node scripts/record-test-count.mjs` 生成），其它文档不手写计数。
 
----
+一键验证（测试 + 链接 + 编号 + 追溯 + 证据清单）：
 
-## 7. 一个决策到证据的例子（R1 沿用）
+```powershell
+node scripts/verify.mjs
+```
 
-**D3 损坏数据策略**
+## 从 R1 升级时变了什么（breaking）
 
-- 已选：非破坏性读取，保留原始存储。
-- 未选：读取时自动修复、去重或删除损坏行。
-- 依据：[`SPEC.md`](SPEC.md) 的 `Decision Resolution` 与 `Order Storage`。
-- 实现后果：`readOrders` 只解析和报告；`appendOrder` 把旧字符串整体作为新值前缀，不重写旧字节。
-- 验证：[`tests/order-store.test.mjs`](tests/order-store.test.mjs) 覆盖"旧原始前缀保留"与"读取不写入"。
+- **订单不再存在浏览器** `localStorage`：改为服务端数据库；**R1 的历史订单不迁移**（R2 从空订单开始）。
+- **访客查单移除**：R1 任何人凭订单号可查；R2 需登录且只能查自己的订单（权限模型要求）。
+- **商品从 10 种扩到 14 种**；商品数据真源从 `assets/catalog.mjs` 移到数据库。
+- **视觉方向**：废弃 R1 的「手写果摊招牌」，改为 Apple 式高冷克制版式 + 本地真实照片。
+- 默认端口 `4173` → `4174`（与 R1 并存）。
 
----
+完整契约对照见 [`docs/contracts.md`](docs/contracts.md)；决策流水见 [`docs/decision-log.md`](docs/decision-log.md)。
 
-## 8. 错误与证据
+## 目录
 
-- 稳定错误码、用户文案、重试策略、副作用与恢复路径见 [`docs/error-catalog.md`](docs/error-catalog.md)。
-- R1 的八环证据按此顺序阅读：[`OFFICE_HOURS.md`](OFFICE_HOURS.md) → [`docs/designs/fruitlab-traceable-demo.md`](docs/designs/fruitlab-traceable-demo.md) → [`SPEC.md`](SPEC.md) → [`DECISIONS.md`](DECISIONS.md) → [`BUILD.md`](BUILD.md) → [`review.md`](review.md) → [`qa-report.md`](qa-report.md) → [`CHANGELOG.md`](CHANGELOG.md) → [`retro.md`](retro.md)。
+| 路径 | 说明 |
+|---|---|
+| `serve.mjs` | HTTP 服务：静态托管 + `/api` 路由（CSP 由 HTTP 头下发） |
+| `cli.mjs` | 运维/管理员命令行 |
+| `server/` | `db`（SQLite/迁移/事务）、`auth`（scrypt/会话）、`products`、`orders`、`router`、`errors` |
+| `assets/` | 前端模块（`app`/`controller`/`api-client`/`domain`/`styles`）与 14 张商品照片 |
+| `tests/` | `node:test` 测试与夹具 |
+| `scripts/` | 机械校验（链接/编号/追溯/证据清单/测试计数）与取图脚本 |
+| `docs/` | API、契约、错误目录、设计词元、分支矩阵、义务台账、图片来源 |
+| `evidence/` | 逐环证据、测试计数、证据清单、原始评审输出 |
+| `data/` | 运行时数据库（gitignore） |
 
-### R1 的证据表述规则（R2 必须继续遵守）
+## 安全边界（如实声明，非生产）
 
-R1 的 build 阶段**没有预造门禁事件**，也**不声称曾经发生门禁拦截**。没有真实记录时，统一表述为：
+- 只监听回环地址；无 HTTPS，Cookie 无 `Secure`；无会话过期/续期。
+- 无 CSRF Token（仅有同源 `Origin`/`Sec-Fetch-Site` 的**部分**校验）；无登录失败限流/锁定。
+- 他人订单返回 `403`（按 D-32 的取舍，会泄露订单号存在性）。
+- `node:sqlite` 为实验特性，同步 API 会阻塞事件循环；本版接受该限制。
+- 详细风险与取舍见 [`DECISIONS.md`](DECISIONS.md) 与 [`docs/decision-log.md`](docs/decision-log.md)。
 
-> 本演示包未发生门禁阻断；它展示的是流程与检查记录，不证明门禁曾拦下问题。
+## 图片与授权
 
-P5 教学价值仍为 `UNVERIFIED`：未观察到真实学员，记录见 [`evidence/learner-checks/pre-spec.md`](evidence/learner-checks/pre-spec.md)；没有独立的 `post-build.md` 观察，**不得宣称教学价值已经验证**。
+14 张商品照片均为仓库内本地文件，来源与授权逐张记录在 [`docs/assets-credits.md`](docs/assets-credits.md)（含 CC BY 署名）。抓取与校验脚本：[`scripts/fetch-product-images.mjs`](scripts/fetch-product-images.mjs)。
 
----
+## 证据与复盘
 
-## 9. 相关文档
-
-| 文档 | 位置 | 用途 |
-|---|---|---|
-| R2 PRD | 本目录 [`PRD-R2.md`](PRD-R2.md) | R2 的输入，替代 office-hours |
-| R1 八环讲解记录 | `reference-app/reports/R1-八环讲解记录.md` | 课堂讲解用 |
-| R1 义务覆盖率核查 | `reference-app/reports/R1-义务覆盖率核查.md` | 38 条义务逐条实测 |
-| R1 操作经验教训 | `reference-app/reports/R1-操作经验教训.md` | 执行层经验 |
-| 项目总交接 | `通用AI_Coding课程与教材/HANDOFF.md` | 整个项目的来龙去脉 |
+- 证据索引：[`evidence/index.md`](evidence/index.md)
+- 本轮规格：[`SPEC.md`](SPEC.md)（v1.1） · 评审与义务：[`DECISIONS.md`](DECISIONS.md)
+- R1 八环讲解：[`R1-八环讲解记录.md`](R1-八环讲解记录.md) · R1 义务核查：[`R1-义务覆盖率核查.md`](R1-义务覆盖率核查.md)
+- 项目总交接：`通用AI_Coding课程与教材/HANDOFF.md`

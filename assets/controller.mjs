@@ -1,30 +1,17 @@
-import {
-  generateUniqueOrderNumber,
-  isOrderNumberFormat,
-  lineTotalCents,
-  normalizeOrderNumber,
-  parseQuantity,
-  subtotalCents,
-} from "./domain.mjs";
-import { appendOrder, readOrders } from "./order-store.mjs";
+// FruitLab R2 控制器：纯 reducer 与纯派生函数，不依赖 DOM、fetch 或存储。
+// R1 的 checkout/lookup reducer 语义保留（saving、not-written、save-unknown 冻结、
+// 输入即清结果），并按 R2 增加登录态、商品目录、我的订单与管理端两面板状态。
+import { lineTotalCents, parseQuantity, subtotalCents } from "./domain.mjs";
 
-const DEFAULT_SUFFIX_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const NOT_WRITTEN_MESSAGES = Object.freeze({
-  "storage-unavailable": "订单未保存，请重试。本地订单存储不可用，请检查站点数据权限后重试。",
-  "storage-security-blocked": "订单未保存，请重试。浏览器阻止了本地订单存储，请允许本站使用站点数据后刷新。",
-  "storage-quota-exceeded": "订单未保存，请重试。本地订单存储空间已满，请先导出并检查现有订单数据。",
-  "storage-read-failed": "订单未保存，请重试。本地订单数据不是文本，无法读取，原始值未被修改。",
-  "storage-write-failed": "订单未保存，请重试。请检查浏览器存储权限和可用空间后重试。",
-});
+const QUANTITY_BOUND_MIN = 1;
+const QUANTITY_BOUND_MAX = 99;
 
-function defaultSuffixFactory() {
-  let suffix = "";
-  for (let index = 0; index < 4; index += 1) {
-    suffix += DEFAULT_SUFFIX_ALPHABET[
-      Math.floor(Math.random() * DEFAULT_SUFFIX_ALPHABET.length)
-    ];
-  }
-  return suffix;
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isQuantity(value) {
+  return Number.isInteger(value) && value >= QUANTITY_BOUND_MIN && value <= QUANTITY_BOUND_MAX;
 }
 
 export function parseQuantityUpdate(raw, previousQuantity) {
@@ -35,402 +22,418 @@ export function parseQuantityUpdate(raw, previousQuantity) {
   };
 }
 
-export function checkoutNotWrittenMessage(code) {
-  return NOT_WRITTEN_MESSAGES[code] ?? "订单未保存，请重试";
+// ---------------------------------------------------------------------------
+// 商品目录与商品卡状态
+// ---------------------------------------------------------------------------
+
+// 商品卡六态：normal / sold-out / unlisted 由数据决定；
+// loading / empty / error 由目录 reducer 决定，渲染层负责对应骨架与提示。
+export function productCardState(product) {
+  if (!product) return "unlisted";
+  if (product.listed === 0 || product.listed === false) return "unlisted";
+  if (product.soldOut === true) return "sold-out";
+  const stock = Number(product.stock);
+  if (Number.isFinite(stock) && stock <= 0) return "sold-out";
+  return "normal";
+}
+
+export function isPurchasable(product) {
+  return productCardState(product) === "normal";
+}
+
+export function createCatalogState() {
+  return Object.freeze({
+    status: "loading",
+    products: Object.freeze([]),
+    code: null,
+  });
+}
+
+export function catalogReducer(state, event) {
+  switch (event.type) {
+    case "CATALOG_LOADING":
+      return createCatalogState();
+    case "CATALOG_LOADED": {
+      const products = Object.freeze(
+        Array.isArray(event.products) ? event.products.filter(isPlainObject) : [],
+      );
+      return Object.freeze({
+        status: products.length === 0 ? "empty" : "ready",
+        products,
+        code: null,
+      });
+    }
+    case "CATALOG_FAILED":
+      return Object.freeze({
+        status: "error",
+        products: Object.freeze([]),
+        code: event.code ?? "internal-error",
+      });
+    default:
+      return state;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 购物袋与结账
+// ---------------------------------------------------------------------------
+
+export function createCartItems(cart, productsById) {
+  if (!(cart instanceof Map)) {
+    throw new TypeError("createCartItems requires a Map");
+  }
+  if (!(productsById instanceof Map)) {
+    throw new TypeError("createCartItems requires a product Map");
+  }
+
+  const items = [];
+  for (const [productId, quantity] of cart) {
+    const product = productsById.get(productId);
+    if (!isPlainObject(product)) {
+      throw new TypeError(`unknown product: ${productId}`);
+    }
+    if (!isQuantity(quantity)) {
+      throw new TypeError(`invalid quantity for ${productId}`);
+    }
+    if (!Number.isSafeInteger(product.unitPriceCents) || product.unitPriceCents <= 0) {
+      throw new TypeError(`invalid price for ${productId}`);
+    }
+    items.push(Object.freeze({
+      productId,
+      name: typeof product.name === "string" ? product.name : productId,
+      unit: typeof product.unit === "string" ? product.unit : "",
+      unitPriceCents: product.unitPriceCents,
+      quantity,
+      lineTotalCents: lineTotalCents(product.unitPriceCents, quantity),
+    }));
+  }
+  return Object.freeze(items);
+}
+
+export function createOrderItems(cart, productsById) {
+  return Object.freeze(
+    createCartItems(cart, productsById).map(({ productId, quantity }) =>
+      Object.freeze({ productId, quantity })),
+  );
+}
+
+export function cartSubtotalCents(cart, productsById) {
+  if (!(cart instanceof Map) || cart.size === 0) return 0;
+  return subtotalCents(createCartItems(cart, productsById));
 }
 
 export function createCheckoutState() {
-  return {
-    status: "idle",
+  return Object.freeze({
+    status: "idle", // idle | saving | not-written | save-unknown | saved
     frozen: false,
     code: null,
-    orderNumber: null,
-    attemptedOrder: null,
+    clientOrderId: null,
+    attemptedItems: null,
     receipt: null,
-  };
+    orderNumber: null,
+  });
 }
 
 export function isCartFrozen(state) {
   return Boolean(state?.frozen || state?.status === "save-unknown");
 }
 
+export function isCheckoutBusy(state) {
+  return Boolean(state && (state.status === "saving" || isCartFrozen(state)));
+}
+
 export function checkoutReducer(state, event) {
   switch (event.type) {
     case "CART_CHANGED":
-      if (isCartFrozen(state)) return state;
+      if (state.status === "saving" || isCartFrozen(state)) return state;
       return createCheckoutState();
     case "CHECKOUT_STARTED":
-      if (isCartFrozen(state)) return state;
-      return {
+      if (state.status === "saving" || isCartFrozen(state)) return state;
+      return Object.freeze({
         ...createCheckoutState(),
         status: "saving",
-      };
+        clientOrderId: event.clientOrderId ?? state.clientOrderId ?? null,
+        attemptedItems: Object.freeze(
+          Array.isArray(event.items) ? event.items.map((item) => Object.freeze({ ...item })) : [],
+        ),
+      });
     case "CHECKOUT_SAVED":
-      return {
+      if (state.status !== "saving") return state;
+      return Object.freeze({
         ...createCheckoutState(),
         status: "saved",
         code: "order-saved",
-        orderNumber: event.order.orderNumber,
-        receipt: event.order,
-      };
-    case "CHECKOUT_NOT_WRITTEN":
-      return {
+        receipt: event.order ?? null,
+        orderNumber: event.order?.orderNumber ?? null,
+      });
+    case "CHECKOUT_FAILED":
+      if (state.status !== "saving") return state;
+      return Object.freeze({
         ...createCheckoutState(),
         status: "not-written",
-        code: event.code ?? "storage-write-failed",
-      };
-    case "CHECKOUT_DUPLICATE":
-      return {
-        ...createCheckoutState(),
-        status: "duplicate-order-number",
-        code: event.code ?? "duplicate-order-number",
-      };
+        code: event.code ?? "internal-error",
+        clientOrderId: state.clientOrderId,
+        attemptedItems: state.attemptedItems,
+      });
     case "CHECKOUT_SAVE_UNKNOWN":
-      return {
+      if (state.status !== "saving") return state;
+      return Object.freeze({
         ...createCheckoutState(),
         status: "save-unknown",
         frozen: true,
-        code: event.code ?? "storage-readback-mismatch",
-        orderNumber: event.order.orderNumber,
-        attemptedOrder: event.order,
-      };
-    case "CHECKOUT_NUMBER_FAILED":
-      return {
+        code: event.code ?? "network-error",
+        clientOrderId: state.clientOrderId,
+        attemptedItems: state.attemptedItems,
+      });
+    case "SAVE_UNKNOWN_RESOLVED_SAVED":
+      if (state.status !== "save-unknown") return state;
+      return Object.freeze({
         ...createCheckoutState(),
-        status: "number-generation-failed",
-        code: "order-number-exhausted",
-      };
-    case "UNKNOWN_INCONCLUSIVE":
-      if (!isCartFrozen(state)) return state;
-      return {
-        ...state,
-        code: event.code ?? "save-unknown-inconclusive",
-      };
-    case "UNKNOWN_ABSENT":
-      if (!isCartFrozen(state)) return state;
-      return {
+        status: "saved",
+        code: "order-saved",
+        receipt: event.order ?? null,
+        orderNumber: event.order?.orderNumber ?? null,
+      });
+    case "SAVE_UNKNOWN_RESOLVED_ABSENT":
+      if (state.status !== "save-unknown") return state;
+      return Object.freeze({
         ...createCheckoutState(),
+        status: "idle",
         code: "save-unknown-absent",
-      };
+        clientOrderId: state.clientOrderId,
+        attemptedItems: state.attemptedItems,
+      });
     default:
       return state;
   }
 }
 
+// save-unknown 的人工核对只认同一个 clientOrderId；服务端订单摘要若不含该字段，
+// 返回 null，调用方只能提示人工核对，不得自动判定为未生成。
+export function findOrderByClientOrderId(orders, clientOrderId) {
+  if (!Array.isArray(orders) || typeof clientOrderId !== "string" || clientOrderId === "") {
+    return null;
+  }
+  return orders.find((order) => isPlainObject(order) && order.clientOrderId === clientOrderId) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// 登录态
+// ---------------------------------------------------------------------------
+
+export function createAuthState() {
+  return Object.freeze({
+    status: "anonymous", // anonymous | submitting | error | authenticated
+    mode: null, // login | register
+    user: null,
+    code: null,
+  });
+}
+
+export function authReducer(state, event) {
+  switch (event.type) {
+    case "SESSION_LOADED":
+      if (!event.user) return createAuthState();
+      return Object.freeze({
+        status: "authenticated",
+        mode: null,
+        user: event.user,
+        code: null,
+      });
+    case "AUTH_SUBMITTED":
+      if (state.status === "submitting") return state;
+      return Object.freeze({
+        ...createAuthState(),
+        status: "submitting",
+        mode: event.mode ?? "login",
+      });
+    case "AUTH_FAILED":
+      if (state.status !== "submitting") return state;
+      return Object.freeze({
+        status: "error",
+        mode: event.mode ?? state.mode,
+        user: null,
+        code: event.code ?? "internal-error",
+      });
+    case "AUTH_LOGGED_IN":
+      if (!event.user) return state;
+      return Object.freeze({
+        status: "authenticated",
+        mode: null,
+        user: event.user,
+        code: null,
+      });
+    case "AUTH_LOGGED_OUT":
+      return createAuthState();
+    case "AUTH_CLEAR_ERROR":
+      if (state.status !== "error") return state;
+      return createAuthState();
+    default:
+      return state;
+  }
+}
+
+export function isAuthenticated(state) {
+  return state?.status === "authenticated" && isPlainObject(state.user);
+}
+
+export function isAdmin(state) {
+  return isAuthenticated(state) && state.user.role === "admin";
+}
+
+// ---------------------------------------------------------------------------
+// 查订单
+// ---------------------------------------------------------------------------
+
 export function createLookupState() {
-  return {
-    status: "idle",
+  return Object.freeze({
+    status: "idle", // idle | submitting | found | not-found | error
     code: null,
     order: null,
     orderNumber: null,
-    invalidCount: 0,
-    duplicateNumbers: [],
-  };
+  });
 }
 
 export function lookupReducer(state, event) {
   switch (event.type) {
     case "INPUT_CHANGED":
       return createLookupState();
-    case "LOOKUP_RESULT":
-      return {
-        status: event.status,
-        code: event.code ?? null,
-        order: event.order ?? null,
+    case "LOOKUP_STARTED":
+      return Object.freeze({
+        status: "submitting",
+        code: null,
+        order: null,
         orderNumber: event.orderNumber ?? null,
-        invalidCount: event.invalidCount ?? 0,
-        duplicateNumbers: event.duplicateNumbers ?? [],
-      };
+      });
+    case "LOOKUP_FOUND":
+      return Object.freeze({
+        status: "found",
+        code: "order-found",
+        order: event.order ?? null,
+        orderNumber: event.order?.orderNumber ?? event.orderNumber ?? null,
+      });
+    case "LOOKUP_FAILED":
+      return Object.freeze({
+        status: event.code === "order-not-found" ? "not-found" : "error",
+        code: event.code ?? "internal-error",
+        order: null,
+        orderNumber: event.orderNumber ?? null,
+      });
     default:
       return state;
   }
 }
 
-export function createCartItems(cart, catalogById) {
-  if (!(cart instanceof Map)) {
-    throw new TypeError("createCartItems requires a Map");
-  }
-  if (!(catalogById instanceof Map)) {
-    throw new TypeError("createCartItems requires a catalog Map");
-  }
+// ---------------------------------------------------------------------------
+// 订单列表（我的订单 / 管理端全部订单）
+// ---------------------------------------------------------------------------
 
-  const items = [];
-  for (const [fruitId, quantity] of cart) {
-    const fruit = catalogById.get(fruitId);
-    if (!fruit) {
-      throw new TypeError(`unknown fruit: ${fruitId}`);
-    }
-    const lineTotal = lineTotalCents(fruit.unitPriceCents, quantity);
-    items.push(Object.freeze({
-      fruitId: fruit.id,
-      name: fruit.name,
-      unit: fruit.unit,
-      unitPriceCents: fruit.unitPriceCents,
-      quantity,
-      lineTotalCents: lineTotal,
-    }));
-  }
-  return Object.freeze(items);
-}
-
-function createOrderSnapshot({ items, now, orderNumber }) {
+export function createOrdersListState() {
   return Object.freeze({
-    orderNumber,
-    createdAt: now.toISOString(),
-    currency: "CNY",
-    subtotalCents: subtotalCents(items),
-    items,
+    status: "idle", // idle | loading | ready | empty | error
+    orders: Object.freeze([]),
+    code: null,
   });
 }
 
-export function runCheckout({
-  cart,
-  catalogById,
-  storage,
-  now = new Date(),
-  suffixFactory = defaultSuffixFactory,
-}) {
-  if (!(cart instanceof Map) || cart.size === 0) {
-    return {
-      status: "empty-cart",
-      code: "cart-empty",
-      state: createCheckoutState(),
-    };
-  }
-
-  let items;
-  try {
-    items = createCartItems(cart, catalogById);
-  } catch {
-    return {
-      status: "not-written",
-      code: "domain-invalid-order",
-      state: checkoutReducer(createCheckoutState(), {
-        type: "CHECKOUT_NOT_WRITTEN",
-        code: "domain-invalid-order",
-      }),
-    };
-  }
-
-  const latest = readOrders(storage);
-  if (!latest.ok) {
-    return {
-      status: "not-written",
-      code: latest.code,
-      state: checkoutReducer(createCheckoutState(), {
-        type: "CHECKOUT_NOT_WRITTEN",
-        code: latest.code,
-      }),
-    };
-  }
-
-  const taken = new Set(latest.orders.map((order) => normalizeOrderNumber(order.orderNumber)));
-  const orderNumber = generateUniqueOrderNumber({
-    now,
-    suffixFactory,
-    isTaken: (candidate) => taken.has(candidate),
-  });
-
-  if (!orderNumber) {
-    return {
-      status: "number-generation-failed",
-      code: "order-number-exhausted",
-      state: checkoutReducer(createCheckoutState(), {
-        type: "CHECKOUT_NUMBER_FAILED",
-      }),
-    };
-  }
-
-  const order = createOrderSnapshot({ items, now, orderNumber });
-  const result = appendOrder(storage, order);
-
-  if (result.status === "saved") {
-    return {
-      status: "saved",
-      code: result.code,
-      order,
-      state: checkoutReducer(createCheckoutState(), {
-        type: "CHECKOUT_SAVED",
-        order,
-      }),
-    };
-  }
-  if (result.status === "duplicate-order-number") {
-    return {
-      status: "duplicate-order-number",
-      code: result.code,
-      state: checkoutReducer(createCheckoutState(), {
-        type: "CHECKOUT_DUPLICATE",
-        code: result.code,
-      }),
-    };
-  }
-  if (result.status === "save-unknown") {
-    return {
-      status: "save-unknown",
-      code: result.code,
-      order,
-      state: checkoutReducer(createCheckoutState(), {
-        type: "CHECKOUT_SAVE_UNKNOWN",
-        code: result.code,
-        order,
-      }),
-    };
-  }
-  return {
-    status: "not-written",
-    code: result.code,
-    state: checkoutReducer(createCheckoutState(), {
-      type: "CHECKOUT_NOT_WRITTEN",
-      code: result.code,
-    }),
-  };
-}
-
-export function performLookup({ input, storage }) {
-  if (typeof input !== "string") {
-    return { status: "malformed", code: "lookup-malformed" };
-  }
-  const trimmed = input.trim();
-  if (trimmed === "") {
-    return { status: "empty", code: "lookup-empty" };
-  }
-
-  const orderNumber = normalizeOrderNumber(trimmed);
-  if (!isOrderNumberFormat(orderNumber)) {
-    return { status: "malformed", code: "lookup-malformed" };
-  }
-
-  const result = readOrders(storage);
-  if (!result.ok) {
-    return {
-      status: "unavailable",
-      code: result.code,
-      orderNumber,
-    };
-  }
-
-  if (result.duplicateNumbers.includes(orderNumber)) {
-    return {
-      status: "duplicate",
-      code: "duplicate-order-number",
-      orderNumber,
-      invalidCount: result.invalidCount,
-      duplicateNumbers: result.duplicateNumbers,
-    };
-  }
-
-  const order = result.orders.find((candidate) => candidate.orderNumber === orderNumber);
-  if (!order) {
-    return {
-      status: "not-found",
-      code: "lookup-not-found",
-      orderNumber,
-      invalidCount: result.invalidCount,
-      duplicateNumbers: result.duplicateNumbers,
-    };
-  }
-
-  return {
-    status: "found",
-    code: "lookup-found",
-    orderNumber,
-    order,
-    invalidCount: result.invalidCount,
-    duplicateNumbers: result.duplicateNumbers,
-  };
-}
-
-function ordersEqual(left, right) {
-  if (!left || !right || left.items.length !== right.items.length) return false;
-  if (
-    left.orderNumber !== right.orderNumber ||
-    left.createdAt !== right.createdAt ||
-    left.currency !== right.currency ||
-    left.subtotalCents !== right.subtotalCents
-  ) {
-    return false;
-  }
-
-  return left.items.every((item, index) => {
-    const other = right.items[index];
-    return (
-      item.fruitId === other.fruitId &&
-      item.name === other.name &&
-      item.unit === other.unit &&
-      item.unitPriceCents === other.unitPriceCents &&
-      item.quantity === other.quantity &&
-      item.lineTotalCents === other.lineTotalCents
-    );
-  });
-}
-
-export function resolveUnknownCheckout({ state, storage }) {
-  if (state?.status !== "save-unknown" || !state.attemptedOrder) {
-    return { status: "not-applicable", state };
-  }
-
-  const result = readOrders(storage);
-  if (!result.ok) {
-    return {
-      status: "unavailable",
-      code: result.code,
-      state: checkoutReducer(state, {
-        type: "UNKNOWN_INCONCLUSIVE",
-        code: result.code,
-      }),
-    };
-  }
-
-  const orderNumber = normalizeOrderNumber(state.attemptedOrder.orderNumber);
-  if (result.duplicateNumbers.includes(orderNumber)) {
-    return {
-      status: "duplicate",
-      code: "duplicate-order-number",
-      state: checkoutReducer(state, {
-        type: "UNKNOWN_INCONCLUSIVE",
-        code: "duplicate-order-number",
-      }),
-    };
-  }
-
-  const found = result.orders.find((order) => order.orderNumber === orderNumber);
-  if (found) {
-    if (!ordersEqual(found, state.attemptedOrder)) {
-      return {
-        status: "inconclusive",
-        code: "save-unknown-mismatch",
-        state: checkoutReducer(state, {
-          type: "UNKNOWN_INCONCLUSIVE",
-          code: "save-unknown-mismatch",
-        }),
-      };
+export function ordersListReducer(state, event) {
+  switch (event.type) {
+    case "ORDERS_LOADING":
+      return Object.freeze({ status: "loading", orders: Object.freeze([]), code: null });
+    case "ORDERS_LOADED": {
+      const orders = Object.freeze(
+        Array.isArray(event.orders) ? event.orders.filter(isPlainObject) : [],
+      );
+      return Object.freeze({
+        status: orders.length === 0 ? "empty" : "ready",
+        orders,
+        code: null,
+      });
     }
-    return {
-      status: "saved",
-      code: "order-saved",
-      order: found,
-      state: checkoutReducer(state, {
-        type: "CHECKOUT_SAVED",
-        order: found,
-      }),
-    };
+    case "ORDERS_FAILED":
+      return Object.freeze({
+        status: "error",
+        orders: Object.freeze([]),
+        code: event.code ?? "internal-error",
+      });
+    case "ORDERS_RESET":
+      return createOrdersListState();
+    default:
+      return state;
   }
+}
 
-  if (result.invalidCount > 0 || result.duplicateNumbers.length > 0) {
-    return {
-      status: "inconclusive",
-      code: "save-unknown-unhealthy-storage",
-      state: checkoutReducer(state, {
-        type: "UNKNOWN_INCONCLUSIVE",
-        code: "save-unknown-unhealthy-storage",
-      }),
-    };
+// ---------------------------------------------------------------------------
+// 管理端商品面板
+// ---------------------------------------------------------------------------
+
+export function createAdminProductsState() {
+  return Object.freeze({
+    status: "idle", // idle | loading | ready | empty | error
+    products: Object.freeze([]),
+    code: null,
+    savingId: null,
+    rowCode: null,
+  });
+}
+
+export function adminProductsReducer(state, event) {
+  switch (event.type) {
+    case "ADMIN_PRODUCTS_LOADING":
+      return Object.freeze({
+        status: "loading",
+        products: Object.freeze([]),
+        code: null,
+        savingId: null,
+        rowCode: null,
+      });
+    case "ADMIN_PRODUCTS_LOADED": {
+      const products = Object.freeze(
+        Array.isArray(event.products) ? event.products.filter(isPlainObject) : [],
+      );
+      return Object.freeze({
+        status: products.length === 0 ? "empty" : "ready",
+        products,
+        code: null,
+        savingId: null,
+        rowCode: null,
+      });
+    }
+    case "ADMIN_PRODUCTS_FAILED":
+      return Object.freeze({
+        status: "error",
+        products: Object.freeze([]),
+        code: event.code ?? "internal-error",
+        savingId: null,
+        rowCode: null,
+      });
+    case "PRODUCT_SAVING":
+      return Object.freeze({
+        ...state,
+        savingId: event.productId ?? null,
+        rowCode: null,
+      });
+    case "PRODUCT_SAVED": {
+      const product = isPlainObject(event.product) ? event.product : null;
+      if (!product) return Object.freeze({ ...state, savingId: null });
+      const next = state.products.map((item) => (item.id === product.id ? product : item));
+      return Object.freeze({
+        status: next.length === 0 ? "empty" : "ready",
+        products: Object.freeze(next),
+        code: null,
+        savingId: null,
+        rowCode: null,
+      });
+    }
+    case "PRODUCT_SAVE_FAILED":
+      return Object.freeze({
+        ...state,
+        savingId: null,
+        rowCode: event.code ?? "internal-error",
+      });
+    case "ADMIN_PRODUCTS_RESET":
+      return createAdminProductsState();
+    default:
+      return state;
   }
-
-  return {
-    status: "absent",
-    code: "save-unknown-absent",
-    state: checkoutReducer(state, { type: "UNKNOWN_ABSENT" }),
-  };
 }

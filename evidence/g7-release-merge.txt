@@ -1,0 +1,21 @@
+# G7 证据：R1 发布分支合并状态
+
+日期: 2026-10-18
+
+## R1 仓库
+```
+$ git -C r1 merge-base --is-ancestor release/r1-fruitlab-ring7 main
+exit=0
+$ git -C r1 log --oneline main..release/r1-fruitlab-ring7
+(空：无未合并提交)
+```
+
+## R2 仓库（含 R1 历史）
+```
+$ git merge-base --is-ancestor release/r1-fruitlab-ring7 main
+exit=0
+$ git log --oneline main..release/r1-fruitlab-ring7
+(空：无未合并提交)
+```
+
+结论：两个仓库中 release 分支均已是 main 的祖先，**G7 已关闭**。

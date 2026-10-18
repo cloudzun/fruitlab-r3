@@ -5,92 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
     >
-    <title>果子摊 FruitLab · 本地可追溯水果商城</title>
-    <meta name="description" content="十种水果、本地下单、按订单号查询。无账号、无服务端订单存储。">
+    <title>FruitLab 果子摊 · 本地可追溯水果商城</title>
+    <meta
+      name="description"
+      content="FruitLab 是本地教学演示商城：十四种水果、账号登录、服务端订单与管理员面板。"
+    >
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="./assets/styles.css">
     <script src="./assets/boot-guard.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#catalog">跳到水果摊位</a>
+    <a class="skip-link" href="#main">跳到主要内容</a>
 
-    <header class="stall-header" aria-labelledby="site-title">
-      <div class="signboard">
-        <div class="signboard-tape signboard-tape-left" aria-hidden="true"></div>
-        <div class="signboard-tape signboard-tape-right" aria-hidden="true"></div>
-        <p class="brand-kicker">本地鲜果 · 今日开摊</p>
-        <h1 id="site-title"><span>果子摊</span><small>FruitLab</small></h1>
-        <p class="stall-note">十种鲜果，一台浏览器。无账号、无服务端订单存储。</p>
-        <div class="stall-stamp" aria-hidden="true">本地<br>演示</div>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#catalog-section" aria-label="FruitLab 商城首页">FruitLab</a>
+        <nav class="site-nav" aria-label="主导航">
+          <a href="#catalog-section">商城</a>
+          <a id="nav-lookup" href="#lookup">查订单</a>
+          <a id="nav-my-orders" href="#my-orders">我的订单</a>
+          <a id="nav-admin" href="#admin" hidden>管理</a>
+          <a id="nav-auth" href="#auth">登录 / 注册</a>
+          <a id="nav-cart" class="nav-cart" href="#cart">购物袋 <span id="nav-cart-count" class="nav-cart-count">0</span></a>
+        </nav>
       </div>
-
-      <nav class="stall-nav" aria-label="页面导航">
-        <a href="#catalog">浏览水果</a>
-        <a href="#lookup">查订单</a>
-      </nav>
-
-      <p id="boot-status" class="boot-status" role="status" aria-live="polite">
-        正在加载商品...
-      </p>
-      <noscript>
-        <p class="noscript-note">本演示需要启用 JavaScript。</p>
-      </noscript>
     </header>
 
-    <main class="market-shell">
-      <div class="market-grid">
-        <section class="catalog-section" aria-labelledby="catalog-title">
-          <div class="section-heading">
-            <p class="section-kicker">TODAY'S PICK</p>
-            <h2 id="catalog-title">今日果子</h2>
-            <p>按份挑选，价钱清清楚楚。购物车只在当前页面保留。</p>
-          </div>
-          <div id="catalog" class="catalog-grid" aria-busy="true"></div>
-        </section>
+    <p id="boot-status" class="container status-line" role="status" aria-live="polite">
+      正在加载商品…
+    </p>
 
-        <aside id="cart" class="cart-panel" aria-labelledby="cart-title">
-          <div class="cart-heading">
-            <div>
-              <p class="section-kicker">YOUR BASKET</p>
-              <h2 id="cart-title">我的果篮</h2>
-            </div>
-            <span id="cart-count" class="cart-count">0 件</span>
-          </div>
+    <main id="main" class="container" tabindex="-1">
+      <section class="hero" aria-labelledby="hero-title">
+        <p class="eyebrow">FruitLab</p>
+        <h1 id="hero-title">水果，按份买。</h1>
+        <p class="hero-subtitle">
+          十四种当季水果，价格与库存以服务端为准。登录后可下单，并在「我的订单」里核对每一单。
+        </p>
+      </section>
 
-          <div id="cart-lines" class="cart-lines">
-            <p class="empty-cart">购物车为空</p>
-          </div>
-
-          <div class="cart-checkout-block">
-            <p id="cart-total" class="cart-total">合计 ¥0.00</p>
-            <p class="cart-fineprint">刷新页面会清空果篮，已保存订单仍可查询。</p>
-            <button id="checkout" class="primary-button" type="button" data-requires-js disabled>
-              去结账
-            </button>
-          </div>
-
-          <div id="checkout-message" class="checkout-message" role="status" aria-live="polite" aria-atomic="true"></div>
-          <div id="unknown-actions" class="unknown-actions" hidden></div>
-          <p id="cart-live" class="sr-only" aria-live="polite"></p>
-        </aside>
-      </div>
-
-      <section id="storage-notice" class="storage-notice" role="status" aria-live="polite" hidden></section>
-
-      <section id="order-success" class="receipt-panel" aria-labelledby="success-title" hidden></section>
-
-      <section id="lookup" class="lookup-panel" aria-labelledby="lookup-title">
-        <div class="lookup-copy">
-          <p class="section-kicker">FIND YOUR TICKET</p>
-          <h2 id="lookup-title">查订单</h2>
-          <p>订单保存在当前浏览器的本地存储里。输入订单号，找回这张果子票。</p>
+      <section id="catalog-section" class="section" aria-labelledby="catalog-title">
+        <div class="section-head">
+          <h2 id="catalog-title">商城</h2>
+          <p class="section-note">售罄商品会保留在列表中；下架商品不展示。</p>
         </div>
+        <p id="catalog-status" class="status-line" role="status" aria-live="polite"></p>
+        <div id="catalog" class="product-grid" aria-busy="true"></div>
+      </section>
 
+      <section id="cart" class="section bag" aria-labelledby="bag-title">
+        <div class="section-head">
+          <h2 id="bag-title">购物袋</h2>
+          <p id="cart-count" class="section-note">0 件</p>
+        </div>
+        <div id="cart-lines" class="bag-lines">
+          <p class="empty-state">购物袋是空的。</p>
+        </div>
+        <div class="bag-summary">
+          <p id="cart-total" class="bag-total">合计 ¥0.00</p>
+          <button id="checkout" class="button button-primary" type="button" data-requires-js disabled>
+            去结账
+          </button>
+        </div>
+        <p class="fineprint">购物袋只保存在当前页面，刷新后清空；已提交的订单仍可在「我的订单」查看。</p>
+        <p
+          id="checkout-message"
+          class="status-line"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        ></p>
+        <div id="unknown-actions" class="unknown-actions" hidden></div>
+        <p id="cart-live" class="sr-only" aria-live="polite"></p>
+      </section>
+
+      <section id="order-success" class="section receipt" aria-labelledby="success-title" hidden></section>
+
+      <section id="lookup" class="section" aria-labelledby="lookup-title">
+        <div class="section-head">
+          <h2 id="lookup-title">查订单</h2>
+          <p class="section-note">查询需要登录，且只能查看自己账号下的订单。</p>
+        </div>
         <form id="lookup-form" class="lookup-form" novalidate>
-          <label for="lookup-input">订单号</label>
-          <div class="lookup-controls">
+          <div class="field">
+            <label for="lookup-input">订单号</label>
             <input
               id="lookup-input"
               name="orderNumber"
@@ -99,35 +99,201 @@
               autocomplete="off"
               spellcheck="false"
               placeholder="FL-YYYYMMDD-HHMMSS-XXXX"
-              aria-describedby="lookup-help"
+              aria-describedby="lookup-input-help lookup-input-error"
+              data-requires-js
             >
-            <button id="lookup-submit" class="ink-button" type="submit" data-requires-js disabled>
-              查询
-            </button>
+            <p id="lookup-input-help" class="field-help">
+              格式为 FL-YYYYMMDD-HHMMSS-XXXX；首尾空格和字母大小写会被忽略。
+            </p>
+            <p id="lookup-input-error" class="field-error" role="alert"></p>
           </div>
-          <p id="lookup-help" class="field-help">首尾空格和字母大小写会自动忽略。</p>
+          <button id="lookup-submit" class="button button-secondary" type="submit" data-requires-js>
+            查询
+          </button>
         </form>
-
-        <div id="lookup-message" class="lookup-message" role="status" aria-live="polite" aria-atomic="true">
-          输入订单号查询已保存订单
-        </div>
+        <p
+          id="lookup-message"
+          class="status-line"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          登录后输入订单号查询自己的订单。
+        </p>
         <div id="lookup-result" class="lookup-result" aria-labelledby="lookup-result-title" hidden></div>
+      </section>
+
+      <section id="my-orders" class="section" aria-labelledby="my-orders-title">
+        <div class="section-head">
+          <h2 id="my-orders-title">我的订单</h2>
+          <button id="my-orders-refresh" class="button button-quiet" type="button" data-requires-js>
+            刷新
+          </button>
+        </div>
+        <p
+          id="my-orders-status"
+          class="status-line"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          登录后查看我的订单。
+        </p>
+        <div id="my-orders-list" class="order-list"></div>
+      </section>
+
+      <section id="auth" class="section" aria-labelledby="auth-title">
+        <div class="section-head">
+          <h2 id="auth-title">登录与注册</h2>
+          <p class="section-note">演示账号由种子脚本创建；口令只以哈希形式存储。</p>
+        </div>
+        <p id="auth-status" class="status-line" role="status" aria-live="polite" aria-atomic="true">
+          当前未登录。
+        </p>
+
+        <div id="auth-session" class="auth-session" hidden>
+          <p>当前登录：<strong id="session-user"></strong> <span id="session-role" class="session-role"></span></p>
+          <button id="logout-button" class="button button-secondary" type="button" data-requires-js>
+            退出登录
+          </button>
+        </div>
+
+        <div id="auth-forms" class="auth-forms">
+          <form id="login-form" class="auth-form" novalidate>
+            <h3>登录</h3>
+            <div class="field">
+              <label for="login-username">用户名</label>
+              <input
+                id="login-username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                autocapitalize="off"
+                spellcheck="false"
+                data-requires-js
+              >
+            </div>
+            <div class="field">
+              <label for="login-password">口令</label>
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                data-requires-js
+              >
+            </div>
+            <button id="login-submit" class="button button-primary" type="submit" data-requires-js>
+              登录
+            </button>
+            <p id="login-message" class="field-error" role="alert" aria-live="assertive"></p>
+          </form>
+
+          <form id="register-form" class="auth-form" novalidate>
+            <h3>注册</h3>
+            <div class="field">
+              <label for="register-username">用户名</label>
+              <input
+                id="register-username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                autocapitalize="off"
+                spellcheck="false"
+                aria-describedby="register-username-help"
+                data-requires-js
+              >
+              <p id="register-username-help" class="field-help">
+                3 到 32 位字母、数字、下划线或短横线。
+              </p>
+            </div>
+            <div class="field">
+              <label for="register-password">口令</label>
+              <input
+                id="register-password"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                aria-describedby="register-password-help"
+                data-requires-js
+              >
+              <p id="register-password-help" class="field-help">8 到 128 位字符。</p>
+            </div>
+            <button id="register-submit" class="button button-primary" type="submit" data-requires-js>
+              注册
+            </button>
+            <p id="register-message" class="field-error" role="alert" aria-live="assertive"></p>
+          </form>
+        </div>
+      </section>
+
+      <section id="admin" class="section" aria-labelledby="admin-title" hidden>
+        <div class="section-head">
+          <h2 id="admin-title">管理</h2>
+          <p class="section-note">仅管理员可见。所有变更直接写入服务端数据库。</p>
+        </div>
+        <p id="admin-status" class="status-line" role="status" aria-live="polite" aria-atomic="true"></p>
+
+        <div class="admin-panels">
+          <section class="admin-panel" aria-labelledby="admin-orders-title">
+            <div class="section-head">
+              <h3 id="admin-orders-title">订单</h3>
+              <button id="admin-orders-refresh" class="button button-quiet" type="button" data-requires-js>
+                刷新
+              </button>
+            </div>
+            <p
+              id="admin-orders-status"
+              class="status-line"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            ></p>
+            <div id="admin-orders-list" class="order-list"></div>
+          </section>
+
+          <section class="admin-panel" aria-labelledby="admin-products-title">
+            <div class="section-head">
+              <h3 id="admin-products-title">商品</h3>
+              <button id="admin-products-refresh" class="button button-quiet" type="button" data-requires-js>
+                刷新
+              </button>
+            </div>
+            <p
+              id="admin-products-status"
+              class="status-line"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            ></p>
+            <div id="admin-products-list" class="admin-products"></div>
+          </section>
+        </div>
       </section>
     </main>
 
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>FruitLab 是本地教学演示，不是生产商城；数据保存在本机数据库。</p>
+        <nav class="footer-nav" aria-label="页脚链接">
+          <a href="./README.md">运行说明</a>
+          <a href="./evidence/index.md">证据索引</a>
+          <a href="./docs/assets-credits.md">图片来源与授权</a>
+        </nav>
+      </div>
+    </footer>
+
     <div id="mobile-cart-bar" class="mobile-cart-bar" hidden>
-      <div>
+      <p class="mobile-cart-summary">
         <strong id="mobile-cart-count">0 件</strong>
         <span id="mobile-cart-total">¥0.00</span>
-      </div>
-      <a href="#cart">查看果篮</a>
+      </p>
+      <a class="button button-primary mobile-cart-link" href="#cart">查看购物袋</a>
     </div>
 
-    <footer class="page-footer">
-      <p>FruitLab 是本地教学演示，不是生产商城。数据只留在当前浏览器。</p>
-      <a href="./README.md">运行说明</a>
-      <a href="./evidence/index.md">证据索引</a>
-    </footer>
+    <noscript>
+      <p class="noscript-note">本演示需要启用 JavaScript。</p>
+    </noscript>
 
     <script type="module" src="./assets/app.mjs"></script>
   </body>
