@@ -1,0 +1,62 @@
+# R2 决策台账（追加式）
+
+> **规则**：本文件只追加、不重写。每条决策记录日期、编号、决策、备选项、理由、影响面、状态。
+> 状态：`accepted`（项目负责人已确认）/ `recommended`（本规格推荐执行，若反对请提出）/ `superseded`（被后续决策取代）。
+> 与 `DECISIONS.md` 的关系：本文件是**跨环节**的决策流水账；`DECISIONS.md` 是 autoplan 环的正式评审记录。
+
+## 2026-10-18 · spec 环节
+
+| 编号 | 决策 | 备选项 | 理由 | 影响面 | 状态 |
+|---|---|---|---|---|---|
+| D-01 | 持久化用 SQLite 单文件（`node:sqlite` 的 `DatabaseSync`） | JSON/NDJSON 文件存储 | 项目负责人要求「一个数据库实例」；零第三方依赖；本机实测 `node:sqlite` 无需标志位可用、文件库重开可读回 | 数据模型、CLI、测试、备份 | recommended |
+| D-02 | 4+1 张表：`users`/`products`/`orders`/`order_items` + `sessions` | 单表 JSON 快照 | 对齐 `01_` 蓝本 4+1 精神；关系约束可被测试验证 | DB 层、API | recommended |
+| D-03 | 服务端会话表 + `HttpOnly` Cookie（`SameSite=Lax`，无 `Secure`） | 前端 JWT、内存会话 | PRD 已定方案 A；服务端可即时失效；无 HTTPS 故不加 `Secure` | 认证、API 中间件 | recommended |
+| D-04 | 口令用 `scrypt` + 随机盐 + `timingSafeEqual` | 明文（禁止）、PBKDF2 | 零依赖、内置；满足「不得明文」 | 认证、种子数据 | recommended |
+| D-05 | R2 默认端口 **4174** | 4173（最初口误）、随机端口 | 与 R1 的 4173 并存；项目负责人 2026-10-18 更正为 4174 | 启动参数、README、测试 | accepted |
+| D-06 | 开放注册，默认 `user`；`admin` 仅种子/CLI 创建 | 仅管理员建号 | PRD FR-2 明确「支持注册」 | 认证、UI | recommended |
+| D-07 | 下单原子扣减库存；零库存售罄；下架隐藏 | 库存仅手工维护 | 否则「库存」与「售罄」语义不成立 | 下单事务、UI 售罄态 | recommended |
+| D-08 | 视觉改为**苹果官网式高冷克制风**（变更 PRD FR-7 的亚马逊方向） | 亚马逊密集网格 | 项目负责人 2026-10-18 课堂观感要求；属方向变更，需在 SPEC/`DECISIONS.md` 双处留痕 | 前端结构、CSS、A11 口径 | accepted |
+| D-09 | 商品照片用 **Openverse API**（CC0/CC BY）14 张，本地落盘 | Pexels/Unsplash/Pixabay 直连；Wikimedia Commons | 直连被 401/403 拦截；Openverse 返回授权元数据且回源可下载（实测 119 KB JPEG） | 资产、授权台账、页脚署名 | accepted |
+| D-10 | `readOrders`/`appendOrder` 保留函数名、首参 `storage→db`，领域纯函数不动 | 全部重写存储层 | 保留 R1 接缝，证明分层有效；契约变更进对照表 | 服务端存储、测试 | recommended |
+| D-11 | 义务编号 `OB-<阶段>-<序号>`，`BUILD.md` 同时引用 `AC` 与 `OB` | 沿用 R1 的 F/DF/DX/E | R1 编号不可复用，避免歧义；机械可核对 | 追溯表、各环报告 | recommended |
+| D-12 | 降级分三档（不可降级/外部依赖可降级/可替代形态），降级三处留痕 | 不设降级 | 项目负责人授权酌情定；防止文档类义务再次掉队 | 验收口径 | accepted |
+| D-13 | 文档落 `docs/`（决策台账、契约、API、错误目录、分支矩阵、词元、授权）+ `evidence/`（逐环证据、清单、唯一计数） | 只写 SUMMARY | 项目负责人要求「文档记录便于复盘」；复盘需要可核对形态而非叙述 | 全流程 | accepted |
+| D-14 | 基线标签 `r1-baseline` 打在 `c1167e0` | 不打卡点 | 让「改了哪些」永远可 diff；支撑课堂对比与回退 | Git、回退 | accepted |
+| D-15 | SPEC 覆盖写入 `SPEC.md`，R1 版本靠标签与 `r1-fruitlab` 保留 | 另写 `SPEC-R2.md` | 保持「每环一个产物文件」的约定；历史不丢 | 文档结构 | recommended |
+| D-16 | 不引入订单状态机，订单即完成记录 | 加五态状态机 | PRD 未要求；避免范围膨胀 | 数据模型、UI、测试 | recommended |
+| D-17 | 深色模式不做 | 双主题 | PRD 未要求；减少验收面 | 视觉、测试 | recommended |
+| D-18 | 管理界面单页两面板（订单/商品）+ 内联编辑 | 独立管理页 | 零依赖、无路由 | 前端结构 | recommended |
+| D-19 | 测试计数由 `scripts/record-test-count.mjs` 生成唯一文件 | 文档手写计数 | G6 根因就是手写漂移 | 文档、验收 | recommended |
+| D-20 | 照片静态 1:1 裁切 + CSS `object-fit` | 运行时缩放 | 运行时图片处理需第三方库，违反零依赖 | 资产、CSS | recommended |
+
+## 2026-10-18 · 评审后补强（spec 环 · Phase 4.5 阶段）
+
+同族二次审阅给出 6.5/10（未过 7 分线），提出的问题成立，追加以下决策：
+
+| 编号 | 决策 | 备选项 | 理由 | 影响面 | 状态 |
+|---|---|---|---|---|---|
+| D-21 | 会话令牌库中存 `sha256(token)` | 明文存令牌 | 降低库泄露风险，成本极低 | 认证、测试 | accepted |
+| D-22 | 下单主单/明细/扣库存同一事务 + 有界重试与回滚 | 分步写入 | 防「订单已建、库存未扣」；并发正确性 | DB 层、测试 | accepted |
+| D-23 | API 请求体 ≤ 64 KiB，超限 413 | 不限制 | 防内存放大 | 路由、测试 | accepted |
+| D-24 | 视觉验收用真实 Chromium 三视口截图 + 人工确认 | 只用 fake DOM | fake DOM 证明不了布局与视觉 | qa 环、AC-15～18 | accepted |
+| D-25 | `PRAGMA user_version` + 迁移函数 | 无版本位 | 实验 API 也要有迁移路径 | DB 层、CLI | accepted |
+| D-26 | 不迁移 R1 `localStorage` 历史订单 | 做数据迁移 | PRD 未要求；不假装「平滑迁移」 | README、范围 | accepted |
+
+## 2026-10-18 · 第二轮补强（spec 环 · 同族二次审阅后）
+
+第二轮同族审阅仍 6.5/10，其中 5 条真缺口已修，2 条撞 PRD 边界按边界保留。追加：
+
+| 编号 | 决策 | 备选项 | 理由 | 影响面 | 状态 |
+|---|---|---|---|---|---|
+| D-27 | 状态变更请求校验 `Origin`/`Sec-Fetch-Site` 同源 | 完全不校验 | 部分缓解，成本低；**不构成 CSRF 防护**，不写成「已做 CSRF」 | API 中间件 | accepted |
+| D-28 | CLI 增加 `--db` 与 `FRUITLAB_DB`，与 serve 共用 | CLI 固定默认库 | 测试需临时库；避免与运行库互踩 | CLI、测试 | accepted |
+| D-29 | 商品/订单确定性排序 + 事务内合计断言 | 依赖插入顺序 | 防列表顺序漂移、防主单与明细合计不一致 | DB 层、测试 | accepted |
+| D-30 | **不做幂等键**；`save-unknown` 后不自动重试，引导「我的订单」核对 | 加 idempotency 表 | PRD 未要求；延续 R1 DX1「未知写入人工核对」，避免重复下单 | 前端、API | accepted |
+| D-31 | 启动自检 Node/sqlite；接受 `DatabaseSync` 同步阻塞（单进程演示） | 异步驱动 | 零依赖现实；风险显式记录 | 服务端 | accepted |
+| D-32 | 他人订单返回 `403`（不改为 404），接受「订单号存在性泄露」 | 统一 404 | 课堂需要可演示的水平越权拒绝；泄露代价显式记录 | 权限、文档 | accepted |
+
+## 2026-10-18 · 确认记录
+
+- 项目负责人确认 SPEC v1.0 草稿（含 D-01～D-26 与 §13 开放项），授权进入后续环节。
+- 自本条起，上表中 `recommended` 条目视为 `accepted`；历史行不修改（本文件追加式）。
+- 后续若推翻上述任何决策，**追加新条目**并注明 `superseded`，不删不改旧行。
