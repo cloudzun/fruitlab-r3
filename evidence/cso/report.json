@@ -1,0 +1,556 @@
+{
+  "schemaVersion": 3,
+  "runId": "1792288145456-eef57b00cf6a29bb",
+  "repoId": "207432f99d4bb796e3d4c097",
+  "createdAt": "2026-10-18T01:49:05.435Z",
+  "deadline": "2026-10-18T01:59:05.435Z",
+  "status": "finished",
+  "completeness": "partial",
+  "policy": {
+    "mode": "daily",
+    "scope": "code",
+    "diff": false,
+    "base": "origin/main",
+    "offline": true,
+    "budgetSeconds": 600,
+    "maxWorkers": 3,
+    "maxRepairs": 3
+  },
+  "source": {
+    "root": "<REDACTED-internal.user_path>",
+    "snapshotHash": "e38f954ebf8b8948b4774e72d5960cb36d1e3c91f4305d8f7df0c7ad829ecd5b",
+    "originalHash": "dfe26684ac9cb4f0b730d9f9640650b4f600968546b551ea55d7f2f9a11b6f79",
+    "transformations": [
+      {
+        "path": "CLAUDE.md",
+        "handling": "excluded: credential or execution configuration"
+      },
+      {
+        "path": "DECISIONS.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "NEXT-SESSION-PROMPT.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "PRD-R2.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "R1-八环讲解记录.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "SPEC.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "VERSION",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/api-client.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/app.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/images/products/banana.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/blueberry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/cherry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/durian.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/fuji-apple.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/golden-pineapple.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/hami-melon.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/kiwi.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/mango.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/navel-orange.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/peach.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/red-dragon-fruit.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/shine-muscat.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/strawberry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "docs/api.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/assets-credits.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/assets-manifest.json",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/ceo.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/design.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/dx.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/eng.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/index.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-build.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-ship.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-spec.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/toolchain-recon.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/visual/home-1440.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-390-cart.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-390-top.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-834.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "retro.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "tests/app.test.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "tests/controller.test.mjs",
+        "handling": "secret spans redacted"
+      }
+    ]
+  },
+  "application": {
+    "actors": [
+      "anonymous visitor",
+      "authenticated user (userA/userB)",
+      "admin"
+    ],
+    "assets": [
+      "products database",
+      "orders database",
+      "sessions",
+      "user credentials"
+    ],
+    "entrypoints": [
+      "GET /api/products",
+      "POST /api/auth/register",
+      "POST /api/auth/login",
+      "POST /api/auth/logout",
+      "GET /api/auth/me",
+      "POST /api/orders",
+      "GET /api/orders/mine",
+      "GET /api/orders/{orderNumber}",
+      "GET /api/admin/orders",
+      "GET /api/admin/products",
+      "PATCH /api/admin/products/{id}",
+      "GET /api/health"
+    ],
+    "tenantBoundaries": [
+      "order.user_id ownership",
+      "role admin vs user"
+    ],
+    "sensitiveOperations": [
+      "read order by number",
+      "admin price/stock/listing update",
+      "session issuance"
+    ],
+    "invariants": [
+      "users can only read own orders",
+      "admin mutations require admin role",
+      "passwords stored as scrypt hash",
+      "stock never negative"
+    ]
+  },
+  "coverage": [
+    {
+      "domain": "snapshot-inputs",
+      "scope": "code",
+      "status": "partial",
+      "method": "fail-closed captured source inventory",
+      "gaps": [
+        "assets/images/products/banana.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/blueberry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/cherry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/durian.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/fuji-apple.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/golden-pineapple.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/hami-melon.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/kiwi.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/mango.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/navel-orange.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/peach.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/red-dragon-fruit.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/shine-muscat.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/strawberry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-1440.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-390-cart.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-390-top.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-834.png: in-scope source payload was unread and withheld from static and runtime assessment"
+      ],
+      "exclusions": [
+        "CLAUDE.md: excluded: credential or execution configuration"
+      ],
+      "evidence": [
+        "95 sanitized execution inputs captured; 1 explicit non-executable exclusion; 18 unread in-scope inputs; 0 tracked deletions"
+      ]
+    },
+    {
+      "domain": "history-inputs",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "bounded helper-retained Git history",
+      "gaps": [
+        "Could not read bounded Git metadata: log exceeded the output limit (request rejected); source may not be a Git repository"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "application-model",
+      "scope": "code",
+      "status": "assessed",
+      "method": "manual static review of routes, auth and schema",
+      "gaps": [],
+      "exclusions": [],
+      "evidence": [
+        "server/router.mjs",
+        "server/auth.mjs",
+        "server/db.mjs"
+      ]
+    },
+    {
+      "domain": "attack-surface",
+      "scope": "code",
+      "status": "assessed",
+      "method": "route census over /api endpoints",
+      "gaps": [],
+      "exclusions": [],
+      "evidence": [
+        "server/router.mjs"
+      ]
+    },
+    {
+      "domain": "llm-agentic-mcp",
+      "scope": "code",
+      "status": "not_applicable",
+      "method": "repository has no LLM/MCP surface",
+      "gaps": [],
+      "exclusions": [],
+      "evidence": [
+        "no agent tooling in repo"
+      ]
+    },
+    {
+      "domain": "owasp-2025",
+      "scope": "code",
+      "status": "partial",
+      "method": "manual review of A01/A02/A03/A07/A05",
+      "gaps": [
+        "scanner profiles unavailable offline"
+      ],
+      "exclusions": [],
+      "evidence": [
+        "server/router.mjs",
+        "server/auth.mjs",
+        "server/orders.mjs"
+      ]
+    },
+    {
+      "domain": "stride",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "data-classification",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "7aa3eaa0c3c167a14de5bb9c4f2e7f9d",
+      "fingerprint": "7aa3eaa0c3c167a14de5bb9c4f2e7f9d",
+      "title": "Login timing side channel enables username enumeration",
+      "rootCause": "Lookup short-circuits before scrypt when the username does not exist, so response time differs between existing and missing users even though both return the same 401 code.",
+      "location": {
+        "path": "server/router.mjs",
+        "line": 145,
+        "symbol": "findUserByUsername / verifyPassword"
+      },
+      "advisoryIds": [],
+      "severity": "medium",
+      "confidence": "high",
+      "confidenceRationale": "Direct source reading; scrypt runs only for existing users, a measurable difference. No runtime measurement performed in this offline static run.",
+      "evidence": "supported",
+      "attackerControl": "Chosen username on POST /api/auth/login",
+      "impact": "Attacker can distinguish valid usernames and build an account list for credential stuffing.",
+      "scenario": "POST login for candidate usernames and compare latency; valid names take scrypt time, invalid names return immediately.",
+      "trace": [
+        "POST /api/auth/login",
+        "router login handler",
+        "findUserByUsername then verifyPassword"
+      ],
+      "references": [
+        "server/router.mjs:144-145",
+        "server/auth.mjs verifyPassword"
+      ],
+      "recommendation": "Always perform a scrypt verification against a dummy hash when the user is missing, and compare with timing-safe equality.",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked the only caller (router login handler)",
+        "controls": "same 401 code and message for both branches",
+        "counterevidence": "rate limiting absent, so attacker can sample repeatedly",
+        "conclusion": "survives challenge; message equality does not hide timing"
+      },
+      "reproduction": "not_attempted",
+      "repair": "not_attempted",
+      "closure": "open"
+    },
+    {
+      "id": "4d82eec4c036df0e744c0de0660cc7c4",
+      "fingerprint": "4d82eec4c036df0e744c0de0660cc7c4",
+      "title": "No login rate limiting or account lockout",
+      "rootCause": "The login route performs credential checks on every request with no per-IP or per-account throttle.",
+      "location": {
+        "path": "server/router.mjs",
+        "line": 140,
+        "symbol": "POST /api/auth/login"
+      },
+      "advisoryIds": [],
+      "severity": "medium",
+      "confidence": "high",
+      "confidenceRationale": "No rate-limit middleware exists; SPEC/PRD explicitly excludes it.",
+      "evidence": "supported",
+      "attackerControl": "Unlimited POST /api/auth/login requests",
+      "impact": "Online password guessing is unbounded; weak demo passwords are trivially brute-forced.",
+      "scenario": "Concurrent login attempts against userA with a password wordlist.",
+      "trace": [
+        "POST /api/auth/login",
+        "router login handler",
+        "verifyPassword"
+      ],
+      "references": [
+        "server/router.mjs login block",
+        "DECISIONS.md Known boundary"
+      ],
+      "recommendation": "Add bounded per-account/IP rate limiting and backoff before shipping outside a local demo.",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "single login endpoint",
+        "controls": "no throttle or lockout in code or config",
+        "counterevidence": "PRD states this is out of scope; still a real weakness for any non-local use",
+        "conclusion": "survives challenge as a scoped limitation"
+      },
+      "reproduction": "not_attempted",
+      "repair": "not_attempted",
+      "closure": "open"
+    },
+    {
+      "id": "33600ae03de640bf67e1d9b9e6cd563b",
+      "fingerprint": "33600ae03de640bf67e1d9b9e6cd563b",
+      "title": "Sessions never expire and are not revocable except logout",
+      "rootCause": "sessions table has no expires_at and auth check does not validate age; cookies have no Max-Age but server-side rows persist indefinitely.",
+      "location": {
+        "path": "server/db.mjs",
+        "line": 91,
+        "symbol": "CREATE TABLE sessions"
+      },
+      "advisoryIds": [],
+      "severity": "medium",
+      "confidence": "high",
+      "confidenceRationale": "Schema and createSession show no expiry field or cleanup.",
+      "evidence": "supported",
+      "attackerControl": "Stolen session cookie (e.g., from a shared machine or log)",
+      "impact": "A stolen token remains valid until explicit logout, indefinitely.",
+      "scenario": "Copy fruitlab_session cookie from a logged-in browser and reuse it days later.",
+      "trace": [
+        "any authenticated endpoint",
+        "getSessionUser",
+        "sessions table"
+      ],
+      "references": [
+        "server/db.mjs sessions",
+        "server/auth.mjs createSession"
+      ],
+      "recommendation": "Add expires_at, enforce it on lookup, clean up expired rows, and document rotation.",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "all authenticated routes share getSessionUser",
+        "controls": "logout deletes the row, but no age check exists",
+        "counterevidence": "PRD excludes expiry; local-only demo lowers exposure",
+        "conclusion": "survives challenge as a scoped limitation"
+      },
+      "reproduction": "not_attempted",
+      "repair": "not_attempted",
+      "closure": "open"
+    },
+    {
+      "id": "1b5825bce237bce1050bc80401cdd097",
+      "fingerprint": "1b5825bce237bce1050bc80401cdd097",
+      "title": "Order ownership rejection discloses order-number existence",
+      "rootCause": "GET /api/orders/{orderNumber} returns 403 order-not-owned for existing orders of other users and 404 only for non-existent numbers.",
+      "location": {
+        "path": "server/router.mjs",
+        "line": 189,
+        "symbol": "order-not-owned"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "high",
+      "confidenceRationale": "Response codes differ by existence; documented tradeoff D-32.",
+      "evidence": "supported",
+      "attackerControl": "Guessed order numbers with a valid session",
+      "impact": "Attacker can confirm whether an order number exists (limited enumeration).",
+      "scenario": "Iterate candidate FL-... numbers; 403 means exists, 404 means not.",
+      "trace": [
+        "GET /api/orders/{orderNumber}",
+        "getOrderByNumber",
+        "ownership check"
+      ],
+      "references": [
+        "server/router.mjs:189",
+        "DECISIONS.md D-32"
+      ],
+      "recommendation": "Return 404 for other users' orders if existence disclosure matters; keep 403 only if teaching requires it and document the tradeoff.",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "single order read route",
+        "controls": "requires an authenticated session",
+        "counterevidence": "D-32 records this as an intentional classroom tradeoff",
+        "conclusion": "survives challenge; accepted risk, not a functional bug"
+      },
+      "reproduction": "not_attempted",
+      "repair": "not_attempted",
+      "closure": "open"
+    }
+  ],
+  "gaps": [
+    "history-inputs: not assessed",
+    "stride: not assessed",
+    "data-classification: not assessed"
+  ],
+  "events": [
+    {
+      "at": "2026-10-18T01:49:13.750Z",
+      "kind": "snapshot",
+      "message": "Captured 114 source entries; 42 transformations disclosed"
+    },
+    {
+      "at": "2026-10-18T01:49:27.411Z",
+      "kind": "early-finding",
+      "message": "medium supported finding 7aa3eaa0c3c167a14de5bb9c4f2e7f9d"
+    },
+    {
+      "at": "2026-10-18T01:49:27.413Z",
+      "kind": "early-finding",
+      "message": "medium supported finding 4d82eec4c036df0e744c0de0660cc7c4"
+    },
+    {
+      "at": "2026-10-18T01:49:27.413Z",
+      "kind": "early-finding",
+      "message": "medium supported finding 33600ae03de640bf67e1d9b9e6cd563b"
+    },
+    {
+      "at": "2026-10-18T01:49:27.415Z",
+      "kind": "early-finding",
+      "message": "low supported finding 1b5825bce237bce1050bc80401cdd097"
+    },
+    {
+      "at": "2026-10-18T01:49:30.727Z",
+      "kind": "terminal",
+      "message": "Audit finished and retained according to the private-state policy"
+    }
+  ]
+}

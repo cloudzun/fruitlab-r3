@@ -12,6 +12,8 @@
 | autoplan 原始声音 | [`autoplan-voices/`](autoplan-voices/) | CEO / Design / DX / Eng 的原始输出 |
 | build | [`ring-build.md`](ring-build.md) | 里程碑、测试、集成、未完成项 |
 | review | [`ring-review.md`](ring-review.md) | 结构排雷、安全审计、6 项自动修复 |
+| review 补测 | [`ring-review-codex.md`](ring-review-codex.md) | codex 第二智能体复核（同族） |
+| cso 补测 | [`ring-review-cso.md`](ring-review-cso.md) | WSL 重建 launcher、官方 run、4 findings |
 | qa | [`ring-qa.md`](ring-qa.md) | 真实 Chromium 五断点、健康分 94、截图 |
 | ship | [`ring-ship.md`](ring-ship.md) | 覆盖率审计、文档同步、版本 2.0.0.0、`requires-remote` |
 | retro | [`ring-retro.md`](ring-retro.md) | Git 量化复盘、返工记录、学到的 |

@@ -56,3 +56,9 @@
 | A | codex 子 agent 跑 `/review`（或 cso 风格静态审计，只读、只写报告） | codex + gstack 已就绪；路径加 PATH | 第二智能体复核报告（同族，标明） |
 | B | WSL 重建 cso launcher，跑官方 `/cso` 静态评估 + 提交结论 | WSL 装 bun → `build-cso.sh` → 按 SKILL 流程 start/read/submit/finish | 官方 cso 记录（含 `not_assessed`/findings） |
 | C | 真·跨模型 | 另配 provider key（OpenAI/Anthropic 等） | 跨模型共识，补 4.5c |
+
+## 6. 后续实测（2026-10-18 09:49）
+
+- **cso launcher 已重建成功**：WSL 安装 bun 1.4.3 → scripts/build-cso.sh exit 0 → gstack-cso 3.0.0；官方 run 1792288145456-eef57b00cf6a29bb 提交 4 findings、finish partial（见 evidence/ring-review-cso.md）。
+- **codex /review 复核已跑通**：codex → Git Bash → gstack preamble SKILL_START_PROTO: 1 → 只读复核报告 evidence/ring-review-codex.md（同族）。
+- 仍然不可用：真·跨模型（需另一 provider key）、cso 的 runtime/scanner profiles（离线）、history-inputs。

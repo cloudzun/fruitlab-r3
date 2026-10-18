@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T01:46:35.232Z",
+  "generatedAt": "2026-10-18T01:59:44.593Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -32,6 +32,26 @@
       "bytes": 1096
     },
     {
+      "file": "evidence/cso/cso-report.md",
+      "sha256": "ba9ede22057b3277dfe67e6e39b12bd15cde359f129a77ed4655520edc37912f",
+      "bytes": 17063
+    },
+    {
+      "file": "evidence/cso/history-status.json",
+      "sha256": "853e773423a8747539e0e7eff89b3c38f4eeb639160dfda73a1f1d67cbebf703",
+      "bytes": 165
+    },
+    {
+      "file": "evidence/cso/report.json",
+      "sha256": "657ab78e2e16de3a9f0ab9431ada8718b4b568c001c16512838887b337e55050",
+      "bytes": 19998
+    },
+    {
+      "file": "evidence/cso/submission.json",
+      "sha256": "f988dd20624b786ca74d7d7eb34a93756ff235c7d406b2d843bfd207e02ae268",
+      "bytes": 8912
+    },
+    {
       "file": "evidence/demo-script.md",
       "sha256": "6d707648e4cbd0e9277f0115fed9c6d4f2fe3e763a4ed50be5b0caee749f0f96",
       "bytes": 1681
@@ -43,8 +63,8 @@
     },
     {
       "file": "evidence/index.md",
-      "sha256": "05962ffa6765e73320b09d451ef78b89057446a76b5f3f90514966aac37fa55a",
-      "bytes": 2232
+      "sha256": "8db9bea1dec68173ac2d3427683bf7cf42797219126ca0ba9b69e1353b5b57e6",
+      "bytes": 2449
     },
     {
       "file": "evidence/learner-checks/pre-spec.md",
@@ -77,6 +97,16 @@
       "bytes": 2521
     },
     {
+      "file": "evidence/ring-review-codex.md",
+      "sha256": "5fe2ea316f26fcd991df2fd4e31d1267177bad9ac0cd2e1c9da73e66a18161dd",
+      "bytes": 7984
+    },
+    {
+      "file": "evidence/ring-review-cso.md",
+      "sha256": "6b8fa1323c0a7f7cde32788d2a31a7b51c7b9a69efb164e131ef67250ccb2bc9",
+      "bytes": 3612
+    },
+    {
       "file": "evidence/ring-review.md",
       "sha256": "81e9c46f9f5fd4021edb55b3d532936004866b11ad42b74e163d5f4f3d105a63",
       "bytes": 2710
@@ -103,8 +133,8 @@
     },
     {
       "file": "evidence/toolchain-recon.md",
-      "sha256": "9fdf760b8fdbc9e536784ea2875a936fe3dd73241aa7f1e96ee0ad3564bed101",
-      "bytes": 4088
+      "sha256": "f003a157f4d6b2829461ddb8bff34f78b013b899d1eebda7d51183be5f639114",
+      "bytes": 4656
     },
     {
       "file": "evidence/visual/home-1440.png",
