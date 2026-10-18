@@ -14,7 +14,7 @@
 | review | [`ring-review.md`](ring-review.md) | 结构排雷、安全审计、6 项自动修复 |
 | qa | [`ring-qa.md`](ring-qa.md) | 真实 Chromium 五断点、健康分 94、截图 |
 | ship | [`ring-ship.md`](ring-ship.md) | 覆盖率审计、文档同步、版本 2.0.0.0、`requires-remote` |
-| retro | `ring-retro.md`（retro 环产出） | 量化复盘 |
+| retro | [`ring-retro.md`](ring-retro.md) | Git 量化复盘、返工记录、学到的 |
 
 ## 资产与计数
 
