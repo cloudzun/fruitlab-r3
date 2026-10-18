@@ -1,107 +1,104 @@
-# FruitLab R2 · 教学演示应用（升级后）
+# FruitLab R3 · 工作区（Postgres 化 + 三层架构 + 可部署）
 
-> **R1（升级前）** 在 `D:\vibecoding\easyvibe\r1-fruitlab`，**已冻结，不得改动**。
-> 本目录是 **R2（升级后）**：服务端数据库、用户与会话、权限、管理员、命令行、14 种商品、Apple 式商品版式。
-> 课堂用途：R1/R2 **同时启动并排对比**（R1 默认 `4173`，R2 默认 `4174`）。
+> **当前状态：PRD 已完成，spec 未开始。目录内代码仍是 R2 `2.0.0.0` 的快照，尚未 Postgres 化。**
+> **基线**：从 R2 `5f4dd87` 克隆；R3 内标签 `r2-baseline`（另有继承的 `r1-baseline`）。
+> **PRD**：[`PRD-R3.md`](PRD-R3.md)（commit `9042c10`），替代 R3 的 office-hours。
+> **目标版本**：`3.0.0.0`；**7 环**：spec → autoplan → build → review → qa → ship → retro。
 
-## 快速开始（60 秒）
+---
 
-前置：Node.js 22+（本项目在 `v22.20.0` 实测）。
+## 1. 三个版本与课堂展示
+
+| 版本 | 目录 | 端口 | 状态 | 启动 |
+|---|---|---|---|---|
+| **R1**（升级前） | `..\r1-fruitlab` | `4173` | **永久冻结** | `node serve.mjs` |
+| **R2**（升级后） | `..\r2-fruitlab` | `4174` | **已冻结**（`5f4dd87`） | `node cli.mjs dev` |
+| **R3**（本轮） | 本目录 | `4175` | PRD 完成，未开发 | `docker compose up --build`（M3 后可用） |
+
+**R3 的开发不得影响 R1/R2**：
+
+- R1 一行不改；R2 自 R3 起冻结；R3 只写本目录；
+- 端口/数据/容器名严格区分：R3 用 `4175`、Postgres 宿主 `55432`、compose 项目 `fruitlab-r3`、卷 `fruitlab-r3-pgdata`、镜像 `fruitlab-r3:3.0.0.0`；
+- 验收会检查 `git -C ..\r1-fruitlab status` 与 `git -C ..\r2-fruitlab status` 为空。
 
 ```powershell
-node cli.mjs dev
+# 课堂：三个版本可同时启动（当前 R3 还不能起，M3 后可用）
+cd ..\r1-fruitlab; node serve.mjs
+cd ..\r2-fruitlab; node cli.mjs dev
+cd ..\r3-fruitlab; docker compose up --build
 ```
 
-`dev` 会自动建库、写入种子（14 商品 + 3 个演示账号）并启动服务。访问 **http://127.0.0.1:4174**。
+> R3 计划提供 `scripts/start-all.mjs`：一次启动三版本，`Ctrl+C` 全停，不修改 R1/R2。
 
-停止：在启动它的终端按 `Ctrl+C`。
+---
 
-> 数据库文件在 `data/fruitlab.db`（已 gitignore，可随时用 `node cli.mjs db reset --yes` 重建）。
-> `data/` 只在首次 `dev` / `db init` 时创建。
+## 2. R3 要做什么（详见 PRD）
 
-## 课堂并排演示（R1 + R2 同时启动）
-
-`powershell
-node scripts/start-both.mjs
-`
-
-- R1（冻结展品）→ http://127.0.0.1:4173
-- R2（升级后）→ http://127.0.0.1:4174
-- Ctrl+C 同时停止两边；脚本只启动进程，不修改 R1 任何文件。
-
-## 演示账号（仅演示，非生产）
-
-| 账号 | 口令 | 角色 |
+| # | 目标 | 关键点 |
 |---|---|---|
-| `userA` | `demo1234` | user |
-| `userB` | `demo1234` | user |
-| `admin` | `demo1234` | admin |
+| 1 | **Postgres 化** | PostgreSQL 16；仅 `pg` 一个运行时依赖（R2 仍零依赖） |
+| 2 | **应用分层** | L1：router → services → repositories → Postgres + 依赖规则测试；L2：web(Caddy) + api(Node) + db(Postgres) 三容器 |
+| 3 | **可部署交付** | Dockerfile + docker compose；非 root、healthcheck、volume 持久化、备份/恢复；先本地容器，云平台为 M5 选修 |
+| 4 | **补 R2 漏洞** | codex 6 条 + 官方 cso 4 条 findings；并放开会话过期/限流/CSRF/时序枚举 |
+| 5 | **补测复跑** | 完成后重跑 codex `/review` + 官方 `/cso`，findings 关闭/降级 |
+| 6 | **版本隔离** | R1/R2 冻结、R3 独立、三版本可并排演示 |
 
-口令以 `scrypt` + 随机盐哈希存储；上面的明文只用于课堂演示。生产环境不应存在此表。
+**明确不做**：完整微服务（auth/orders 各自服务+库）、Vercel/Cloudflare 运行时改写、云平台部署（等账号）、CI/CD、水平扩展、R1/R2 修改。
 
-## 能演示什么
+---
 
-1. **浏览到下单**：14 种水果（照片卡）、加入购物袋、结账；库存实时扣减。
-2. **身份与权限**：登录后「我的订单」；`userA` 看不到 `userB` 的订单；`admin` 可查全部。
-3. **管理员**：改价格、改库存、上架/下架（面板在导航「管理」）。
-4. **查订单**：顶层入口，登录后按订单号查自己的订单；失焦重绘不吞点击、焦点落在结果标题。
-5. **持久化**：重启服务，订单与库存仍在。
-6. **命令行**：`node cli.mjs --help`；`db init/seed/reset/check`、`user`、`product`、`orders`。
-
-## 测试
-
-```powershell
-node --test
-```
-
-测试只使用 Node 内置 `node:test`、临时 SQLite 库、最小 fake DOM 与 `127.0.0.1` 回环 HTTP；不启动真实浏览器、不访问外网、不安装依赖。
-**测试计数的唯一权威来源是 [`evidence/test-count.txt`](evidence/test-count.txt)**（由 `node scripts/record-test-count.mjs` 生成），其它文档不手写计数。
-
-一键验证（测试 + 链接 + 编号 + 追溯 + 证据清单）：
-
-```powershell
-node scripts/verify.mjs
-```
-
-## 从 R1 升级时变了什么（breaking）
-
-- **订单不再存在浏览器** `localStorage`：改为服务端数据库；**R1 的历史订单不迁移**（R2 从空订单开始）。
-- **访客查单移除**：R1 任何人凭订单号可查；R2 需登录且只能查自己的订单（权限模型要求）。
-- **商品从 10 种扩到 14 种**；商品数据真源从 `assets/catalog.mjs` 移到数据库。
-- **视觉方向**：废弃 R1 的「手写果摊招牌」，改为 Apple 式高冷克制版式 + 本地真实照片。
-- 默认端口 `4173` → `4174`（与 R1 并存）。
-
-完整契约对照见 [`docs/contracts.md`](docs/contracts.md)；决策流水见 [`docs/decision-log.md`](docs/decision-log.md)。
-
-## 目录
+## 3. 目录现状
 
 | 路径 | 说明 |
 |---|---|
-| `serve.mjs` | HTTP 服务：静态托管 + `/api` 路由（CSP 由 HTTP 头下发） |
-| `cli.mjs` | 运维/管理员命令行 |
-| `server/` | `db`（SQLite/迁移/事务）、`auth`（scrypt/会话）、`products`、`orders`、`router`、`errors` |
-| `assets/` | 前端模块（`app`/`controller`/`api-client`/`domain`/`styles`）与 14 张商品照片 |
-| `tests/` | `node:test` 测试与夹具 |
-| `scripts/` | 机械校验（链接/编号/追溯/证据清单/测试计数）与取图脚本 |
-| `docs/` | API、契约、错误目录、设计词元、分支矩阵、义务台账、图片来源 |
-| `evidence/` | 逐环证据、测试计数、证据清单、原始评审输出 |
-| `data/` | 运行时数据库（gitignore） |
+| `PRD-R3.md` | **先读这个**：R3 的需求、隔离约束、验收、里程碑 |
+| `SPEC.md` / `DECISIONS.md` / `BUILD.md` / `review.md` / `qa-report.md` / `CHANGELOG.md` / `retro.md` | 继承自 R2，**R2 的历史产物**；R3 各环开始后会更新/新增 |
+| `server/`、`assets/`、`serve.mjs`、`cli.mjs`、`tests/` | 继承自 R2 的实现；Postgres/分层改造尚未开始 |
+| `docs/`、`evidence/` | R2 的文档与证据（含补测：`evidence/ring-review-codex.md`、`evidence/cso/`） |
+| `data/` | R2 的运行期 SQLite 库（gitignore）；R3 将改为 Postgres volume |
+| `.gstack/` | 运行期日志（gitignore） |
 
-## 安全边界（如实声明，非生产）
+> ⚠️ 当前 `node cli.mjs dev` 仍会按 R2 的 SQLite 方式运行；这是克隆快照，不是 R3 成品。
+> 现在**没有 `package.json`**，也没有 Dockerfile/compose——它们将随 R3 build 产生。
 
-- 只监听回环地址；无 HTTPS，Cookie 无 `Secure`；无会话过期/续期。
-- 无 CSRF Token（仅有同源 `Origin`/`Sec-Fetch-Site` 的**部分**校验）；无登录失败限流/锁定。
-- 他人订单返回 `403`（按 D-32 的取舍，会泄露订单号存在性）。
-- `node:sqlite` 为实验特性，同步 API 会阻塞事件循环；本版接受该限制。
-- 详细风险与取舍见 [`DECISIONS.md`](DECISIONS.md) 与 [`docs/decision-log.md`](docs/decision-log.md)。
+---
 
-## 图片与授权
+## 4. 硬约束（违反即破坏课堂现场）
 
-14 张商品照片均为仓库内本地文件，来源与授权逐张记录在 [`docs/assets-credits.md`](docs/assets-credits.md)（含 CC BY 署名）。抓取与校验脚本：[`scripts/fetch-product-images.mjs`](scripts/fetch-product-images.mjs)。
+1. **R1 永久冻结、R2 自 R3 起冻结**；不把 R3 的 `package.json`/`pg`/Dockerfile/Postgres 数据写回 R2。
+2. 端口固定：R1 `4173` / R2 `4174` / R3 `4175`；Postgres 宿主 `55432`。
+3. R3 的容器名/卷/镜像统一前缀 `fruitlab-r3`，不得与任何其他版本共享数据卷。
+4. 依赖口径：R2 = 零依赖；R3 = 仅 `pg`；不要把 R3 的口径写进 R1/R2 文档。
+5. 证据链顺序：`node --test` → `record-test-count` → `verify-evidence --write` → `verify.mjs`。
+6. 每环边界停下汇报，得到明确许可才进入下一环。
 
-## 证据与复盘
+---
 
-- 证据索引：[`evidence/index.md`](evidence/index.md)
-- 本轮规格：[`SPEC.md`](SPEC.md)（v1.1） · 评审与义务：[`DECISIONS.md`](DECISIONS.md)
-- R1 八环讲解：[`R1-八环讲解记录.md`](R1-八环讲解记录.md) · R1 义务核查：[`R1-义务覆盖率核查.md`](R1-义务覆盖率核查.md)
-- 项目总交接：`通用AI_Coding课程与教材/HANDOFF.md`
+## 5. 怎么继续（给下一个会话）
+
+1. 读 [`PRD-R3.md`](PRD-R3.md) 与 [`HANDOFF.md`](../通用AI_Coding课程与教材/HANDOFF.md) 第七节；
+2. 从 **spec** 开始：先读 R2 代码取证（SQLite 耦合点、测试结构、findings 位置），产出 R3 的 `SPEC.md`（Postgres schema/迁移、分层接口、compose 拓扑、验收编号、义务追溯）；
+3. spec 门禁（语义/脱敏/跨模型）后归档，**停在环边界汇报**；
+4. 之后 autoplan → build（M1 Postgres/分层 → M2 安全 → M3 容器）→ review → qa → ship → retro。
+
+**环境前置**：Node 22；Docker（R3 测试需要 Postgres 容器，本机 WSL Docker 已可用）；`postgres:16-alpine` 已拉取。
+
+---
+
+## 6. 相关记录
+
+| 内容 | 位置 |
+|---|---|
+| R3 PRD | [`PRD-R3.md`](PRD-R3.md) |
+| 总交接（当前权威状态） | `../通用AI_Coding课程与教材/HANDOFF.md` 第七节 |
+| R2 讲课稿 / 义务核查 / 产物快照 | `C:\Users\cheng\OneDrive - CloudZun Studio\Project\2026 年度项目\20261008 浙江移动AICoding\reference-app\reports\R2-八环讲解记录.md`、`R2-义务与缺口核查.md`、`reports/r2-fruitlab/` |
+| R2 补测（codex / cso） | `evidence/ring-review-codex.md`、`evidence/ring-review-cso.md`、`evidence/cso/`（继承自 R2） |
+| R2 安全/评审原始记录 | `review.md`、`qa-report.md`、`evidence/ring-*.md` |
+
+---
+
+## 7. 变更记录
+
+| 日期 | 变更 |
+|---|---|
+| 2026-10-18 | 从 R2 `5f4dd87` 克隆建立 R3 工作区；新增 `PRD-R3.md`（commit `9042c10`）；README 改写为 R3 状态说明 |
