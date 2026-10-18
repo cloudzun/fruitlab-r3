@@ -119,13 +119,15 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
           TAG: ${{ needs.build-push.outputs.tag }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # 从 DNS 现场取 host key，避免 secret 的换行/CR 差异导致 known_hosts 匹配失败
+          ssh-keyscan -t ed25519 "$VPS_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          test -s ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
           ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" \
             "cd /opt/fruitlab && ./deploy.sh '$TAG'"
