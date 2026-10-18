@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T04:07:26.987Z",
+  "generatedAt": "2026-10-18T04:10:23.764Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -348,8 +348,8 @@
     },
     {
       "file": "evidence/ring-retro.md",
-      "sha256": "81cbbf0c7cfd40012701b1e5fe49b19f018d6068caaac5ee3cadf64759075457",
-      "bytes": 2593
+      "sha256": "cd802de8fabacf0a61c0745cb19fa45135ee825ef7f79bef3d6879d671e88c30",
+      "bytes": 2963
     },
     {
       "file": "evidence/ring-review-codex.md",
@@ -373,8 +373,8 @@
     },
     {
       "file": "evidence/ring-ship.md",
-      "sha256": "7f0a99e0caaea7aadf574bd2878334f94ec3427352aec1add689e8b92d6200c4",
-      "bytes": 2993
+      "sha256": "b02aec3147b474b1004678639df67cd424fd7b6f7a8c83713860bc0ad7e0868e",
+      "bytes": 2567
     },
     {
       "file": "evidence/ring-spec.md",
@@ -398,8 +398,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "4f141cad6bc9fd507a64445a77d25a3cc46169c5407e8808e789356937f40877",
-      "bytes": 1704
+      "sha256": "546854c4e4824566204c3d97b3204ab0b09206e54680b05b152ed3649f1751f2",
+      "bytes": 1703
     },
     {
       "file": "evidence/toolchain-recon.md",

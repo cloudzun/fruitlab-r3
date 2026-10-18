@@ -1,110 +1,72 @@
-# retro.md（R2 第 7/7 环）
+# retro.md（R3 第 7/7 环）
 
-> **数据来源**：本仓库真实 Git 历史（`r1-baseline..HEAD`）、真实测试输出、真实证据文件。
-> **窗口**：2026-10-18 08:26 → 09:27（+0800），8 个提交，单执行者（agent）。
-> **不美化**：返工、降级与未验证项全部列出。
+> 对象：R3 七环（spec → autoplan → build → review → qa → ship → retro）。
+> 数据来源：git、`evidence/test-count.txt`、`evidence/`。量化优先于叙述。
 
-## 1. 一句话
+## 1. 数字
 
-> **7 环走完，2.0.0.0 可本地发布**：96 项测试全绿、健康分 94、42 条义务全部关闭；但图片资产与视觉一致性、移动端导航、PRD 边界安全项仍有债。
-
-## 2. 提交与变更规模
-
-| 指标 | 值 |
+| 项 | 值 |
 |---|---|
-| 提交数（`r1-baseline..HEAD`） | **8** |
-| 提交类型 | docs 3 / build 1 / review 1 / qa 1 / release 1 / merge 1 |
-| 文件变更 | **92** |
-| 新增 / 删除行 | **+10,396 / −5,412** |
-| 来源 / 测试 / 文档行数（当前） | 3,701 / 2,475 / 3,205 |
-| **Test Ratio**（测试行/来源行） | **0.669**（规格门槛 ≥0.20） |
-| 测试数 | **96**（R1 为 62，+34，+54.8%） |
-| 挂钟耗时 | 约 61 分钟（spec 08:26 → release 09:27） |
+| 版本 | `3.0.0.0` |
+| 提交（自 `r2-baseline`） | 8（spec / autoplan / build / review / qa / ship / retro 修复） |
+| 变更规模 | 135 files，+14702 / −2707 |
+| 测试 | 96 → **137**（真实 Postgres；连续 4 次稳定性复跑 0 失败） |
+| 路由覆盖 | 12/12 |
+| 运行时依赖 | 0 → 1（`pg`） |
+| 容器 | 3（web/api/db）；api 245 MB、web 102 MB |
+| R2 遗留缺陷 | 11 open → **11 closed** |
+| review findings | codex 13（4 High）全部修复；cso 4 Low 处置 |
+| 义务 | 42/42（BUILD.md 引用，最终 `closed`） |
+| 三版本 | R1 4173、R2 4174、R3 4175 并排；R1/R2 git status 空 |
 
-## 3. 提交节奏与类型
+## 2. 七环实际节奏
 
-```text
-docs: approve R2 spec
-docs: autoplan R2 (four-phase review, obligations)
-docs: approve autoplan gate + SPEC v1.1
-build: implement R2 (DB/auth/API/CLI/frontend/visuals/assets)
-review: structure minesweep + security audit (6 auto-fixes)
-qa: real Chromium QA (5 breakpoints), health 94, image/licensing fixes
-release: v2.0.0.0 (coverage audit, docs sync, release branch)
-merge: release v2.0.0.0 into main
-```
-
-- **门禁型提交集中在环边界**：spec、autoplan（终门）、release 三次独立提交，符合「环边界停」。
-- **单次 build 提交承载了主要实现**（约 8.1k 插入），build 环内按 M1–M5 里程碑推进但未逐里程碑提交——**这是可改进点**。
-
-## 4. 热点文件（变更次数）
-
-| 次数 | 文件 | 解读 |
-|---:|---|---|
-| 4 | `evidence/manifest.json` | 每次证据变更重算哈希（流程成本） |
-| 4 | `evidence/index.md` | 逐环追加索引 |
-| 3 | `DECISIONS.md` | autoplan、终门、编号修正 |
-| 3 | `evidence/test-count.txt` | 唯一计数重生成 |
-| 3 | `docs/decision-log.md` | 逐环决策追加 |
-| 2 | `index.html` / `scripts/fetch-product-images.mjs` / `evidence/manual-checks/browser.md` / `SPEC.md` / `server/auth.mjs` / `server/orders.mjs` / `server/router.mjs` | 视觉与修复迭代 |
-
-**结论**：热点集中在「证据与决策文档」而非代码，说明**流程成本主要花在可追溯性上**；代码热点是 review 环修复的 3 个服务端文件。
-
-## 5. 质量门与返工
-
-| 环节 | 真实结果 |
-|---|---|
-| spec | 4.5a 通过（修 2 处编号矛盾）；4.5b 本地扫描通过；4.5c 跨模型 **unavailable** |
-| autoplan | 四阶段全 FAIL（CEO 6.5 / Design 7.0 / DX 5.7 / Eng 6.5）→ **42 条义务** |
-| review | 6 项自动修复（N+1、幂等竞态、Cookie 容错、路径泄露、旧会话、lint） |
-| qa | **健康分 94**；无 Critical/High；2 Medium/2 Low |
-| ship | 覆盖率 27 条路径（19★★★/7★★/1★/0 未覆盖）；`verify` 5/5；`requires-remote` |
-
-**返工事实（不隐藏）**：
-- 商品图片重抓 **9 次**：樱花当车厘子、鸡尾酒当脐橙、月亮当脐橙、菠萝表皮特写、酒吧场景当蓝莓、水果摊当哈密瓜、市场挂果当榴莲；最终 5 张改用 Wikimedia Commons 精确文件。
-- 2 处 fake DOM 测试因「重渲染后再派发事件」不可靠而简化（一次 163 秒内存异常），真实浏览器行为由 qa 补足。
-- 图片授权策略被迫扩展（CC BY-SA / Public Domain），已记录为对 SPEC §5.8 的降级。
-
-## 6. 义务与缺口
-
-| 项 | 结果 |
-|---|---|
-| 42 条义务（`OB-*`） | **全部 closed**（`docs/obligations.md`，证据在 `BUILD.md`/各环报告） |
-| G1–G7 | **全部关闭**（死链、证据包、契约、aria、编号、计数、发布分支） |
-| 技术债 TODOS | 5 项（取消/退款回补、管理审计、会话过期/限流、分页、scrypt 升级） |
-| Known Issues | 移动端导航可发现性、图片授权/尺寸降级、PRD 边界安全项、人工无障碍 `UNVERIFIED`、无远端 |
-
-## 7. 学到的（详见 [`docs/learnings.md`](docs/learnings.md)）
-
-1. 图片这类外部资产要**先做质量 spike**，不能按“下载成功”验收内容。
-2. fake DOM 只适合交互状态；**视觉/焦点/布局必须真实浏览器**。
-3. 官方工具不可用时要**如实写 unavailable**，手动流程同样能留证据。
-4. PowerShell 双引号里的反引号会吃掉 Markdown；长文本一律走文件/Node。
-5. 证据链要按顺序重建：跑测试 → 写计数 → 生成哈希清单 → 全量 verify，否则必红。
-6. 范围上，**资产与治理文档约占 build 的 1/3 时间**，排期要显式给。
-
-## 8. 与 R1 对比
-
-| 指标 | R1 | R2 |
+| 环 | 产出 | 返工点 |
 |---|---|---|
-| 版本 | 1.0.0.0 | **2.0.0.0** |
-| 测试 | 62（61 通过/1 跳过） | **96（96 通过）** |
-| 运行形态 | 纯浏览器 + 静态托管 | **服务端 DB + 会话 + API + CLI** |
-| 商品 | 10 种、纯文字卡 | **14 种、真实照片 + Apple 式版式** |
-| 缺口 | 7 项未收敛 | **G1–G7 全关闭、42 义务全 closed** |
-| 发布 | main 直发被门禁拦下 | **发布分支 + 合回 main** |
+| spec | SPEC v1.0→v1.1、32 项耦合点取证 | codex 10 findings 并入；跨模型 unavailable |
+| autoplan | 4 路评审（全 FAIL）、42 OB、SPEC v1.2 | 42 findings 去重合并；CEO 工时重估 |
+| build | Postgres/分层/CLI/容器/测试 | Caddy Host 丢端口、测试发现误扫脚本、admin 连接泄漏 |
+| review | codex 13 findings + cso 4 | 错误映射、seed 隔离、restore 校验、CSRF bootstrap 等 13 项修复 |
+| qa | Chromium 1440/834/390 + 容器证据 | 390 视口需 emulate（resize 最小 500）；截图路径受 MCP workspace 限制 |
+| ship | 3.0.0.0、文档、verify 9/9 | simple 首页未验证（如实记录） |
+| retro | 本文件 | — |
 
-## 9. 诚实边界
+## 3. 做对了什么
 
-- 挂钟 61 分钟是 agent 执行时间，**不能当作人力工期**。
-- Test Ratio 是行数比，覆盖率是路径×质量的人工映射，**都不是行覆盖率**。
-- 无远端：推送/PR/部署/金丝雀 `requires-remote`；无红先失败回归证明。
-- 人工无障碍、对比度仪器、真实学员教学价值：`UNVERIFIED`。
+1. **先冻结快照再让 codex 复核**：第一次复核因 SPEC 被并发修改而停下，改成“快照 + SHA”后两轮都可用；这是可复用规则。
+2. **用真实 Postgres 测试**：并发不超卖、同幂等键、反向购物车、advisory lock、reset 回滚都测出来了；没有用 SQLite/mock 充数。
+3. **review 环真找了独立智能体**：codex 抓出的 13 条里 4 High 是实打实的（错误映射、seed 污染、restore 清库、CSRF bootstrap 不可用），不是自证。
+4. **容器证据链完整**：健康、非 root、restart、down/up、备份→删→恢复都实跑；simple 模式也起了对照。
+5. **R1/R2 全程未改**：每环收尾检查 `git status`，最终仍为空。
 
-## 10. 下一步（R3 候选）
+## 4. 踩过的坑（可复用）
 
-1. 图片资产：统一白底/构图，或采购一套风格一致的可商用素材（当前是最大观感短板）。
-2. 订单状态机 + 取消/回补（T-01），可用于演示状态机与补偿事务。
-3. 会话过期/轮换与 CSRF（T-03），把安全边界从“声明”推进到“实现”。
-4. 移动端导航折行/抽屉，关闭 QA-01。
-5. 把 build 拆成逐里程碑提交，让 `/retro` 的节奏指标更有意义。
+| # | 坑 | 教训 |
+|---:|---|---|
+| 1 | Node `--test` 把 `scripts/test-pg.mjs` 当测试文件 | 脚本命名避开 `test-*`/`*.test.*` |
+| 2 | 测试里 `dropStaleTestDatabases()` 会删掉并行测试的库 → 偶发失败 | **测试清理必须只动自己的库**；不要“清理所有前缀” |
+| 3 | Caddy `{http.request.host}` 丢端口 → API Host 403 | 反代保留 Host 用 `{http.request.hostport}` |
+| 4 | PostgreSQL 23505 后事务 aborted，不能继续查 | 先 ROLLBACK，再新事务回查/重试 |
+| 5 | `isSeeded` 只看非空，classroom 库可被当 production | 加 `app_meta.seed_mode`，production 拒绝污染库 |
+| 6 | CLI restore 缺表被当空表 → 可“成功清库” | 固定表/列白名单 + schemaVersion + 行数校验 |
+| 7 | health `Promise.race` 不取消底层查询 | 超时 `release(true)` 销毁连接 |
+| 8 | PowerShell `$HOME`/`$home` 是只读变量 | 别用保留变量名；长文本走文件 |
+| 9 | MCP 截图 `filePath` 受 workspace roots 限制 | 不传 filePath → 取 temp/attachment 路径再复制 |
+| 10 | codex 多行 prompt 被 PowerShell 拆参数 | 用 stdin：`Get-Content prompt \| codex exec ... -` |
+
+## 5. 没做到/不足
+
+1. **跨模型门禁 unavailable**：只有 DeepSeek 家族；同族复核不能替代跨模型共识。
+2. **cso partial**：离线无 scanner profiles；history/stride/data-classification 未评估。
+3. **人工无障碍未做**：读屏器/对比度仪器/完整键盘流程 `UNVERIFIED`。
+4. **simple 模式首页未验证**：只验证 health 与容器健康。
+5. **云平台未部署**：M5 选修，需账号；本仓库无 remote，tag 只在本机。
+6. **review 修复后未再跑一次 codex 复核**：以回归测试 + verify 作为修复证据，属“同族单轮 + 自测”，不是双轮独立复核。
+
+## 6. 给下一轮（M5 / R4）的建议
+
+1. 若做平台部署，先把 `PUBLIC_URL`/TLS/`COOKIE_SECURE`/`TRUST_PROXY` 四项做成部署 checklist，再动代码。
+2. 若继续安全加固：把限流迁到共享存储（Redis/PG），补 CSRF token 轮换的端到端测试。
+3. 若补无障碍：引入 axe 自动扫描 + 一次人工读屏，别再用“有 aria 属性”代替可用性。
+4. 保持测试隔离纪律：任何“清理全部测试库”的工具都只能在独立测试环境手工运行。
+5. 跨模型复核需要第二 provider key；没有就继续如实写 `unavailable`，不要拿同族凑数。

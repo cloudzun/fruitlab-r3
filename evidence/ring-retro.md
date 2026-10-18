@@ -1,72 +1,60 @@
-# 证据 · retro 环（R2 第 7/7 环）
+# 证据 · retro 环（R3，7/7 环）
 
-> 基于真实 Git 历史与真实测试输出；命令与原始结果如下。
+> 基于真实 Git 历史、`evidence/test-count.txt`、容器/浏览器证据。量化优先。
 
-## 1. 数据窗口
-
-| 项 | 值 |
-|---|---|
-| 范围 | `r1-baseline..HEAD`（R1 冻结基线 → R2 发布） |
-| 首个提交 | `5432b35` 2026-10-18 08:26:38 +0800（spec） |
-| 末个提交 | `c844789` 2026-10-18 09:27:21 +0800（merge release） |
-| 提交数 | 8 |
-
-## 2. 真实命令与结果
+## 1. 量化数据
 
 ```text
-$ git log --format="%h|%s" r1-baseline..HEAD
-8 条（docs 3 / build 1 / review 1 / qa 1 / release 1 / merge 1）
-
-$ git diff --numstat r1-baseline..HEAD
-insertions=10396 deletions=5412 files=92
-
-$ git log --name-only --format="" r1-baseline..HEAD | group
-4 evidence/manifest.json
-4 evidence/index.md
-3 DECISIONS.md
-3 evidence/test-count.txt
-3 docs/decision-log.md
-2 index.html / scripts/fetch-product-images.mjs / evidence/manual-checks/browser.md
-2 SPEC.md / server/auth.mjs / server/orders.mjs / server/router.mjs
-
-$ 行数（当前）
-source=3701 test=2475 docs=3205
-test_ratio = 2475 / 3701 = 0.669
-
-$ node --test
-96 项，96 通过，0 失败（见 evidence/test-count.txt）
-
-$ node scripts/verify.mjs
-PASS 5/5
+git rev-list --count r2-baseline..HEAD        # 8（spec/autoplan/build/review/qa/ship/retro）
+git diff --shortstat r2-baseline..HEAD        # 135 files changed, 14702 insertions(+), 2707 deletions(-)
+evidence/test-count.txt                       # tests=137 pass=137 fail=0（连续 4 次稳定）
+docker images                                 # fruitlab-r3:3.0.0.0 245MB, fruitlab-r3-web:3.0.0.0 102MB
 ```
 
-## 3. 指标汇总
+| 指标 | R2 | R3 |
+|---|---:|---:|
+| 测试 | 96 | 137 |
+| 路由 | 10 | 12/12 覆盖 |
+| 依赖 | 0 | 1（`pg`） |
+| 容器 | 0 | 3 |
+| R2 缺陷 | 11 open | 11 closed |
+| review findings | — | codex 13 + cso 4 |
+| 义务 | 42 closed | 42 closed |
 
-| 指标 | 值 |
-|---|---|
-| Test Ratio（测试行/来源行） | 0.669（门槛 ≥0.20） |
-| 测试数 | 96（R1 62，+34） |
-| 义务关闭 | 42 / 42 |
-| G1–G7 | 7 / 7 关闭 |
-| QA 健康分 | 94（无 Critical/High） |
-| 覆盖率审计 | 27 路径：19★★★ / 7★★ / 1★ / 0 未覆盖 |
-| 技术债 | 5 项 TODOS + 5 项 Known Issues |
+## 2. 返工日志
 
-## 4. 返工与降级（真实记录）
+| 环 | 返工 | 原因 |
+|---|---|---|
+| spec | 第一轮 codex 复核因 SPEC 并发修改停下；改冻结快照 + SHA 后重跑 | 评审对象必须稳定 |
+| build | Caddy Host 丢端口 → API 403；重建 web 镜像 | `{http.request.host}` 不含端口 |
+| build | 测试发现误扫 `scripts/test-pg.mjs`；改名 `pgctl.mjs` | Node `--test` 命名规则 |
+| build | 测试 runner 不退出；admin 连接未关闭 | 测试夹具资源泄漏 |
+| review | 13 条 findings 全部修复；其中 4 High | codex 独立复核有效 |
+| review | 偶发 flaky（1/3）；定位为测试清理误删并行库 | 测试隔离纪律 |
+| qa | 390 视口 resize 最小 500；改用 emulate | 浏览器窗口约束 |
 
-- 商品图片重抓 9 次（樱花/鸡尾酒/月亮/菠萝表皮/酒吧场景/水果摊/市场挂果等错误内容）；5 张最终改用 Wikimedia Commons。
-- 图片授权扩展为 CC0 / CC BY / CC BY-SA / Public Domain（对 SPEC §5.8 的降级）。
-- 2 处 fake DOM 测试简化（重渲染后再派发事件不可靠）。
-- 12 张图片短边低于 800px（已逐张记录）。
+## 3. 经验教训
 
-## 5. `/learn` 记录
+1. 评审前冻结快照（哈希写入报告首行），避免“边改边审”。
+2. 测试清理只动自己的库；任何“全前缀清理”都是并行测试的炸弹。
+3. PostgreSQL 事务错误后必须 ROLLBACK；23505 不能在同一事务里回查。
+4. seed 模式要显式记录（app_meta），否则演示库会被当生产。
+5. 备份恢复必须有白名单与校验，否则“成功恢复”可能是成功清库。
+6. 反代保留 Host 用 `hostport`；`TRUST_PROXY` 只在可信反代后开启。
+7. 证据文件路径受工具限制时，先落临时/附件路径再复制，不伪造截图。
+8. 同族评审不是跨模型；如实标注 `unavailable`，不拿同族凑数。
 
-- 官方 `gstack-learn` 不可用；经验手动落库到 [`docs/learnings.md`](../docs/learnings.md)（8 条，真实踩坑）。
-- 不编造 “Prior learning applied” 触发记录。
+## 4. 可复用资产
 
-## 6. 诚实边界
+- `scripts/preflight.mjs`、`pgctl.mjs`、`verify.mjs --quick/--full`、`record-test-count.mjs`（含 tree hash）；
+- `tests/helpers/pg.mjs`（每用例独立库 + 可操作错误）；
+- `docs/architecture.md`、`deploy.md`、`backup-restore.md`、`coverage-audit.md`；
+- `evidence/container/` 的容器验收脚本化命令；
+- 三版本 `start-all.mjs`（R2 用仓库外临时 SQLite 文件）。
 
-- 挂钟约 61 分钟为 agent 执行时间，不等于人力工期。
-- Test Ratio 是行数比；覆盖率审计是「路径 × 测试质量」人工映射，不是行覆盖率。
-- 无远端：`requires-remote`；无红先失败回归证明。
-- 人工无障碍、对比度仪器、真实学员教学价值：`UNVERIFIED`。
+## 5. 未完成
+
+- 跨模型复核 `unavailable`；cso `partial`；
+- 读屏器/对比度仪器/实体手机 `UNVERIFIED`；
+- simple 模式首页 HTML 未验证；
+- 云平台部署 M5 选修（需账号）；tag 未推送（无 remote）。
