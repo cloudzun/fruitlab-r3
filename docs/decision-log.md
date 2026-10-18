@@ -94,3 +94,48 @@
 | 编号 | 决策 | 说明 | 状态 |
 |---|---|---|---|
 | D-46 | ≤720px 导航折行，替代横向滚动 | 横向滚动虽符合 SPEC §5.7，但初始看不到购物袋；折行后全部入口可见，实测 scrollWidth==clientWidth。 | accepted |
+
+## 2026-10-18 · R3 spec 环节（第 1/7 环）
+
+> 用户已授权执行代理自行完成 R3 的全部选型与环审批。以下决策由 SPEC.md §3 落定，本表为追加式留痕。
+> 编号续 R2（D-46 之后）；不修改 R2 的历史行。
+> 对 R2 决策的推翻以 `superseded` 标注（D-30 已被 D-33 取代，D-32 由 D-57 取代）。
+
+| 编号 | 决策 | 备选项 | 理由 | 影响面 | 状态 |
+|---|---|---|---|---|---|
+| D-47 | PostgreSQL 16（`postgres:16-alpine`）+ `pg.Pool` + `DATABASE_URL` | 保持 `node:sqlite`；MySQL | PRD 已定；WSL 端口实证可达；连接池/事务/SQLSTATE 是分层与部署前提 | DB、API、CLI、测试、容器 | accepted |
+| D-48 | 运行时依赖恰好 `{pg}`（`8.23.1`），提交 lockfile | 继续零依赖；ORM（Prisma/Drizzle） | PRD 已定；ORM 会引入大量依赖与黑盒；`pg` 足够 | package/CI/文档 | accepted |
+| D-49 | 不迁移 R2 SQLite 数据；空库 + 迁移 + seed | 写迁移脚本搬数据 | PRD 已定；演示数据可重建，迁移会制造"假平滑" | DB、README | accepted |
+| D-50 | 用户名 `text UNIQUE` 大小写敏感，不引入 `citext` | `citext`；lower 索引 | 保持 R2 行为；避免扩展安装依赖 | schema、登录 | accepted |
+| D-51 | L1 分层 router→services→repositories，依赖规则由测试断言 | 保持 R2 单体模块 | PRD 目标 2；依赖规则可机械核对 | 服务端结构、测试 | accepted |
+| D-52 | 默认 L2 三容器（web/api/db），另留 simple 两容器对照 | 只做两容器；只做 Dockerfile | PRD §4.3；三容器是"物理三层"的课堂证据 | compose、验收 | accepted |
+| D-53 | 会话 `expires_at` + TTL 86400s + Max-Age + 登录轮换 + 清理 | 永不失效（R2） | 关闭 cso S-3；可部署形态的最低要求 | auth/schema/API | accepted |
+| D-54 | 登录限流：内存计数，username+IP，5 次/15 分钟 → 锁 15 分钟，429 | DB 计数；无（R2） | 关闭 cso S-2；单实例下最简且可测 | auth/API/文档 | accepted |
+| D-55 | CSRF 双提交 Cookie + `X-CSRF-Token`，叠加 Origin 校验 | 仅 Origin；完整同步 Token 表 | 关闭"无 CSRF"；双提交无需服务端存储，边界清晰 | auth/API/前端 | accepted |
+| D-56 | 缺失用户执行 dummy scrypt，两条路径各一次 verify | 仅延迟；不处理 | 关闭 cso S-1；只声称"降低到不可测量" | auth/测试 | accepted |
+| D-57 | 他人订单 404（**supersede D-32**） | 保留 403 | R3 面向可部署形态，消除订单号存在性泄露；课堂演示改为"资源不存在" | API/前端/文档/测试 | accepted |
+| D-58 | 实现冻结优先级：Host→Origin→体协议→405→401→CSRF→角色→404→400→409→5xx | 认证优先（R2 实现） | 关闭 codex C-4；契约优先，体上限 64 KiB 使风险有界 | router/测试/文档 | accepted |
+| D-59 | `db reset` 先 SQL 导出备份，失败即中止；事务重建 + 校验 | 文件复制（R2，已证假成功） | 关闭 codex C-1（High） | CLI/测试 | accepted |
+| D-60 | 测试跑真实 PG；每用例独立数据库；连不上 fail fast | SQLite 临时库；共享 schema | PRD 目标 4；隔离最彻底 | 测试基础设施 | accepted |
+| D-61 | 白名单抽 `server/allowlist.mjs`；web 用 `build-public.mjs` 生成 `public/` | 各写一份；直接挂载仓库 | 防白名单漂移；web 不暴露服务端代码 | 静态层/容器 | accepted |
+| D-62 | `/api/health` 含 `db:"up|down"`，down 时 503 | 仅进程存活 | 供 compose healthcheck 与 A3/A5 | API/compose | accepted |
+| D-63 | 编号：AC-49 起、D-47 起、`OB-R3-<PHASE>-NN`、`F-R3-NN` | 重新从 01 编号 | 避免与 R2 冻结编号歧义 | 全流程文档 | accepted |
+| D-64 | static-scan 改为"运行时依赖恰好 `{pg}`" | 保留"无 package.json" | 与 D-48 一致，机械可查 | 测试/文档 | accepted |
+| D-65 | 命名隔离：项目/镜像/卷/端口按 PRD §2.2 | 复用 R2 名称 | 三版本并排不碰撞 | compose/验收 | accepted |
+| D-66 | `cli db backup` = SQL 导出；`scripts/backup.sh` = `pg_dump` | 只做一种 | 跨平台可测 vs 生产标准工具，双轨且互不冒充 | CLI/容器/文档 | accepted |
+| D-67 | `APP_ENV=production` 强制 `DEMO_PASSWORD`/`POSTGRES_PASSWORD` | 保留默认口令 | 关闭"默认口令上公网"风险 | 配置/seed/compose | accepted |
+| D-68 | Cookie `Max-Age` + `COOKIE_SECURE` 开关 | 恒无 Secure | 本地无 TLS，公网必须开 | auth/部署 | accepted |
+| D-69 | review 用 codex 子代理；cso 用官方 launcher 真跑；跨模型记 unavailable | 自审；跳过 cso | 用户明确要求；同族不冒充跨模型 | review 环/证据 | accepted |
+| D-70 | `start-all.mjs` 用 R2 内存库启动，停 R3 用 compose down | 直接跑 R2 默认库 | 不写 R2 目录，满足隔离 | 课堂脚本 | accepted |
+| D-71 | 反代场景下客户端 IP 取 `X-Forwarded-For` 最左段，仅在 `TRUST_PROXY=1` 时启用 | 永远取 socket 地址；永远信任 XFF | L2 下 api 看到的是 Caddy 容器 IP，限流键会失真；只信任已知反代、直连时关闭 | auth/限流/compose | accepted |
+| D-72 | 版本口径分离：`VERSION` 保持 `3.0.0.0`，`package.json` 用合法 SemVer `3.0.0` | 包版本也写 4 段；改 VERSION 为 3 段 | npm 包版本必须是合法 SemVer，4 段会破坏 `npm ci`/元数据；课程口径仍要 4 段 | 版本、AC-55、Docker build | accepted |
+| D-73 | 生产模式加固：`ADMIN_PASSWORD` 独立（≥12、非默认）、`COOKIE_SECURE=1`、不 seed `userA/userB` | 只要求 `DEMO_PASSWORD` 非空 | codex F-06：仅"存在"不能阻止 `demo1234` 进生产；演示用户不应公开 | 配置/seed/compose/AC-82 | accepted |
+| D-74 | 下单事务先插 orders 预留幂等键，再扣库存；`23505` 先 ROLLBACK 再回查/重试 | 沿用 R2「先扣库存再插单、catch 后查」 | PostgreSQL 中 23505 会使事务 aborted，继续查询得 25P02；顺序错误会重复扣库存（F-01） | orders/db/测试/AC-64/97 | accepted |
+| D-75 | 组合根 `server/app.mjs`（建池→迁移→seed→构造 services）+ `createXxxService(deps)` 工厂 | router 直接建 service；service 内 import pool | 依赖注入才能同时满足"可注入"与"签名冻结"（F-02） | 分层/契约/测试 | accepted |
+| D-76 | 连接池加 `connectionTimeoutMillis`/`idleTimeoutMillis`/`pool.on("error")`，故障映射 `db-unavailable` | 只用 `max` + `statement_timeout` | pg.Pool 默认无限等连接，health/API 会挂起而非 503（F-07） | db/health/容器 | accepted |
+| D-77 | `PUBLIC_URL` 派生 Host 白名单 + 容器内 `HOST=0.0.0.0` + Caddy 保留 Host | 只允许外部 Host；容器默认 127.0.0.1 | api 容器默认回环会导致 Caddy 不可达、healthcheck 403（F-03） | 配置/compose/AC-99 | accepted |
+| D-78 | `POSTGRES_USER`/`POSTGRES_DB`/`POSTGRES_PASSWORD` 同源生成 DSN、`pg_isready`、备份参数 | 硬编码 `fruitlab` 用户/库 | 官方镜像默认 postgres 用户/库，硬编码会 role/database 不存在（F-04） | compose/备份/AC-100 | accepted |
+| D-79 | 输入约束继承并加 DB `CHECK`：`clientOrderId` 8–128、maxItems 10、重复 productId 合并、username/password/价格/库存边界 | 只依赖 service 校验 | DB 层空 `client_order_id` 仍合法；边界丢失会造成不一致（F-10） | schema/API/测试/AC-105 | accepted |
+| D-80 | BUILD.md 提供 96 项逐测试处置表（保留/等价迁移/预期变更/删除理由），变更仅限已定决策 | 笼统写"语义保留" | 403→404、CSRF、过期、URL 优先级、换库必然改断言，笼统口径不可机械核对（F-09） | BUILD/测试/AC-91 | accepted |
+| D-81 | codex 同族复核 10 条 F-01..F-10 全部处置（采纳/部分采纳并改 SPEC v1.1）；跨模型仍 `unavailable` | 只跑同族就宣称门禁通过 | 同族不是跨模型；10 条中 4 High 必须落到 AC | 门禁/SPEC/证据 | accepted |
+| D-82 | 修订 D-71：不再取 XFF 最左段；改为 **Caddy 覆盖** `X-Forwarded-For` 为 `{remote_host}`，api 仅在 `TRUST_PROXY=1` 且来源为 compose 内网时信任 | 保留最左段信任 | 最左段可被客户端伪造，限流可绕过（codex F-08） | 限流/反代/测试 | accepted |

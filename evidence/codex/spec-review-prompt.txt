@@ -1,0 +1,21 @@
+﻿你是 FruitLab R3 的独立规格复核者（同族第二智能体，不是跨模型）。只读复核，不要修改任何代码或配置。
+
+仓库：D:\vibecoding\easyvibe\r3-fruitlab
+需要读：SPEC.md（R3 规格）、PRD-R3.md、evidence/spec-forensics.md、../r2-fruitlab 的 SPEC.md 与 DECISIONS.md（R2 基线契约）、docs/decision-log.md 末尾的 D-47..D-70。
+
+任务：找出 R3 SPEC 的**真实问题**，不要为凑数编造。重点：
+1. 内部矛盾/优先级冲突（HTTP 优先级、CSRF 与认证顺序、405 与体校验顺序、health 与 DB down）。
+2. 验收标准是否可机械验证（AC-49..AC-96），有无遗漏或不可测的表述。
+3. L1 分层接口与依赖规则是否自洽；事务边界（withTransaction 重试）是否会破坏幂等/库存语义。
+4. Postgres schema/错误映射的漏洞（并发、唯一冲突、锁超时、NULL/类型、时区、bigint）。
+5. 安全设计漏洞（会话、限流、CSRF、时序、404、生产口令）。
+6. 容器/compose/备份恢复的可执行性问题（非 root、healthcheck、Caddy、pg_dump 路径）。
+7. 与 PRD 硬约束（A1-A16、版本隔离、仅 pg、真实 PG 测试）的偏差。
+
+输出：只写报告文件 evidence/codex/spec-review-codex.md，不要改动其它文件。格式：
+- 开头一行：本报告由 codex 同族第二智能体生成，非跨模型。
+- 结论（可实施/需修订）。
+- findings 表：编号、严重度（High/Medium/Low）、位置（SPEC 章节/AC 编号）、问题、建议。
+- 未评估/不可用项。
+- 若未发现问题，明确写"未发现"。
+禁止运行测试、禁止启动容器、禁止清理临时目录、禁止 git 操作。

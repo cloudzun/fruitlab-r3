@@ -1,166 +1,100 @@
-# 证据 · spec 环（R2）
+# 证据 · spec 环（R3，1/7 环）
 
-> **性质**：R2 第一环（spec）的实跑证据。**记录时点：Phase 4 草稿产出后、Phase 4.5 门禁前。**
-> **规则**：命令与输出必须来自真实执行；未执行的步骤写「未执行」；不可用的能力写「不可用」。
+> **性质**：真实执行记录。基线 `r3-fruitlab` HEAD `55f2cf0`（`r2-baseline` = `5f4dd87`）。
+> **规则**：命令与输出来自真实执行；未执行的写“未执行”；不可用的写 `unavailable`。
+> **结果**：`SPEC.md` v1.1 `APPROVED`；R1/R2 未改动。
 
 ## 1. 环境与输入
 
 | 项 | 值 |
 |---|---|
 | 日期 | 2026-10-18 |
-| 工作目录（R2） | `D:\vibecoding\easyvibe\r2-fruitlab` |
-| R1 冻结目录 | `D:\vibecoding\easyvibe\r1-fruitlab`（本环未写入） |
-| 基线 commit | `c1167e0`（标签 `r1-baseline`，本环创建） |
-| 运行时 | `node --version` → `v22.20.0` |
-| 输入 | `PRD-R2.md`、R1 八环产物、`R1-义务覆盖率核查.md`、`R1-八环讲解记录.md`、`R1-操作经验教训.md`、`HANDOFF.md` 第五节与第六节 |
+| 工作目录 | `D:\vibecoding\easyvibe\r3-fruitlab` |
+| 基线 | HEAD `55f2cf0`；R1 `3087a05`、R2 `5f4dd87`，工作树均空 |
+| 运行时 | Node `v22.20.0`；npm `10.9.3`；registry `https://registry.npmmirror.com` |
+| Docker | Windows Docker Desktop 引擎未运行；WSL Docker `29.9.1` + Compose `v5.6.0` |
+| 输入 | `PRD-R3.md`、`HANDOFF.md` 第七节、R2 `SPEC/DECISIONS/BUILD/review/qa-report/docs/*`、R2 补测报告、`evidence/toolchain-recon.md` |
 
 ## 2. 真实执行记录
 
-### 2.1 基线测试
+### 2.1 基线测试（R3 当前快照，未改代码）
 
 ```powershell
-cd D:\vibecoding\easyvibe\r2-fruitlab
+cd D:\vibecoding\easyvibe\r3-fruitlab
 node --test
 ```
 
-原始输出（节选尾部）：
+原始输出尾部：
 
 ```text
-1..62
-# tests 62
+1..96
+# tests 96
 # suites 0
-# pass 61
+# pass 96
 # fail 0
 # cancelled 0
-# skipped 1
+# skipped 0
 # todo 0
-# duration_ms 417.1049
+# duration_ms 2511.8211
 ```
 
-判定：R1 基线 **62 项（61 通过 / 1 平台跳过 / 0 失败）**。此数字仅作为 R1 基线，**不是 R2 的权威计数**；R2 权威计数由 `scripts/record-test-count.mjs` 在 build 环生成。
+判定：R3 起点仍是 R2 的 96 项全绿；该数字是**基线**，R3 权威计数由 `record-test-count.mjs` 在 build 环重新生成。原始输出保存在 `evidence/baseline-tests.txt`。
 
-### 2.2 `node:sqlite` 可用性探测
+### 2.2 环境可行性 spike（Postgres）
 
 ```powershell
-node -e "const s=require('node:sqlite'); console.log('require ok', Object.keys(s).join(','))"
+wsl -e docker run -d --rm --name fruitlab-r3-pg-spike -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=fruitlab -p 55432:5432 postgres:16-alpine
+# Windows TcpClient 127.0.0.1:55432 -> TCP OPEN
+# 容器内 pg_isready -> accepting connections
 ```
 
-```text
-require ok DatabaseSync,StatementSync,constants,backup
-```
+结论：Windows Node 可通过 `127.0.0.1:55432` 访问 WSL 发布的 Postgres；测试脚手架可行。镜像 `postgres:16-alpine`、`node:22-alpine`、`caddy:2-alpine` 均已在本地。
 
-文件库往返（ESM 脚本，临时目录）：
+### 2.3 R2 代码取证
 
-```text
-reopened rows: [{"x":7}]
-file bytes: 8192
-[stderr] (node:...) ExperimentalWarning: SQLite is an experimental feature and might change at any time
-```
+- `evidence/spec-forensics.md`：32 项 SQLite 耦合点（`file:line` → R3 替代 → 受影响测试）；96 项测试风险分级；11 个缺陷点的精确位置；证据链改进输入。
+- 关键事实：`enqueueWrite` 无调用方；`db reset` 直接复制/删库；405 表不完整；认证先于体校验；api-client 定时器在响应头后清除；会话无 `expires_at`。
 
-判定：**无需标志位**即可使用；文件库写入→关闭→重开→读回成功。实验性警告如实记录，不隐藏。
-
-### 2.3 图片源可用性探测
-
-| 源 | 命令 | 结果 |
-|---|---|---|
-| Pexels | `HEAD https://www.pexels.com` | 403 |
-| Unsplash | `HEAD https://unsplash.com` | 401 |
-| Pixabay | `GET https://pixabay.com/api/?q=apple`（无 key） | 400 |
-| Openverse API | `GET https://api.openverse.org/v1/images/?q=red%20apple&license=cc0,by&page_size=3` | 200，返回 `title/creator/license/url` |
-| Openverse 回源下载 | 下载首条结果到临时文件 | 成功，`119314` 字节，magic `FF D8 FF E1`（JPEG） |
-| Wikimedia Commons API | `GET https://commons.wikimedia.org/w/api.php?...` | 探测脚本解析失败（未取到 `imageinfo`），**本环未采用**，不记为可用 |
-
-判定：选 Openverse 作为照片来源（D-09）。**注意：本环只探测了 1 张图，14 张的实际下载与授权核对属于 build 环工作，尚未执行。**
-
-### 2.4 R1 契约取证（只读取证，未修改）
-
-| 取证项 | 命令/位置 | 结果 |
-|---|---|---|
-| 白名单失效项 | `serve.mjs:10-31` 与磁盘比对 | `/BUILD-LOG.md`、`/evidence/clean-run.md`、`/evidence/index.md`、`/evidence/manual-checks/browser.md` 不存在 |
-| CSP | `index.html:6-9`、`serve.mjs:42-52` | `connect-src 'none'`（R2 必须改为 `'self'`） |
-| 存储接缝 | `assets/order-store.mjs:16,53` | `readOrders(storage)`、`appendOrder(storage, order)` |
-| 领域层导出 | `assets/domain.mjs` | 10 个纯函数 + `limits`（`domain.mjs:269`） |
-| 控制器导出 | `assets/controller.mjs` | `checkoutReducer`、`lookupReducer`、`runCheckout`、`performLookup`、`resolveUnknownCheckout` 等 12 个 |
-| 商品目录 | `assets/catalog.mjs:1-75` | 10 种，无图片/库存/上下架字段 |
-| G7 合并状态 | `git merge-base --is-ancestor release/r1-fruitlab-ring7 main`（R1 与 R2 两仓） | 退出码 `0`，均已是 `main` 祖先 → **G7 关闭** |
-| 基线标签 | `git tag r1-baseline c1167e0` | 创建成功 |
-
-### 2.5 本环实际写出的文件
+### 2.4 本环实际写出的文件
 
 | 文件 | 说明 |
 |---|---|
-| `SPEC.md` | R2 规格草稿（v1.0-draft，DRAFT 状态，覆盖 R1 版本；R1 版本由 `r1-baseline` 与 `r1-fruitlab` 保留） |
-| `docs/decision-log.md` | 追加式决策台账，D-01～D-20 |
+| `SPEC.md` | R3 规格 v1.0 → v1.1（并入语义审查 8 项 + codex 10 条 findings） |
+| `docs/decision-log.md` | 追加 D-47～D-82（R3 spec 决策） |
+| `evidence/spec-forensics.md` | 32 项耦合点与测试结构 |
+| `evidence/spec-quality-gate.md` | 门禁记录（语义/脱敏/同族/跨模型） |
+| `evidence/codex/*` | 冻结快照 v1.0/v1.1、codex 复核报告、处置台账、原始日志 |
+| `evidence/autoplan-voices/r3-*-prompt.txt` | autoplan 四阶段外部声音的提示词（下一环用） |
+| `evidence/baseline-tests.txt` | 基线 96 项原始输出 |
+| `scripts/check-redaction.mjs` | 本地 fail-closed 脱敏扫描 |
 | `evidence/ring-spec.md` | 本文件 |
-| git 标签 `r1-baseline` | 指向 `c1167e0` |
 
 ## 3. 门禁状态与结果
 
 | 门禁 | 状态 | 结果 |
 |---|---|---|
-| Phase 4 草稿确认（人） | **通过** | 2026-10-18 项目负责人确认 SPEC 草稿，授权继续 |
-| Phase 4.5a 语义内容审查 | **通过（人工执行）** | 见 3.1；发现 2 处需修，已修 |
-| Phase 4.5b 脱敏扫描（fail-closed） | **通过（本地等价扫描）** | 见 3.2；官方 gstack 扫描器不可用，如实记录并用本地正则扫描替代 |
-| Phase 4.5c 跨模型质量门（0–10） | **`unavailable`** | 宿主 `claude` CLI 实际运行 `deepseek-v4-flash`（同族），`codex` 未安装；**无独立模型家族可用**，不换模型充数 |
-| 同族二次审阅（补强，非门禁） | 已执行 2 轮 | 首轮 6.5/10（4 项真缺口）、次轮 6.5/10（5 项真缺口）；已修 5 项，残余风险见 3.4 |
-| Phase 5 归档提交 | **通过（本地）** | 本地 git 提交；GitHub issue 归档 `requires-remote`（本仓无远端） |
+| 语义内容审查（人工逐项） | **通过** | 8 项内部问题，全部已修（清单见 `spec-quality-gate.md`） |
+| 脱敏扫描（本地 fail-closed） | **通过** | HIGH 0 / MEDIUM 0 / WARN 13（全部回环地址/版本号误报） |
+| 同族第二智能体复核（codex） | **通过（经修订）** | v1.0 上 10 条 findings（6 High / 4 Medium），全部采纳并落 v1.1；第二轮增量复核见 `spec-review-round2-codex.md` |
+| 跨模型质量门 | **`unavailable`** | 无第二模型家族/provider key；不换模型充数，不冒充跨模型 |
+| 项目负责人确认 | **通过（授权代理自审）** | 用户明确授权代理自行完成选型与环审批 |
+| 归档 | **本地完成** | 文档与证据同一提交；无 remote，推送/PR `requires-remote` |
 
-### 3.1 Phase 4.5a 语义内容审查（人工）
-
-按 gstack 检查项逐条过：
-
-| 检查项 | 结果 |
-|---|---|
-| 命名个体与负面评价绑定 | 无。文中未对具体个人作负面判断 |
-| 内容/指令混淆（正文里夹带「忽略上述」类指令） | 无 |
-| 敏感信息（密钥、口令值、内网主机名） | 无实际口令值；只写「演示口令表」机制 |
-| 内部矛盾 | **发现 2 处，已修**：① D-14～D-20 在 §3 与 §13 重复定义、编号冲突 → 统一为 D-01～D-26；② AC-33 仍写 D-01～D-20 → 改为 D-01～D-26 |
-| 未决项关闭 | D-16～D-20（现编号）经项目负责人确认，状态更新为 accepted（追加记录，不改历史行） |
-
-### 3.2 Phase 4.5b 脱敏扫描（本地等价实现）
-
-命令：对 `SPEC.md`、`docs/decision-log.md`、`evidence/ring-spec.md` 扫描密钥前缀、私钥块、赋值式口令、邮箱、内网主机名、IPv4、手机号/身份证。
-
-| 文件 | 结果 |
-|---|---|
-| `SPEC.md` | 仅命中 8 处 IPv4，全部是版本号 `1.0.0.0/2.0.0.0` 与回环地址 `127.0.0.1` → **误报，非敏感信息** |
-| `docs/decision-log.md` | 无命中 |
-| `evidence/ring-spec.md` | 无命中 |
-
-判定：**通过**。官方 `gstack` 脱敏扫描器不可用（未安装 gstack 运行件），本记录不声称运行过官方扫描。
-
-### 3.3 Phase 4.5c 跨模型质量门
-
-| 探测 | 结果 |
-|---|---|
-| `claude --version` | `2.1.301 (Claude Code)`，可用 |
-| 实际模型 | `deepseek-v4-flash` → **与本地同族，不构成跨模型对抗** |
-| `codex` | 未安装 |
-| `gh` | 已安装，但本仓无远端/未授权，issue 去重与归档不可用 |
-
-判定：**`unavailable`**。理由：没有独立模型家族；不换模型充数（R1 同一原则）。为补强，用同族 `claude` 做两次**明确标注的二次审阅**（不是门禁）。
-
-### 3.4 同族二次审阅与残余风险
-
-| 轮次 | 评分 | 采纳并修复 | 未采纳（PRD 边界，显式保留） |
-|---|---|---|---|
-| 第 1 轮 | 6.5/10 | 事务原子性与重试、令牌哈希、请求体上限、schema 版本、视觉验收改实机截图、R1 数据迁移边界、OB 表时序说明 | 会话过期、登录限流、CSRF 完整防护（PRD 明确不做） |
-| 第 2 轮 | 6.5/10 | CLI `--db`、确定性排序与合计断言、错误码优先级表、补 CHECK、`save-unknown` 不自动重试、Origin 校验部分缓解、五断点截图、AC 编号修正、回滚说明 | 幂等键（PRD 未要求，改「不自动重试+人工核对」）、403 存在性泄露（有意识取舍，D-32） |
-
-**残余风险（显式记录，不隐藏）**：实验性 `node:sqlite` 与同步阻塞；无会话过期；无完整 CSRF；他人订单 403 会泄露订单号存在性；CLI/服务端共享进程内同步 DB，不支持高并发。以上均为演示级取舍，**不得在后续环写成「已具备生产级安全」**。
-
-## 4. 环境踩坑（供后续环节参考）
+## 4. 环境坑（供后续环节）
 
 | # | 坑 | 规避 |
-|---|---|---|
-| 1 | PowerShell 里 `.mjs` 用 `require` 报 `require is not defined in ES module scope` | 临时脚本改用 `import { DatabaseSync } from "node:sqlite"`，或存 `.cjs` |
-| 2 | `write` 工具覆盖已存在文件前必须先 `read`（文件策略） | 覆盖 `SPEC.md` 前先读原文件；这是预期行为，不是错误 |
-| 3 | `Invoke-WebRequest -Method Head` 对部分站点返回 403/401，不能据此判定站点不可用 | 对图片源同时记录 GET 探测结果；最终以「下载成功」为准 |
-| 4 | 中文长文本经 PowerShell here-string 传递存在编码风险 | 长文本一律用文件写入工具，不经 shell 拼接 |
+|---:|---|---|
+| 1 | codex 复核期间 `SPEC.md` 被本代理继续修订，codex 检测到“非预期改动”后停下提问、不写报告 | 复核前**冻结快照 + SHA-256**，报告注明对象；不要边改边审 |
+| 2 | PowerShell 把多行 prompt 拆成多个参数，codex 报 `unexpected argument` | 用 stdin：`Get-Content prompt.txt -Raw \| codex exec ... -` |
+| 3 | codex 进程即使成功产出，PowerShell 侧可能报 exit 1 | 以**报告文件 + 原始日志**为准，不用 exit code 单独判定 |
+| 4 | 本机 Windows Docker Desktop 未运行，`docker` 命令不可用 | 所有容器/测试命令走 `wsl -e docker ...`，证据写明形态 |
+| 5 | `node:sqlite` 基线测试在 Windows 产生 ExperimentalWarning | 记录不隐藏；R3 换 `pg` 后该警告消失（build 环验证） |
+| 6 | 本地无 `pg_dump`（Windows） | 备份 A14 走容器内 `pg_dump`（WSL docker exec）；CLI `db backup` 用 SQL 导出，两条路径不互相冒充 |
 
 ## 5. 诚实边界
 
-1. 本环**没有**启动真实的 R2 服务器、**没有**下载 14 张正式图片、**没有**创建数据库文件——这些都属 build 环。本环只做可行性探测与规格冻结。
-2. 本环**没有**在真实浏览器中验证任何视觉——Apple 风格的最后落地效果属 build 与 qa 环，人工浏览器验收将如实记 `UNVERIFIED`。
-3. 本环**没有**运行 `/spec` 技能的官方脚本（`gstack-skill-start` 等）：当前宿主是 DeepSeek Harness，未安装 gstack 运行件，因此按技能文档手动执行流程；此偏差已记录，后续环节同理。
-4. 本环的跨模型质量门**尚未尝试**；若 build 前仍不可用，将如实记 `unavailable`，并把本地语义审查结论保留，不冒充通过。
+1. 本环**没有**写产品代码、没有启动 R3 服务、没有构建镜像、没有跑真实 PG 测试（只有基线 96 项与 PG 端口 spike）。
+2. codex 复核是**同族第二智能体静态复核**，不是跨模型、不是渗透测试；它未运行测试/容器。
+3. 跨模型门禁 `unavailable`，没有用同族结果代替；没有用其它模型充数。
+4. 门禁通过的是“规格与计划”，不代表 build/review/qa 的任何实现或测试已经通过。
+5. 语义审查由执行代理完成（用户授权自审）；发现的 8 项都是真实修订，不含为凑数编造的问题。

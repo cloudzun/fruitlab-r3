@@ -1,0 +1,13 @@
+﻿你是 FruitLab R3 的独立规格复核者（同族第二智能体，非跨模型）。只读，不改代码/配置，不跑测试/容器。
+
+输入：
+- 新版冻结快照 evidence/codex/SPEC-snapshot-v1.1.md（SHA-256 adc8f220b017d2257e20af4f58968c154421fa17b0c873cd93f4efcc463a65e5）
+- 上一轮报告 evidence/codex/spec-review-codex.md（F-01..F-10）
+- PRD-R3.md、evidence/spec-forensics.md、docs/decision-log.md（D-47 之后）
+
+任务（只做增量复核，不重复发散）：
+1) 逐条判断 F-01..F-10 是否在 v1.1 中**真正解决**（不是只加一句话）：给出 resolved / partially / unresolved，并指出残留。
+2) 检查 v1.1 的修订是否引入新的内部矛盾（尤其：事务顺序与错误映射、Host 规则与 healthcheck、生产模式与 classroom 默认、AC 编号与验收可测性、连接池与 health）。
+3) 若发现新的 High，明确列出；不要为凑数编造。
+
+输出：只写 evidence/codex/spec-review-round2-codex.md。开头注明"同族第二智能体，非跨模型；对象 SPEC-snapshot-v1.1.md（adc8f220b017d2257e20af4f58968c154421fa17b0c873cd93f4efcc463a65e5）"。含：结论、F-01..F-10 处置表、新 findings（若有）、未评估项。写完即结束，不要等待确认。

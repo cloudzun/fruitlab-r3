@@ -1,599 +1,537 @@
-# FruitLab R2 规格：从单机演示到带角色的持久化系统（含视觉重塑）
+# FruitLab R3 规格：Postgres 化、逻辑三层与可部署交付
 
-> **状态**：`APPROVED v1.1`（2026-10-18 项目负责人确认 v1.0；同日 autoplan 终门批准后并入修订，见 §15）
-> **文档定位**：本文件替代 R1 的 `SPEC.md`。R1 原始版本由 git 标签 `r1-baseline`（commit `c1167e0`）与 `D:\vibecoding\easyvibe\r1-fruitlab` 双重保留，本文件不覆盖历史、只推进当前实现。
-> **上游输入**：`PRD-R2.md`（替代 office-hours）、R1 八环产物、`R1-义务覆盖率核查.md`、`R1-八环讲解记录.md`、`R1-操作经验教训.md`
-> **下游**：`DECISIONS.md`（autoplan）→ `BUILD.md` → `review.md` → `qa-report.md` → `CHANGELOG.md` → `retro.md`
-> **基线实测**：Node.js `v22.20.0`；本目录 `node --test` 实测 **62 项（61 通过 / 1 平台跳过 / 0 失败）**；工作树基线 commit `c1167e0`，标签 `r1-baseline`。
+> **状态**：`DRAFT v1.0`（等待 spec 门禁：语义 / 脱敏 / 同族第二智能体复核 / 项目负责人确认）
+> **文档定位**：本文件替代 R2 的 `SPEC.md`。R3 共 **7 环**：spec → autoplan → build → review → qa → ship → retro；PRD 已替代 office-hours，不重跑。
+> **上游输入**：`PRD-R3.md`（commit `9042c10`）、`HANDOFF.md` 第七节、R2 的 `SPEC.md`/`DECISIONS.md`/`BUILD.md`/`review.md`/`qa-report.md`/`docs/*`、R2 补测报告（codex `/review` 6 行 / 7 缺陷点 + 官方 `/cso` 4 条）、`evidence/toolchain-recon.md`。
+> **基线**：`r3-fruitlab` HEAD `55f2cf0`；`r2-baseline` = R2 `5f4dd87`；R1 `3087a05` 永久冻结，R2 自 R3 起冻结。
+> **目标版本**：`3.0.0.0`（ship 环落定）。
+> **一句话**：把 R2 的单机 SQLite 应用升级为 **Postgres 16 + L1 逻辑三层 + L2 三容器 + 可备份恢复的可部署形态**，逐条收敛 11 个补测缺陷，并保证 R1/R2/R3 三版本独立可启动、并排可演示。
 
 ## 修订记录
 
 | 日期 | 版本 | 变更 |
 |---|---|---|
-| 2026-10-18 | v1.0-draft | spec 环节产出：R2 规格初稿。含数据模型、API、CLI、Apple 风格视觉规范、义务追溯与文档证据形态、降级边界 |
-| 2026-10-18 | v1.1 | 并入 autoplan 四阶段接受的 42 条义务修订：工时/里程碑、AC-31 拆分（访客查单按 U2=A 移除）、管理端商品接口、下单幂等、会话登出、CLI 契约（dev/health/--json/退出码/--password-stdin）、错误单源、Origin/Host 规则、单写者队列、图片 fallback、verify 入口、CSP 单源、校验上限等。**§15 覆盖前文冲突条款** |
+| 2026-10-18 | v1.0-draft | spec 环产出：R3 规格初稿。含 Postgres schema/迁移、L1 分层接口与依赖规则、HTTP 契约与优先级、安全设计（会话过期/限流/CSRF/时序/404）、L2 compose 拓扑、测试策略、AC-49～AC-96、F→OB 追溯设计 |
+| 2026-10-18 | v1.1 | 并入语义审查 8 项修订与 codex 同族复核 10 条 findings 的处置：事务/23505 边界与幂等语义、service 工厂与组合根、容器 HOST/Public URL/健康检查 Host、DB 身份变量统一、SemVer 4 段映射、生产模式口令策略、连接池超时与 pool error、XFF 信任与限流上限、输入约束继承、测试处置表口径。跨模型门禁仍 `unavailable`（同族复核不冒充跨模型） |
 
 ---
 
 ## 1. Context（为什么做这件事）
 
-R1 交付了一个**单机演示**：10 种水果、浏览器 `localStorage` 存订单、`serve.mjs` 只做静态托管、零第三方依赖、62 项测试。它是课堂「升级前」的展品，已冻结。
+R1 交付了单机静态演示（`1.0.0.0`，4173，localStorage，10 商品，62 测试，永久冻结）。R2 交付了带数据库/账号/权限/管理员/CLI 的可运行系统（`2.0.0.0`，4174，`node:sqlite`，零第三方依赖，96 测试，QA 95，42 义务关闭，G1–G7 关闭），并在 ship/retro 之后做了补测：codex 第二智能体 6 行 findings（1 High）、官方 `/cso` 4 条 findings（3 Medium、1 Low），全部 `open`。
 
-R2 是同一门课程的第二幕，要演示「**一次真实迭代升级**」：把单机演示演进成带服务端、数据库与角色的系统，同时收敛 R1 暴露的 7 项缺口，并补上 R1 缺失的**义务追溯机制**。课堂需要 R1/R2 两个目录**同时启动并排对比**。
+R3 是课程的第三幕：**补漏 + 换数据库 + 分层 + 走向可部署**。它要回答三个课堂问题：
 
-本规格回答四件事：功能怎么定、契约怎么变、视觉怎么换、证据怎么留。
+1. 一个"跑在本机"的系统，离开本机需要补什么？（Postgres、连接池、事务、迁移、容器、健康检查、备份恢复、生产口令纪律）
+2. 单进程同步数据库的代码，怎么在**不改变用户可见契约**的前提下拆成三层？（router → services → repositories）
+3. 10 条 findings（11 个缺陷点）如何**逐条关闭或明确降级**，并留下可复测的证据？
+
+同时，R3 必须遵守课程最硬的一条原则：**升级不覆盖旧版本**。R1/R2 一行不改，R3 只写自己的目录。
 
 ## 2. Current State（实测基线，不是复述）
 
 | 项 | 实测值 | 证据 |
 |---|---|---|
-| 运行时 | Node.js `v22.20.0` | `node --version` |
-| 测试 | 62 项：61 通过 / 1 跳过 / 0 失败 | `node --test` 原始输出（`# tests 62`、`# pass 61`、`# skipped 1`、`# fail 0`） |
-| 版本 | `1.0.0.0` | `VERSION` |
-| 端口 | 默认 `127.0.0.1:4173`，支持 `--port` | `serve.mjs:6-7`、`serve.mjs:242-281` |
-| 静态白名单 | 22 条，其中 **4 条在磁盘上不存在**（`/BUILD-LOG.md`、`/evidence/clean-run.md`、`/evidence/index.md`、`/evidence/manual-checks/browser.md`） | `serve.mjs:10-31`；`index.html:129` 页脚还链向 `./evidence/index.md` |
-| CSP | `connect-src 'none'`、`img-src 'self' data:`、`script-src 'self'`、`style-src 'self'` | `index.html:6-9`、`serve.mjs:42-52` |
-| 存储接缝 | `readOrders(storage)`、`appendOrder(storage, order)`，存储对象参数注入 | `assets/order-store.mjs:16,53` |
-| 领域层 | 10 个纯函数 + `limits`，全部无 DOM/存储依赖 | `assets/domain.mjs:35-269` |
-| 控制器 | 无 DOM 的 reducer：`checkoutReducer`、`lookupReducer`、`runCheckout`、`performLookup`、`resolveUnknownCheckout` | `assets/controller.mjs:42-436` |
-| 商品目录 | 硬编码 10 种，字段 `id/name/unit/unitPriceCents/description`，无图片、无库存、无上下架 | `assets/catalog.mjs:1-75` |
-| 前端 | 单页，果摊招牌视觉；商品为纯文字卡；订单存 `localStorage["fruitlab.orders.v1"]` | `index.html`、`assets/styles.css` |
-| 依赖 | 无 `package.json`、零第三方依赖 | `tests/static-scan.test.mjs` 已断言 |
-| Git | `main` 分支；`r1-baseline` = `c1167e0` | `git tag -l` |
+| 运行时 | Node `v22.20.0`；npm `10.9.3`；registry `https://registry.npmmirror.com` | `node --version`、`npm config get registry` |
+| 依赖 | R2 无 `package.json`，零第三方依赖；`pg 8.23.1` 可安装 | `npm view pg version`、目录实查 |
+| 数据库 | R2 `node:sqlite` 单文件 `data/fruitlab.db`；R3 目标 Postgres 16 | `server/db.mjs:1-173` |
+| Docker | **Windows Docker Desktop 引擎未运行**；WSL Docker `29.9.1` + Compose `v5.6.0` 可用 | `docker version` 失败、`wsl -e docker version` 成功 |
+| Postgres 可达性 | WSL `postgres:16-alpine` 以 `-p 55432:5432` 启动后，Windows `127.0.0.1:55432` **TCP OPEN**、`pg_isready` accepting | 本轮 spike（`evidence/spec-forensics.md` §1） |
+| 镜像 | `postgres:16-alpine`、`node:22-alpine`、`caddy:2-alpine` 本地已有 | `wsl -e docker image ls` |
+| codex | `C:\Users\cheng\AppData\Local\OpenAI\Codex\bin\9614f1d9b40d9c4f\codex.exe`（`0.162.0-alpha.17.2`，不在 PATH） | 存在性检查 |
+| cso launcher | WSL `/mnt/c/Users/cheng/gstack/bin/gstack-cso-launcher` `3.0.0 (abi 3)` | `--version` 实测 |
+| Git | R1 `3087a05` 干净；R2 `5f4dd87` 干净；R3 `55f2cf0` 干净（相对 `r2-baseline` 仅 PRD+README） | `git status --short`、`git diff --stat` |
+| R2 测试 | 96 项（96 pass / 0 fail）；唯一计数 `evidence/test-count.txt` | 继承的计数文件 |
+| R2 findings | codex 6 行 / 7 缺陷点；cso 4 条；全部 `open` | `evidence/ring-review-codex.md`、`evidence/ring-review-cso.md` |
 
-**R1 已知缺口（本规格第 5.11 节逐项处置）**：G1 四个失效链接、G2 证据包未生成、G3 契约冻结不完整、G4 查单框缺 `aria-invalid`、G5 引用了不存在的检查项编号、G6 测试计数三处不一致、G7 发布分支未合回 `main`（**实测已合并**：`release/r1-fruitlab-ring7` 是 `main` 祖先）。
+**R2 → R3 的耦合点清单**（32 项，逐项含 `file:line`、替代形态、受影响测试）见 `evidence/spec-forensics.md` §2；本文不重复。
 
 ## 3. Decision Resolution（本规格锁定的决策）
 
-| # | 决策 | 选择 | 依据 / 备注 |
-|---|---|---|---|
-| D-01 | 持久化载体 | **SQLite 单文件数据库**，用 Node 内置 `node:sqlite`（`DatabaseSync`） | 本机实测：无需标志位即可 `require`；文件库写入→关闭→重开→读回成功；仅一条 `ExperimentalWarning`，如实记录不隐藏。满足「零第三方依赖 + 一个数据库实例」 |
-| D-02 | 数据表 | **4 + 1 张表**：`users`、`products`、`orders`、`order_items` + `sessions` | 对齐 `01_` 蓝本的 4+1 精神（主体/资源/主单/子项 + 辅助表），按本业务命名 |
-| D-03 | 会话 | 服务端 `sessions` 表 + `HttpOnly` Cookie，令牌 32 字节随机十六进制 | 已定方案 A；Cookie `Path=/; HttpOnly; SameSite=Lax`，**无 `Secure`**（无 HTTPS），边界写入第 12 节 |
-| D-04 | 口令 | `node:crypto` 的 `scrypt` + 每用户随机盐 + `timingSafeEqual` | 零依赖；格式 `scrypt$<N>$<r>$<p>$<salt_b64>$<hash_b64>`；不存明文、不记日志 |
-| D-05 | 端口 | R2 默认 **`127.0.0.1:4174`** | 与 R1 的 `4173` 并存，供课堂并排对比；`--port` 仍可覆盖 |
-| D-06 | 注册 | 开放注册，默认 `role='user'`；`admin` 只能由 CLI 或种子创建 | PRD FR-2 |
-| D-07 | 库存语义 | 下单时**原子扣减**库存（`UPDATE ... WHERE stock >= ?`，同一事务）；零库存仍出现在列表并标「已售罄」；下架商品不出现在列表 | 沿用 PRD FR-4 已定语义；扣减是「库存」成立的必要行为 |
-| D-08 | 视觉方向 | **苹果官网式高冷克制风**，**替代** PRD FR-7 的「参照亚马逊」 | 项目负责人 2026-10-18 指示。属**方向变更**：不修改 PRD 原文，在本规格与 `DECISIONS.md` 双处记录，A11 判定口径随本规格重写 |
-| D-09 | 商品照片 | **Openverse API** 检索（CC0 / CC BY，排除 NC/ND），14 张，下载进仓库 `assets/images/products/` | 本机实测 Openverse API 可用且返回 `license/creator/url`，回源图片可下载（JPEG 119 KB）；Pexels/Unsplash/Pixabay 直连 401/403 不可靠。台账见 5.8 |
-| D-10 | 契约演进 | `order-store` 的 `readOrders`/`appendOrder` 保留函数名但首参从 `storage` 换成 `db` 并加用户归属；领域层纯函数**原样不动** | PRD 第 5 节；对照表见 5.4 |
-| D-11 | 追溯机制 | 义务编号 `OB-<阶段>-<序号>`；`BUILD.md` 验收表同时引用 `AC-xx` 与 `OB-xx`；`docs/obligations.md` 单一台账；脚本机械核对 | PRD 第 6 节 |
-| D-12 | 降级边界 | 见 5.12：分「不可降级 / 可降级（外部依赖）/ 可替代形态」三档，降级必须三处留痕 | 项目负责人授权按此执行 |
-| D-13 | 文档形态 | 见 5.11：`docs/`（决策台账、契约、API、错误目录、分支矩阵、设计词元、图片授权）+ `evidence/`（逐环证据、清单、唯一测试计数） | 项目负责人要求「文档记录便于复盘」 |
-| D-14 | 基线标签 | `r1-baseline` 打在 `c1167e0`，任何改动可 diff、可回退 | 课堂对比与回退需要 |
-| D-15 | SPEC 覆盖方式 | R2 规格覆盖写入 `SPEC.md`，R1 版本由标签与 `r1-fruitlab` 保留 | 保持「每环一个产物文件」约定 |
-| D-21 | 会话令牌存储 | 库中存 `sha256(token)`，不存明文 | 降低库泄露风险；改动小 |
-| D-22 | 下单事务边界 | 主单、明细、扣库存**同一事务**；`busy_timeout` + 有界重试；失败回滚 | 防「订单已建、库存未扣」 |
-| D-23 | 请求体上限 | API 请求体 ≤ 64 KiB，超限 413 | 防内存放大；零依赖 |
-| D-24 | 视觉验收方式 | qa 环真实 Chromium 在 1440/1024/390 三视口截图 + 人工确认，截图入 `evidence/` | fake DOM 证明不了布局，必须实机 |
-| D-25 | schema 版本与迁移 | `PRAGMA user_version` + 迁移函数，`db init` 建 v1 | 实验 API 也要有版本位 |
-| D-26 | R1 数据迁移 | **不迁移** R1 浏览器 `localStorage` 订单；R2 从空订单开始 | PRD 未要求；不假装「平滑迁移」 |
-| D-27 | 状态变更请求校验 | `POST`/`PATCH` 校验 `Origin`/`Sec-Fetch-Site` 同源；**部分缓解，不构成 CSRF 防护** | 低成本降低跨站风险，边界照 PRD 写清 |
-| D-28 | CLI 库路径 | `--db <path>` + `FRUITLAB_DB`，与 `serve.mjs` 共用 | 测试用临时库，避免与运行库互踩 |
-| D-29 | 数据完整性 | 商品/订单确定性排序 + 事务内合计断言 | 防顺序漂移与主单/明细合计不一致 |
-| D-30 | 未知写入语义 | 不做幂等键；`save-unknown` 后**不自动重试**，引导「我的订单」核对 | 延续 R1 DX1，防重复下单 |
-| D-31 | sqlite 风险 | 启动自检 Node/sqlite；接受 `DatabaseSync` 同步阻塞（单进程演示） | 零依赖现实，风险显式记录 |
-| D-32 | 越权返回码 | 他人订单返回 `403`（不统一为 404），接受订单号存在性泄露 | 课堂需要可演示的水平越权拒绝 |
+> 编号续 R2（其 `docs/decision-log.md` 已用到 D-46）。用户已授权执行代理自行拍板；每条在 `docs/decision-log.md` 追加留痕。
 
-## 4. Proposed Change
+| # | 决策 | 选择 | 理由 / 边界 |
+|---|---|---|---|
+| D-47 | 数据库 | **PostgreSQL 16**（`postgres:16-alpine`），`pg.Pool` 连接池，`DATABASE_URL` | PRD 已定；WSL 端口实证可行 |
+| D-48 | 依赖 | 运行时依赖**恰好 `{pg}`**（`8.23.1`）；提交 `package-lock.json`；`npm ci` 可复现 | 对"零依赖"的正式变更；R2 仍零依赖，口径不得混用 |
+| D-49 | 数据 | **不迁移** R2 SQLite 数据；Postgres 空库 + 迁移 + seed；迁移脚本不进主路径 | PRD 已定；避免"假平滑迁移" |
+| D-50 | 用户名 | `text UNIQUE`，保持**大小写敏感**（不引入 `citext` 扩展） | 保留 R2 行为；避免扩展安装依赖 |
+| D-51 | L1 分层 | `router → services → repositories → Postgres`；`domain` 纯函数不动；`db.mjs` 只做池/迁移/事务 | 依赖规则由测试机械断言（§5.3） |
+| D-52 | L2 拓扑 | 默认 **web(Caddy)+api(Node)+db(Postgres)** 三容器；另提供 `compose.simple.yml`（api+db）对照 | PRD §4.3；web 只暴露 4175，api/db 不对外 |
+| D-53 | 会话 | `expires_at`（`SESSION_TTL_SECONDS`，默认 86400s）；Cookie `Max-Age` 跟随；登录轮换旧会话；过期惰性/启动清理 | 关闭 S-3；无改密 API，故"改密撤销"不适用并记录 |
+| D-54 | 登录限流 | **内存**计数，键 `username+IP`，15 分钟窗口失败 5 次 → 锁定 15 分钟，`429 auth-rate-limited` + `Retry-After`；成功清零 | 单实例设计；DB 计数会引入写热点 |
+| D-55 | CSRF | 带会话的写请求要求**双提交**：`fruitlab_csrf` Cookie（JS 可读）+ `X-CSRF-Token` 头，常量时间比较；同时保留严格 `Origin`/`Sec-Fetch-Site`。登录/注册无会话，仅 Origin 校验 | 组合方案；边界写入 §5.5 与 README，不写成"完整 CSRF 防护" |
+| D-56 | 登录时序 | 缺失用户也执行一次 **dummy scrypt** + `timingSafeEqual`；两条路径各一次 verify | 关闭 S-1；只声称"降低到不可测量"，不声称"消除" |
+| D-57 | 越权返回码 | 他人订单返回 **404 `order-not-found`**；admin 可查任意订单 | **supersede D-32**；R3 面向可部署形态，消除存在性泄露；课堂演示改为"资源不存在" |
+| D-58 | 判定优先级 | 冻结并实现：Host → Origin/Sec-Fetch → 体协议(415/413/400) → 405 → 401 → CSRF 403 → 角色 403 → 404 → 字段 400 → 业务 409 → 登录失败 401 / 限流 429 → 5xx | 关闭 C-4；与 R2 `SPEC.md` §5.2 冻结顺序一致（415 归入体协议） |
+| D-59 | `db reset` | 先**真实备份**（SQL 逻辑导出；失败即中止）→ 事务内 drop/migrate/seed → 重建后校验（schema 版本/种子计数）→ 任一步失败非零退出并保留原库 | 关闭 C-1；不再有"复制文件+忽略删除失败"的假成功 |
+| D-60 | 测试数据库 | 真实 Postgres；`TEST_DATABASE_URL`（默认 `postgres://postgres:postgres@127.0.0.1:55432/postgres`）；**每个测试用例独立数据库**，结束清理；连不上时 fail fast 并给出启动命令 | 关闭"SQLite 临时库"；隔离靠 `CREATE DATABASE` |
+| D-61 | 静态与 web | 抽 `server/allowlist.mjs` 单一白名单；Node 服务在 simple 模式继续托管静态；L2 的 web 用 `scripts/build-public.mjs` 按白名单生成 `public/` 后由 Caddy 托管 | 白名单机械一致；不把 server 代码暴露给 web |
+| D-62 | 健康检查 | `/api/health` 200 `{db:"up", schemaVersion, version, seeded, uptimeSeconds}`；DB down → **503** `{code:"db-unavailable", db:"down"}` | 供 compose healthcheck 与 A3/A5 |
+| D-63 | 编号 | AC 续号 `AC-49` 起；决策续号 `D-47` 起；义务 `OB-R3-<PHASE>-NN`；缺陷 `F-R3-NN` | 避免与 R2 冻结编号歧义 |
+| D-64 | 依赖扫描 | `static-scan` 断言：**允许 `package.json`，但 `dependencies` 集合恰好 `{pg}`**；无 devDependencies 参与运行时 | 关闭 R2 的"无 package.json"断言 |
+| D-65 | 命名隔离 | compose 项目 `fruitlab-r3`；api 镜像 `fruitlab-r3:3.0.0.0`；web 镜像 `fruitlab-r3-web:3.0.0.0`；卷 `fruitlab-r3-pgdata`；端口 `4175`（web）/`55432`（调试）/`3000`（api 容器内）/`5432`（db 容器内） | PRD §2.2；A4/A6/A16 |
+| D-66 | 备份 | `cli db backup` = SQL 逻辑导出（跨平台可跑，reset 的保险）；`scripts/backup.sh` / `restore.sh` = 容器内 `pg_dump`/`pg_restore`（A14 证据） | 两条路径都真实，不互相冒充 |
+| D-67 | 生产口令 | `APP_ENV=production` 时 `DEMO_PASSWORD` 必填；缺失 → seed 明确失败；compose 用 `.env`，`.env` 不入 git，`.env.example` 只放占位符 | PRD §4.4；禁止默认 `demo1234` 进公开部署 |
+| D-68 | Cookie | `HttpOnly; SameSite=Lax; Path=/; Max-Age=TTL`；`COOKIE_SECURE=1` 时加 `Secure`（本地默认 0） | 本地 localhost 无 TLS；上公网前必须置 1 |
+| D-69 | 独立评审 | review 环用 **codex 子代理**执行只读复核；cso 用**官方 launcher** 真实 `start→submit→finish`；跨模型门禁仍记 `unavailable` | 用户明确要求；同族不冒充跨模型 |
+| D-70 | 三版本启动 | `scripts/start-all.mjs`：R1 `node serve.mjs`、R2 `node cli.mjs --db :memory: dev`（内存库，避免写 R2 目录）、R3 `wsl -e docker compose up --build`；`Ctrl+C` 先停 R3 再停 Node | 不修改 R1/R2 文件；证据在 qa 环 |
+| D-71 | 反代客户端 IP | Caddy 覆盖 `X-Forwarded-For`；api 仅在 `TRUST_PROXY=1` 且来自 compose 内网时信任；限流 Map 限键长/容量 | 关闭 F-08；防止伪造 XFF 绕过限流 |
+| D-72 | 版本映射 | `VERSION` 保持 `3.0.0.0`（课程口径）；`package.json` 用合法 SemVer `3.0.0`；映射写入版本校验脚本 | 关闭 F-05；不破坏 `npm ci` |
+| D-73 | 生产模式 | `APP_ENV=production` 要求独立 `ADMIN_PASSWORD`（≥12、非默认）、`COOKIE_SECURE=1`；不 seed `userA/userB` | 关闭 F-06；演示口令只留在 classroom |
+| D-74 | 幂等/订单号事务边界 | 事务内**先插 orders 预留幂等**，再扣库存；`23505` 先 ROLLBACK 再回查/重试；重试回调无外部副作用 | 关闭 F-01；不重复扣库存、不产生空单 |
+| D-75 | 组合根与工厂 | `server/app.mjs` 建池/迁移/seed/构造 services；各 service 用 `createXxxService(deps)`；router 只收已构造 services | 关闭 F-02；依赖注入与签名可测 |
+| D-76 | 连接池故障 | `connectionTimeoutMillis`（默认 5000）、`idleTimeoutMillis`、`pool.on("error")`；池超时/连接终止 → `db-unavailable` 503 | 关闭 F-07；health 不挂起 |
+| D-77 | Host/公开地址 | `PUBLIC_URL` 派生外部 Host；另允许 `127.0.0.1:<PORT>`/`localhost:<PORT>`（healthcheck）；api 容器 `HOST=0.0.0.0` | 关闭 F-03；Caddy→api 与 healthcheck 均通 |
+| D-78 | DB 身份 | `POSTGRES_USER`/`POSTGRES_DB`/`POSTGRES_PASSWORD` 同源生成 `DATABASE_URL`、`pg_isready`、备份参数 | 关闭 F-04；空卷首启成功 |
+| D-79 | 输入约束继承 | `clientOrderId` 8–128、maxItems 10、重复 productId 合并、username/password/价格/库存边界；DB `CHECK` 同步 | 关闭 F-10；与 R2 契约一致 |
+| D-80 | 测试处置口径 | BUILD.md 逐测试处置表：原样保留/等价迁移/预期契约变更/删除理由；变更仅限已定决策 | 关闭 F-09；AC-91 可机械核对 |
+| D-81 | 门禁复核 | codex 同族复核 10 条全部处置（采纳/部分采纳并改 SPEC）；跨模型仍 `unavailable` | 不冒充跨模型；处置见 evidence |
+
+## 4. Proposed Change（目标与验收映射）
 
 | 目标 | 内容 | 验收 |
 |---|---|---|
-| 功能演进 | 持久化、用户与身份、权限、管理员、命令行、14 种商品 | AC-01～AC-08 |
-| 缺口收敛 | G1～G7 逐项处置（关闭或明确降级） | AC-09、AC-19～AC-25 |
-| 机制补强 | 义务追溯、契约冻结、唯一计数、机械校验 | AC-10、AC-21、AC-24 |
-| 视觉重塑 | Apple 式版式 + 14 张本地真实照片 + 授权台账 | AC-14～AC-18 |
-| 文档证据 | 决策台账、逐环证据、可复盘索引 | AC-33～AC-36 |
+| Postgres 化 | 连接池、迁移、种子、事务、SQLSTATE、health、备份 | AC-49～AC-58 |
+| L1 分层 | router/services/repositories + 依赖规则 + 契约冻结 | AC-59～AC-61 |
+| 正确性与并发 | 库存原子扣减、幂等、并发、死锁重试、404 越权 | AC-62～AC-69 |
+| 11 个缺陷点（10 条 findings） | C-1..C-7、S-1..S-4 逐条关闭/降级 | AC-70～AC-80 |
+| 安全边界 | 会话过期、限流、CSRF、时序、生产口令 | AC-77～AC-83 |
+| L2 与可部署 | Dockerfile ×2、compose、Caddy、非 root、healthcheck、volume、备份恢复 | AC-84～AC-89 |
+| 证据与文档 | 唯一计数、codex/cso、三版本并排、追溯、verify | AC-90～AC-96 |
+| 版本隔离 | R1/R2 零改动、命名/端口无碰撞 | AC-49/50/51/52/88 |
+| 复核修订 | codex 同族复核 F-01..F-10 的修订落到可测 AC | AC-97～AC-105 |
 
 ## 5. Implementation Details
 
-### 5.1 数据模型（SQLite，4+1 张表）
+### 5.1 Postgres schema 与迁移
 
-建库文件：`data/fruitlab.db`（`data/` 加入 `.gitignore`；建库与种子由 CLI 完成，见 5.5）。
+迁移文件：`server/migrations/0001_init.sql`（后续只追加，不改已发布文件）；加载器按文件名排序，在**单事务**内执行并写 `schema_migrations`。启动时自动迁移（幂等）；`cli db migrate` 可手动执行。
 
 ```sql
-PRAGMA journal_mode = WAL;
-PRAGMA foreign_keys = ON;
-
-CREATE TABLE users (
-  user_id       TEXT PRIMARY KEY,
-  username      TEXT NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  role          TEXT NOT NULL CHECK (role IN ('user','admin')),
-  created_at    TEXT NOT NULL
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version    integer PRIMARY KEY,
+  name       text NOT NULL,
+  applied_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE products (
-  product_id       TEXT PRIMARY KEY,
-  name             TEXT NOT NULL,
-  unit             TEXT NOT NULL,
-  unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0),
-  stock            INTEGER NOT NULL CHECK (stock >= 0),
-  listed           INTEGER NOT NULL CHECK (listed IN (0,1)),
-  image_path       TEXT NOT NULL,
-  image_alt        TEXT NOT NULL,
-  description      TEXT NOT NULL,
-  sort_order       INTEGER NOT NULL
+CREATE TABLE IF NOT EXISTS users (
+  user_id       text PRIMARY KEY,
+  username      text NOT NULL UNIQUE,
+  password_hash text NOT NULL,
+  role          text NOT NULL CHECK (role IN ('user','admin')),
+  created_at    timestamptz NOT NULL
 );
 
-CREATE TABLE orders (
-  order_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-  order_number   TEXT NOT NULL UNIQUE,
-  user_id        TEXT NOT NULL REFERENCES users(user_id),
-  subtotal_cents INTEGER NOT NULL CHECK (subtotal_cents >= 0),
-  created_at     TEXT NOT NULL
+CREATE TABLE IF NOT EXISTS products (
+  product_id       text PRIMARY KEY,
+  name             text NOT NULL,
+  unit             text NOT NULL,
+  unit_price_cents bigint NOT NULL CHECK (unit_price_cents >= 0),
+  stock            integer NOT NULL CHECK (stock >= 0),
+  listed           boolean NOT NULL,
+  image_path       text NOT NULL,
+  image_alt        text NOT NULL,
+  description      text NOT NULL,
+  sort_order       integer NOT NULL
 );
 
-CREATE TABLE order_items (
-  item_id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  order_id         INTEGER NOT NULL REFERENCES orders(order_id),
-  product_id       TEXT NOT NULL REFERENCES products(product_id),
-  quantity         INTEGER NOT NULL CHECK (quantity BETWEEN 1 AND 99),
-  unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0),
-  subtotal_cents   INTEGER NOT NULL CHECK (subtotal_cents >= 0)
+CREATE TABLE IF NOT EXISTS orders (
+  order_id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  order_number    text NOT NULL UNIQUE,
+  user_id         text NOT NULL REFERENCES users(user_id),
+  client_order_id text NOT NULL CHECK (char_length(client_order_id) BETWEEN 8 AND 128),
+  subtotal_cents  bigint NOT NULL CHECK (subtotal_cents >= 0),
+  created_at      timestamptz NOT NULL,
+  CONSTRAINT ux_orders_user_client UNIQUE (user_id, client_order_id)
 );
 
-CREATE TABLE sessions (
-  token      TEXT PRIMARY KEY,
-  user_id    TEXT NOT NULL REFERENCES users(user_id),
-  created_at TEXT NOT NULL
+CREATE TABLE IF NOT EXISTS order_items (
+  item_id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  order_id         bigint NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
+  product_id       text NOT NULL REFERENCES products(product_id),
+  quantity         integer NOT NULL CHECK (quantity BETWEEN 1 AND 99),
+  unit_price_cents bigint NOT NULL CHECK (unit_price_cents >= 0),
+  subtotal_cents   bigint NOT NULL CHECK (subtotal_cents >= 0)
 );
 
-CREATE INDEX idx_orders_user ON orders(user_id);
-CREATE INDEX idx_order_items_order ON order_items(order_id);
-CREATE INDEX idx_sessions_user ON sessions(user_id);
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash text PRIMARY KEY,
+  user_id    text NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL,
+  expires_at timestamptz NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 ```
 
-**不变量**：
-1. `users.username` 唯一；`orders.order_number` 唯一；
-2. 订单行快照（`unit_price_cents`、`subtotal_cents`）在写入时冻结，后续改价不影响历史订单；
-3. 金额一律整数分；商品最多 10 行（沿用 R1 `limits.maxItems`）；数量 1～99；
-4. 下架（`listed=0`）商品不出现在商品列表；零库存商品仍出现并显示售罄；
-5. 删除商品不删除历史订单行（`order_items` 保留快照，`product_id` 引用保留）；
-6. 列表顺序确定：商品 `ORDER BY sort_order, product_id`，订单 `ORDER BY created_at DESC, order_id DESC`（D-29）；
-7. 事务内断言 `orders.subtotal_cents = SUM(order_items.subtotal_cents)`，不等则回滚。
+**不变量（测试断言）**：
 
-**种子数据**：14 种商品（10 种 R1 原样迁入 + 新增 `cherry` 车厘子、`mango` 贵妃芒、`kiwi` 猕猴桃、`strawberry` 草莓）；3 个账号 `userA`、`userB`、`admin`（口令由种子脚本生成并写入 README 的演示口令表；**数据库只存哈希**，见 5.3）。
+1. `username`、`order_number` 唯一；`(user_id, client_order_id)` 唯一；
+2. 金额一律整数分（`bigint`，驱动侧 `int8` 解析为 `Number`；演示数据远小于 `2^53`，在 `server/db.mjs` 显式设置并注明边界）；
+3. 订单行快照写入时冻结，后续改价不影响历史；
+4. `listed=false` 不出现在公开列表；零库存仍出现并显示售罄；
+5. 主单合计 = 明细合计之和（事务内断言，不等回滚）；
+6. 删除商品不删除历史订单行（外键默认 `NO ACTION`，商品不物理删除，仅下架）；
+7. 列表顺序确定：商品 `ORDER BY sort_order, product_id`；订单 `ORDER BY created_at DESC, order_id DESC`。
 
-**事务与并发**：
-- `PRAGMA busy_timeout = 5000`；
-- 下单：`BEGIN IMMEDIATE` → 校验并扣库存（`UPDATE products SET stock = stock - ? WHERE product_id = ? AND stock >= ?`，受影响行数必须为 1）→ 插入 `orders` → 插入 `order_items` → `COMMIT`；任一步失败 `ROLLBACK`，库存不变，返回 409 或 500；
-- `order_number` 唯一冲突：在事务内重试生成，最多 10 次（沿用 R1 `generateUniqueOrderNumber` 预算），耗尽返回 `409 order-number-exhausted`；
-- `SQLITE_BUSY`：事务整体重试 ≤ 3 次（退避 50/100/200ms），仍失败返回 `503 server-busy`。
+**种子**：14 商品 + 3 账号（`userA`/`userB`/`admin`），`ON CONFLICT DO NOTHING` 幂等；口令只存 `scrypt` 哈希。`APP_ENV=production` 时 `DEMO_PASSWORD` 必填（D-67）。
 
-**schema 版本与迁移**：`PRAGMA user_version = 1`；迁移函数按版本递增执行；`db init` 幂等（已有 v1 则跳过）；`--force` 仅删库重建且需显式确认文本；不提供降级迁移。
+### 5.2 连接、事务、错误映射
 
-**R1 数据迁移**：不迁移 R1 浏览器 `localStorage` 中的历史订单（D-26）；R2 从空订单开始，README 明确说明，避免「平滑迁移」的误导。
+- `server/db.mjs` 导出：`createPool({connectionString, max, connectionTimeoutMs, idleTimeoutMs, statementTimeoutMs, lockTimeoutMs})`、`migrate(pool)`、`withTransaction(pool, fn)`、`closePool(pool)`、`schemaVersion(pool)`、`isSeeded(pool)`。
+- 连接参数：`max`（默认 10）、`connectionTimeoutMillis`（默认 5000ms）、`idleTimeoutMillis`（默认 30000ms）、`statement_timeout`（默认 15000ms）、`lock_timeout`（默认 5000ms）、`application_name=fruitlab-r3`；均可由环境变量覆盖。
+- 启动：连接重试（最多 30 次，指数退避 250ms→2s），全部失败 → 进程退出 1 并打印可操作错误；成功后 `migrate` + 按需 seed。
+- 事务：同一 `client` 执行 `BEGIN/COMMIT/ROLLBACK`；`withTransaction` 在 `40001`（serialization_failure）与 `40P01`（deadlock_detected）上做**有界重试 3 次**（25/50/100ms），耗尽抛 `server-busy`。回调必须是事务内、无外部副作用的操作（可重放）。
+- **23505 事务边界（不可在 aborted 事务里查库）**：任何语句抛 `23505`/`23514`/`23503` 后，必须 `ROLLBACK` 整事务，再由 service 在新事务里回查或重试；禁止在失败事务内继续 `SELECT`（会得到 `25P02`）。
+- **连接池故障**：`connectionTimeoutMillis` 保证池耗尽时不无限等待；监听 `pool.on("error")` 记录并丢弃坏连接；本地池超时、`ETIMEDOUT`/`ECONNRESET`/`Connection terminated` 与连接类 SQLSTATE 统一映射 `db-unavailable` 503；DB 重启后池自动恢复。
+- **checkout 事务顺序（F-01）**：校验/合并 → 事务外幂等预查 → 事务内先 `INSERT orders`（幂等预留）→ 条件扣库存（影响行数=1）→ 插 `order_items` → 合计断言 → COMMIT。`ux_orders_user_client` 冲突：ROLLBACK → 新事务回查 → 200 existing；`orders_order_number_key` 冲突：ROLLBACK → 重新生成 → 重试整事务（≤10）；库存不足：ROLLBACK → 409。此顺序保证幂等冲突发生在扣库存之前，不会重复扣减。
+- 错误映射表（`server/errors.mjs` 镜像，`docs/error-catalog.md` 唯一真源）：
 
-**N+1 规避**：管理端「全部订单」列表用**一条 JOIN 查询**取主单 + 行数/合计摘要，禁止循环查子表（第 5 环的经典靶点，本规格主动规避并留测试）。
-
-### 5.2 HTTP API 契约
-
-统一前缀 `/api`；请求与响应均为 JSON；成功体 `{ "ok": true, ... }`；失败体 `{ "ok": false, "code": "<稳定码>", "message": "<中文文案>", "details": ... }`。
-
-| 方法 | 路径 | 权限 | 说明 |
+| SQLSTATE / 条件 | 应用错误码 | HTTP | 备注 |
 |---|---|---|---|
-| `GET` | `/api/products` | 公开 | 商品列表（只含 `listed=1`）；响应 `{ok, products:[{id,name,unit,unitPriceCents,stock,soldOut,image,alt,description}]}` |
-| `POST` | `/api/auth/register` | 公开 | `{username,password}`；201；重名 409 `auth-username-taken` |
-| `POST` | `/api/auth/login` | 公开 | `{username,password}`；200 + `Set-Cookie`；失败 401 `auth-invalid-credentials` |
-| `POST` | `/api/auth/logout` | 会话 | 204；清 Cookie |
-| `GET` | `/api/auth/me` | 公开 | 200 `{ok,user}` 或 401 `auth-required` |
-| `POST` | `/api/orders` | 登录 | `{items:[{productId,quantity}]}`；201；库存不足 409 `insufficient-stock`；校验失败 400 |
-| `GET` | `/api/orders/mine` | 登录 | 200 `{ok,orders}`（按 `created_at` 倒序） |
-| `GET` | `/api/orders/{orderNumber}` | 登录 | 自己的订单 200；他人订单 403 `order-not-owned`；不存在 404 `order-not-found` |
-| `GET` | `/api/admin/orders` | admin | 200 全部订单（JOIN 摘要）；非 admin 403 `auth-forbidden` |
-| `PATCH` | `/api/admin/products/{id}` | admin | `{unitPriceCents?, stock?, listed?}`；200；非法值 400；不存在 404 |
+| `23505` on `users_username_key` | `auth-username-taken` | 409 | 注册重复 |
+| `23505` on `orders_order_number_key` | 重新生成订单号（≤10 次） | — | 耗尽 → `order-number-exhausted` 409 |
+| `23505` on `ux_orders_user_client` | 回查已有订单 → `200 existing` | 200 | 幂等 |
+| `40001` / `40P01` | 重试；耗尽 `server-busy` | 503 | 有界 |
+| `57014`（statement_timeout）/ `55P03`（lock_timeout） | `server-busy` | 503 | 可重试 |
+| `53300`（too many connections）/ `08006` / `ECONNREFUSED` | `db-unavailable`（健康检查为 `down`） | 503 | 新增码 |
+| 其它 | `internal-error`（脱敏，日志带 requestId） | 500 | 不回显堆栈 |
 
-**失败形状冻结**（G3 的一部分）：
+### 5.3 L1 分层与接口冻结
 
-- `400 invalid-request`：字段缺失/类型错；`400 invalid-quantity`：数量越界；`400 invalid-price` / `400 invalid-stock`：负值或非整数；
-- `401 auth-required`：无会话或会话无效；`401 auth-invalid-credentials`：登录失败（**不区分用户名不存在与口令错误**）；
-- `403 auth-forbidden`：角色不足；`403 order-not-owned`：水平越权；
-- `404 product-not-found` / `404 order-not-found` / `404 not-found`（静态）；
-- `409 auth-username-taken` / `409 insufficient-stock` / `409 duplicate-order-number`；
-- `405`：静态层非 GET/HEAD，带 `Allow`；API 层方法不匹配，带 `Allow`；
-- `500 internal-error`：脱敏，不回显堆栈；服务端日志留 `requestId`；
-- `413 payload-too-large`：请求体超过 64 KiB（D-23）；
-- `400 invalid-json`：请求体不是合法 JSON；
-- `503 server-busy`：SQLite 忙且重试耗尽（D-22）。
-
-**判定优先级**（同一请求多处不满足时按顺序返回，只返回第一个）：
-
-| 顺序 | 判定 | 错误 |
-|---|---|---|
-| 1 | 请求体超限 / 非法 JSON | `413` / `400 invalid-json` |
-| 2 | 方法不允许 | `405`（带 `Allow`） |
-| 3 | 会话无效 | `401 auth-required` |
-| 4 | 角色不足 | `403 auth-forbidden` |
-| 5 | 资源不存在 | `404 product-not-found` / `404 order-not-found` |
-| 6 | 字段缺失/类型错 | `400 invalid-request` |
-| 7 | 业务校验（数量、价格、库存、上下架） | `400 invalid-quantity` / `invalid-price` / `invalid-stock` / `invalid-listed` |
-| 8 | 业务冲突（库存不足、订单号耗尽、重名） | `409 insufficient-stock` / `order-number-exhausted` / `auth-username-taken` |
-| 9 | 服务端异常 | `500 internal-error` / `503 server-busy` |
-
-**补充定义**：
-- 下单时商品不存在 → `404 product-not-found`；已下架 → `409 product-unlisted`；
-- `PATCH` 边界：`unitPriceCents` 为 0～9,999,999 的整数；`stock` 为 0～99,999 的整数；`listed` 仅 0/1；越界 → `400`；
-- `order-number-exhausted`（409）：订单号重生成 10 次仍冲突；
-- **存在性泄露取舍**：他人订单返回 `403 order-not-owned`（而非 404），便于课堂演示水平越权；代价是泄露「该订单号存在」。这是有意识的取舍，记录在 `docs/decision-log.md`（D-32），**不得写成「无信息泄露」**。
-
-**请求体与分页**：请求体上限 65536 字节（含流式读取限长，不只看 `Content-Length`）；本版不做分页（商品 14 条、订单量小），写入第 12 节。
-
-**静态层**：沿用 R1 的「显式白名单 + 拒绝点文件/反斜杠/NUL/编码分隔符/大小写混写遍历/查询变体/symlink 逃逸」；新增 `assets/images/products/*.jpg` 与新增模块进白名单；**每个白名单项必须真实存在**（G1 的机械保证，见 5.11）。`MIME_TYPES` 增加 `.jpg`/`.png`/`.webp`。
-
-### 5.3 会话与权限
-
-- 登录成功：`token = crypto.randomBytes(32).toString("hex")`；库中只存 `sha256(token)`；`Set-Cookie: fruitlab_session=<token>; Path=/; HttpOnly; SameSite=Lax`（无 `Secure`，无 `Max-Age`，即浏览器会话 Cookie）；
-- 每个受保护请求：解析 Cookie → `sha256(token)` 查 `sessions` → 查 `users` → 附 `req.user`；无会话 → 401；
-- 权限矩阵：
-  - `user`：只能 `GET /api/orders/mine`、`GET /api/orders/{自己订单号}`、`POST /api/orders`；
-  - `admin`：上述 + `GET /api/admin/orders`、`PATCH /api/admin/products/*`、`GET /api/orders/{任意}`；
-  - 越权一律 403，且**拒绝行为必须有用例**（水平越权与垂直越权各至少一条）；
-- 状态变更请求（`POST` / `PATCH`）校验 `Origin` 或 `Sec-Fetch-Site` 为同源，不匹配返回 `403 cross-origin-blocked`；这是**部分**缓解，不构成 CSRF 防护（PRD 边界，不得写成「已做 CSRF」；D-27）；
-- 口令：`scrypt`（`N=16384, r=8, p=1`，盐 16 字节，派生 64 字节），校验用 `timingSafeEqual`；种子账号口令写入 README「演示口令表」，**数据库只存哈希**（教学演示性质，明确标注非生产）；
-- 本版明确不做（边界）：会话过期/续期、CSRF 防护、失败次数限制与锁定、HTTPS/`Secure`、记住我、跨设备会话、审计日志。**不得暗示这是生产级安全**。
-- **风险接受（明确声明）**：以上边界来自 PRD FR-2 的「本版明确不做」，是**有意识的取舍而非遗漏**；演示服务只监听回环地址、无真实用户数据。风险接受写入 `docs/decision-log.md`，任何文档不得把它写成「已具备」。
-
-### 5.4 领域层与存储契约演进
-
-| 契约 | R1 | R2 | 变更原因 | 兼容性 |
-|---|---|---|---|---|
-| `readOrders(storage)` | `readOrders(storage)` → `{ok, raw, orders}` | `readOrders(db, { userId })` → `{ok, orders}`（服务端模块） | 数据源从浏览器存储变为服务端库；按用户过滤 | **破坏性**（首参语义变、返回去 `raw`） |
-| `appendOrder(storage, order)` | `appendOrder(storage, order)` → `{status, code, raw…}` | `appendOrder(db, order)` → `{status, code, order}`；`status ∈ {saved, not-written, duplicate-order-number, save-unknown}` 保留 | 服务端权威写入；`save-unknown` 语义在 DB 层不再出现，改由**客户端网络失败**映射 | **破坏性但状态词表保留** |
-| `runCheckout({cart, catalogById, storage, now, suffixFactory})` | 参数注入 storage | `runCheckout({cart, catalogById, db, userId, now, suffixFactory})` | 订单归属用户 | 有限演进 |
-| `performLookup({input, storage})` | 返回本地订单 | `performLookup({input, db, viewer})`，按 `viewer` 过滤 | 权限隔离 | 有限演进 |
-| 领域纯函数（`domain.mjs` 10 个 + `limits`） | 无依赖 | **原样复用，不改签名** | 证明 R1 分层有效 | 完全兼容 |
-| `assets/order-store.mjs` | 浏览器存储实现 | **退役**；职责拆为 `server/order-store.mjs`（DB）与 `assets/api-client.mjs`（前端） | 前端不再直摸存储 | 文件删除，契约对照见上 |
-| `PUBLIC_ALLOWLIST` | 仅静态文件 | 静态文件 + 图片 + API 路由 | 新需求 | 扩展 |
-| CSP `connect-src` | `'none'` | `'self'` | 前端必须调用同源 API | **必须改**，否则登录/下单全部被拦截 |
-| 默认端口 | `4173` | `4174` | 与 R1 并存 | 变更 |
-| 版本 | `1.0.0.0` | `2.0.0.0` | 发布 | 变更 |
-
-**验收口径**：`A7` 要求「R1 哪些契约被保住、哪些被改、为什么」能回答——上表即答案；`BUILD.md` 必须引用本表并给出逐项测试位置。
-
-### 5.5 命令行契约
-
-服务端启动（沿用 R1 契约）：
-
-```
-node serve.mjs [--port <0-65535>] [--db <path>] [--help] [--version]
+```text
+HTTP        server/router.mjs          只做协议：Host/Origin、体读取、405、信封、Cookie、状态码
+应用        server/services/*.mjs      用例：register/login/logout/me、catalog、checkout、lookup、health
+数据        server/repositories/*.mjs  只做 SQL/事务/映射，不含业务分支
+基础设施    server/db.mjs               Pool、迁移、事务、SQLSTATE → 错误
+领域        assets/domain.mjs          纯函数（签名与实现不变）
 ```
 
-- 默认 `127.0.0.1:4174`；`--port` 非法 → 退出码 2，文案沿用 R1；端口占用 → 打印可操作提示（含 `--port` 建议）；
-- `--help` / `--version` 成功退出 0；未知参数退出 2。
+**依赖规则（`tests/layering.test.mjs` 机械断言）**：
 
-运维与管理员 CLI（新增 `cli.mjs`）：
+1. `router.mjs` 不得 import `pg`、`server/repositories/*`、`server/db.mjs`；不得出现 SQL 关键字（`SELECT|INSERT|UPDATE|DELETE|BEGIN|COMMIT` 作为语句）；
+2. `services/*` 不得 import `node:http`/`node:https`/`serve.mjs`/`router.mjs`；不得读 `req`/`res`；
+3. `repositories/*` 不得 import `services/*`/`router.mjs`/`serve.mjs`；
+4. `assets/domain.mjs` 不得 import 任何 `server/*`/`node:http`/`node:fs`；
+5. `server/errors.mjs` 不依赖上层（只被依赖）；
+6. services 只通过注入的 repositories/pool 访问数据；repositories 不抛业务语义错误，返回行或抛数据库错误由 services 翻译。
 
+**模块与导出（`docs/contracts.md` 冻结）**：
+
+| 模块 | 导出（签名） |
+|---|---|
+| `server/db.mjs` | `createPool(config)`, `migrate(pool)`, `withTransaction(pool, fn)`, `schemaVersion(pool)`, `isSeeded(pool)`, `closePool(pool)` |
+| `server/repositories/users.mjs` | `findByUsername(pool, username)`, `findById(pool, id)`, `create(pool, {user})`, `list(pool)` |
+| `server/repositories/sessions.mjs` | `create(pool, {tokenHash, userId, createdAt, expiresAt})`, `findUserByToken(pool, tokenHash, now)`, `deleteByToken(pool, tokenHash)`, `purgeExpired(pool, now)` |
+| `server/repositories/products.mjs` | `list(pool, {includeUnlisted})`, `get(pool, id)`, `update(pool, id, patch)` |
+| `server/repositories/orders.mjs` | `create(client, {orderNumber, userId, items, clientOrderId, subtotalCents, createdAt})`、`deductStock(client, {productId, quantity})`、`createItems(client, orderId, lines)`、`findByClientOrderId(clientOrPool, userId, clientOrderId)`、`findByNumber(pool, orderNumber)`、`listByUser(pool, userId, {limit})`、`listAll(pool, {limit})`、`itemsByOrderIds(pool, ids)`；事务边界由 service 用 `withTransaction` 控制 |
+| `server/app.mjs` | `createApp({config, clock})` → `{handler, pool, services, close}`：组合根（建池→迁移→按需 seed→构造 services），供 `serve.mjs`/`cli.mjs` 复用 |
+| `server/services/index.mjs` | `createServices({pool, config, clock, rateLimiter})` → `{auth, catalog, orders, health}` |
+| `server/services/auth.mjs` | `createAuthService({repos, config, clock})` → `{register, login, logout, me, dummyVerify, resetRateLimiter}` |
+| `server/services/catalog.mjs` | `createCatalogService({repos})` → `{listPublic, listAdmin, updateProduct}` |
+| `server/services/orders.mjs` | `createOrderService({pool, repos, clock, config})` → `{checkout, listMine, getForViewer, listAll}` |
+| `server/services/health.mjs` | `createHealthService({pool, config, clock})` → `{health}` |
+| `server/router.mjs` | `createApiHandler({services, config})` → `(req,res)=>Promise<boolean>` |
+| `server/allowlist.mjs` | `PUBLIC_ALLOWLIST`, `IMAGE_RE`, `isAllowedPublicPath(pathname)`, `listPublicFiles()` |
+| `serve.mjs` | `createStaticServer({port, host, services, config})`、`parseCliArgs`、`main` |
+| `config.mjs` | `loadConfig(env)`（PORT、HOST、`PUBLIC_URL`、DATABASE_URL、TTL、Cookie、限流、`TRUST_PROXY`、APP_ENV、`DEMO_PASSWORD`、`ADMIN_PASSWORD`） |
+
+### 5.4 HTTP API 契约（在 R2 基础上变更）
+
+统一前缀 `/api`；成功 `{ok:true,...}`；失败 `{ok:false,code,message,details?}`。**所有响应**带 `X-Request-Id` 与 `Cache-Control: no-store`。
+
+| 方法 | 路径 | 权限 | 变更 |
+|---|---|---|---|
+| `GET` | `/api/health` | 公开 | 新增 `db`/`schemaVersion`；DB down → 503 |
+| `GET` | `/api/products` | 公开 | 不变 |
+| `POST` | `/api/auth/register` | 公开 | 返回 `{user:{id,username,role}}`；CSRF 不要求（无会话） |
+| `POST` | `/api/auth/login` | 公开 | 统一 user 形状；`Set-Cookie` 会话（`Max-Age`）+ CSRF cookie（若缺失）；429 限流 |
+| `POST` | `/api/auth/logout` | 会话（可选） | 有会话时要求 CSRF；204 + 清两个 Cookie |
+| `GET` | `/api/auth/me` | 公开 | 返回 `{user:{id,username,role}}`（统一形状，C-7）；401 |
+| `POST` | `/api/orders` | 登录 + CSRF | 201/200；幂等；并发安全 |
+| `GET` | `/api/orders/mine` | 登录 | 不变 |
+| `GET` | `/api/orders/{orderNumber}` | 登录 | **他人订单 → 404**；admin 任意；安全解码 |
+| `GET` | `/api/admin/orders` | admin | 不变 |
+| `GET` | `/api/admin/products` | admin | 不变（含下架） |
+| `PATCH` | `/api/admin/products/{id}` | admin + CSRF | 安全解码；405 表补全 |
+
+**405 形状表**（在任何业务分派前判定；`Allow` 头必须准确）：
+
+| 路径模式 | 允许方法 |
+|---|---|
+| `/api/health`、`/api/products`、`/api/auth/me`、`/api/orders/mine`、`/api/admin/orders`、`/api/admin/products` | `GET` |
+| `/api/auth/register`、`/api/auth/login`、`/api/auth/logout`、`/api/orders` | `POST` |
+| `/api/orders/{orderNumber}` | `GET` |
+| `/api/admin/products/{id}` | `PATCH` |
+
+**Host/Origin 允许集合（派生规则，F-03）**：`config.publicOrigin`（`PUBLIC_URL`，默认 `http://127.0.0.1:4175`）→ 允许 `publicOrigin.host`；另允许 `127.0.0.1:<PORT>` 与 `localhost:<PORT>`（容器内 healthcheck 用）；容器内 `HOST=0.0.0.0`。Caddy 必须保留外部 Host（`header_up Host {http.request.host}`）；web 容器 healthcheck 访问 api 时使用 public origin 的 Host。直连 simple 模式 PORT=4175，集合一致。
+
+**判定优先级（冻结，D-58）**：
+
+| 顺序 | 判定 | 结果 |
+|---:|---|---|
+| 1 | Host 不在允许集合 | 403 `host-not-allowed` |
+| 2 | Origin / Sec-Fetch-Site 跨源 | 403 `cross-origin-blocked` |
+| 3 | 体协议（POST/PATCH）：Content-Type 非 JSON → 415；体 >64 KiB → 413；非法 JSON → 400 `invalid-json` | 415 / 413 / 400 |
+| 4 | 方法不允许（已知路由） | 405 + `Allow` |
+| 5 | 无有效会话（受保护路由） | 401 `auth-required` |
+| 6 | 带会话的写请求 CSRF 缺失/不符 | 403 `csrf-token-invalid` |
+| 7 | 角色不足 | 403 `auth-forbidden` |
+| 8 | 资源不存在（含**他人订单**） | 404 |
+| 9 | 字段缺失/类型错 | 400 `invalid-request` |
+| 10 | 业务校验（数量/价格/库存/上下架/重名） | 400 / 409 |
+| 11 | 登录限流触发（在凭证校验之前） | 429 `auth-rate-limited` + `Retry-After` |
+| 12 | 登录失败（凭证错误/用户不存在） | 401 `auth-invalid-credentials` |
+| 13 | 服务端异常/忙/库不可用 | 500 / 503 |
+
+> 登录路径：1 → 2 → 3 → 4 → 11（限流）→ 凭证校验 → 12（失败）/ 成功。
+> 登录/注册不要求 CSRF token（无会话，靠 1/2 与 415/413 限制）；该边界写入 §5.5 与 README，不称"完整 CSRF 防护"。
+
+**新增/变更错误码**：`csrf-token-invalid`(403)、`auth-rate-limited`(429)、`db-unavailable`(503)；移除 `order-not-owned`（D-57），`docs/error-catalog.md` 与 `tests/contracts.test.mjs` 同步。
+
+### 5.5 安全设计
+
+- **会话**：32 字节随机 token，库中只存 `sha256`；`expires_at = now + SESSION_TTL_SECONDS`；每次解析校验未过期；过期行惰性删除 + 启动清理；登录时删除当前 Cookie 对应旧会话并轮换；登出删除服务端行；Cookie `HttpOnly; SameSite=Lax; Path=/; Max-Age=TTL`，`COOKIE_SECURE=1` 时 `Secure`。
+- **登录限流**（D-54/D-77，F-08）：内存 `Map<username|ip, {fails, firstAt, lockedUntil}>`；15 分钟窗口失败 5 次锁定 15 分钟；命中返回 429 + `Retry-After`；成功清零；定期清理过期条目；测试用可注入时钟。客户端 IP：**Caddy 必须覆盖** `X-Forwarded-For` 为 `{remote_host}`（不追加客户端自带值）；api 仅在 `TRUST_PROXY=1` 时信任该头，且只信任来自 compose 内网的请求；`TRUST_PROXY=0` 用 socket 地址。限流 Map 限制键长度（≤128）与条目上限（默认 10000，LRU 淘汰）。测试覆盖伪造 XFF 在 0/1 下的行为。边界：单实例、进程重启清零，不防分布式撞库，写入 README。
+- **CSRF**（D-55）：安全方法（GET/HEAD）在响应缺失时下发 `fruitlab_csrf`（32 字节随机，非 HttpOnly，`SameSite=Lax`）；登录成功响应也补发（若缺失）；带会话的 `POST/PATCH/DELETE` 必须带 `X-CSRF-Token` 且与 Cookie 常量时间相等；否则 403 `csrf-token-invalid`。前端 `api-client` 自动读取 Cookie 并在写请求带头；Cookie 缺失时先 `GET /api/health` 取一次再重试（只重试一次）。
+- **时序枚举**（D-56）：启动时生成一次 `DUMMY_HASH`（随机盐的 scrypt 哈希）；用户不存在时执行 `verifyPassword(password, DUMMY_HASH)`，存在时执行真实 `verifyPassword`；两条路径都只做一次 scrypt；报告写"降低到不可测量"，测试断言 dummy 分支被调用（注入计数），不做脆弱时间断言。
+- **越权**：他人订单统一 404；admin 任意读；管理接口角色校验；静态层沿用 R1/R2 的穿越防护。
+- **生产加固**（D-67/D-73，F-06）：`APP_ENV=production` 时必须提供 `ADMIN_PASSWORD`（≥12 字符、≠`demo1234`、且不等于 `DEMO_PASSWORD`），必须 `COOKIE_SECURE=1`；生产模式只 seed 14 商品 + `admin`，**不创建 `userA`/`userB`**；`DEMO_PASSWORD` 仅 development/classroom 使用，默认值只在 localhost 生效；`POSTGRES_PASSWORD`/`POSTGRES_USER`/`POSTGRES_DB` 由 `.env` 提供，compose 用 `${...:?}` 强制；`.env` gitignore；README 分列 classroom 默认与 production checklist。
+- **明确边界**：无 HTTPS（`COOKIE_SECURE` 需部署方开启）、无审计日志、无多租户、无水平扩展；403→404 的课堂演示取舍写入 `docs/decision-log.md`。
+
+### 5.6 CLI 与配置
+
+```text
+node cli.mjs [--url <DATABASE_URL>] [--json] <command>
+  dev [--port <0-65535>]                 # 迁移 + 按需 seed + 启动（simple 模式含静态）
+  db migrate | seed | check | backup [--out <dir>] | reset --yes [--out <dir>]
+  user list | add --username <u> --password-stdin [--role user|admin]
+  product list [--all] | set-price --id <id> --unit-price-cents <n> | set-stock --id <id> --stock <n>
+          | unlist --id <id> | relist --id <id>
+  orders list [--user <username>] | show <orderNumber>
+  --help | --version
 ```
-node cli.mjs db init [--force]
-node cli.mjs db seed
-node cli.mjs user list
-node cli.mjs user add --username <u> --password <p> [--role user|admin]
-node cli.mjs product list
-node cli.mjs product set-price --id <product-id> --cents <n>
-node cli.mjs product set-stock --id <product-id> --units <n>
-node cli.mjs product list|unlist --id <product-id>
-node cli.mjs orders list [--user <username>]
-node cli.mjs --help | --version
+
+- `--db <path>` **移除**；数据库只由 `--url` 或 `DATABASE_URL` 指定（`--db` 出现即用法错误，退出 2，并提示改用 `--url`）；
+- 退出码保持 `0/1/2/3/4`（成功/业务失败/用法/暂时性/内部）；stdout 数据、stderr 诊断；
+- `db backup`：SQL 逻辑导出（`schema_migrations` 版本 + 每表 JSON Lines）到 `--out`，失败非零；`db reset --yes` 必须先成功 backup，再事务重建并校验，任一步失败非零且原库保留；
+- `db check`：连接、迁移版本是否为最新、关键约束存在、种子计数、`SELECT 1`；
+- 生产口令检查：`APP_ENV=production` + 缺 `DEMO_PASSWORD` → seed/`dev` 退出 1 并提示。
+
+### 5.7 测试策略（真实 Postgres）
+
+- 前置：`TEST_DATABASE_URL`（默认 `postgres://postgres:postgres@127.0.0.1:55432/postgres`）；README 给出启动命令：
+  `wsl -e docker run -d --rm --name fruitlab-r3-test-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:16-alpine`
+- `tests/helpers/pg.mjs`：`createTestDatabase({seed=true})` → 唯一库名 `fruitlab_test_<random>`、`CREATE DATABASE`、`migrate`、`seed`；`close()` 断开并 `DROP DATABASE`；连接失败时**抛可操作错误**（不是 skip）。
+- 隔离：每个测试用例一个数据库（CREATE/DROP），文件级并行由 `node --test` 调度；并发用例在同一库内用两个 Pool 验证。
+- 原有 96 项迁移原则：纯逻辑（domain/controller/app/assets）保留；DB/auth/CLI/API 按 PG 重写并保留断言意图，逐项对照表进 `BUILD.md`；计数以 `scripts/record-test-count.mjs` 为唯一权威（追加 `treeStatus`/`treeHash`，见 `evidence/spec-forensics.md` §5）。
+- 新增覆盖：迁移/种子幂等、约束、事务回滚、并发不超卖、同幂等键并发、死锁/锁超时重试、405 表驱动、优先级组合、CSRF、限流、会话过期/轮换、dummy scrypt 分支、畸形编码、`/auth/me` 形状、api-client 响应体超时、`db reset` 失败路径、`db backup` 往返、compose 静态检查（镜像/端口/卷/非 root/healthcheck/无明文口令）。
+- 静态扫描：依赖口径（`{pg}`）、无远程资源、无注入 sink、router 无 SQL、分层 import 规则。
+
+### 5.8 L2 拓扑与容器交付
+
+```text
+浏览器 ──4175──> web(Caddy :8080 容器内, 非 root) ── /api/* ──> api(Node :3000, 非 root)
+                    │                                              │
+                    └── 静态文件（public/，按白名单生成）            └──> db(postgres:16-alpine)
+                                                                          volume fruitlab-r3-pgdata
 ```
 
-- 全局选项 `--db <path>`（或环境变量 `FRUITLAB_DB`）置于子命令之前，默认 `data/fruitlab.db`；CLI 与 `serve.mjs` 必须能指向同一临时库，否则测试与运维会互相踩库（D-28）；
-- 退出码：`0` 成功 / `1` 运行期错误（库不可写、库未初始化等）/ `2` 参数错误；
-- 所有输出为纯文本，可管道；**不得打印口令或哈希**；
-- `db init` 幂等（存在则报错并提示 `--force`，`--force` 需显式确认文本）；
-- CLI 与 HTTP 共享同一组 `server/*.mjs` 模块，避免第二套业务逻辑。
+- `Dockerfile`（api，多阶段）：`npm ci --omit=dev` → `node:22-alpine`，预建并 `chown node` 可写的 `/app/backups`（`db backup/reset` 用），`USER node`，`HEALTHCHECK` 用 Node `fetch` 调 `/api/health`，`CMD ["node","serve.mjs","--port","3000"]`；启动自动迁移 + 按需 seed；`SIGTERM` 优雅停机（关 server + pool）。
+- `Dockerfile.web`（web，多阶段）：builder 跑 `scripts/build-public.mjs` 生成 `public/`（按 `server/allowlist.mjs`，缺文件即失败）→ `caddy:2-alpine` 拷入，`USER 1000`，`XDG_DATA_HOME=/tmp/caddy-data`、`XDG_CONFIG_HOME=/tmp/caddy-config`（非 root 可写），监听 `:8080`。
+- `Caddyfile`：`handle /api/* { reverse_proxy api:3000 }`；静态 handler 下发 CSP/nosniff/DENY/no-store；`file_server`。
+- `docker-compose.yml`（默认三容器，F-03/F-04）：项目名 `fruitlab-r3`；db 固定 `POSTGRES_USER=fruitlab`、`POSTGRES_DB=fruitlab`、密码来自 `${POSTGRES_PASSWORD:?}`，healthcheck `pg_isready -U fruitlab -d fruitlab`；api 的 `DATABASE_URL` 由同一组变量拼装，`HOST=0.0.0.0`、`PORT=3000`、`APP_ENV=${APP_ENV:-development}`、`PUBLIC_URL=${PUBLIC_URL:-http://127.0.0.1:4175}`；api `depends_on: db: service_healthy`；web `depends_on: api: service_healthy`，`ports: ["4175:8080"]`，Caddy `header_up Host {http.request.host}`、`header_up X-Forwarded-For {remote_host}`；web 也有 healthcheck（`wget -q -O /dev/null http://127.0.0.1:8080/`）；db 不映射宿主端口（调试用 `compose.debug.yml` 加 `55432:5432`）。密码含 URL 特殊字符时用 `encodeURIComponent` 拼装并文档说明。
+- `compose.simple.yml`：db + api，api 暴露 `4175:3000`、`SERVE_STATIC=1`（对照用）。
+- `.env.example`：`POSTGRES_USER` / `POSTGRES_DB` / `POSTGRES_PASSWORD` / `APP_ENV` / `PUBLIC_URL` / `ADMIN_PASSWORD` / `DEMO_PASSWORD` / `SESSION_TTL_SECONDS` / `COOKIE_SECURE` / `RATE_LIMIT_*`；`.env` 进 `.gitignore`。
+- `.dockerignore`：`.git`、`node_modules`、`data/`、`backups/`、`.env`、`.gstack`、`.context`。
+- `scripts/backup.sh` / `scripts/restore.sh`（WSL bash）：从 `.env` 读取 `POSTGRES_USER`/`POSTGRES_DB`（不硬编码），`docker compose exec -T db pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc` → `backups/*.dump`；恢复 `pg_restore --clean --if-exists`；打印校验（行数/种子计数）；恢复前提示停写（`docker compose stop api`）。
+- 非 root 验证：`docker compose exec api id -u`（1000）、`web id -u`（1000）；db 以官方镜像 `postgres` 用户运行（记录）。
+- **本机执行现实**：Windows Docker Desktop 引擎未运行，所有 compose 命令在本机经 WSL 执行（`wsl -e docker compose -f /mnt/d/vibecoding/easyvibe/r3-fruitlab/docker-compose.yml ...`）；这改变的是**证据命令形态**，不改变 PRD 的目标命令语义（`docker compose up --build`）。README 同时给出"有 Docker Desktop 时"与"本机 WSL 时"两种写法，证据只记录实际执行的那种。
 
-### 5.6 前端结构（必须保住 R1 的交互契约）
+### 5.9 静态托管与白名单
 
-页面仍为**单页、零构建**；`index.html` 重组为：
+- `server/allowlist.mjs` 为唯一白名单（R2 集合 + R3 新增文档）；`scripts/build-public.mjs` 按白名单复制文件，缺失即失败（G1 的机械保证延续）；
+- Node 服务在 simple 模式继续托管静态（沿用 R2 的穿越/编码/405/脱敏 500 规则）；L2 下 api 不托管静态；
+- Caddy 静态响应的安全头与 Node 保持一致（CSP 无 `unsafe-inline`，`frame-ancestors 'none'` 由头下发）。
 
-| 区域 | 内容 |
-|---|---|
-| 顶部导航 | 标识、`商城`、`查订单`、`我的订单`、`管理`（仅 admin 可见）、`登录/注册`、购物袋入口 |
-| 首屏 | 标题、简短副标题、商品网格 |
-| 商品网格 | 14 张卡（照片、名称、规格、价格、加入购物袋）；售罄态；下架不出现在此 |
-| 购物袋 | 行算式、合计、结账（未登录先引导登录） |
-| 查订单 | 顶层入口（R1 契约）；查询后**聚焦结果标题**；输入即清过期结果；格式错误给 `aria-invalid` |
-| 我的订单 | 登录用户的订单列表与详情 |
-| 管理 | `订单`（全部订单）/ `商品`（价格、库存、上下架） |
-| 登录/注册 | 表单；错误码到中文文案的映射 |
-| 页脚 | 运行说明、证据索引（真实存在的文件） |
+### 5.10 可观测性与配置
 
-**R1 交互契约（必须全部保留，AC-31 逐条验证）**：
-1. 顶层「查订单」入口存在且可达；
-2. 查询成功后焦点落在结果标题；
-3. 数量输入框失焦重绘不吞掉紧随其后的点击；
-4. 数量边界 1/99 时加减按钮禁用；
-5. 购物车变动或新结账时隐藏旧收据；查单输入即清旧结果；
-6. 存储/网络失败显示**按错误码对应的具体文案**，不是笼统「出错了」；
-7. 结账中（saving）状态可见且按钮禁用；未知结果（`save-unknown`）锁定重试并要求人工核对；
-8. 移动端（<720px）购物袋有紧凑入口，不必滚到页底。
+- 启动结构化摘要（JSON 一行）：`{event:"listening", url, port, db, schema, seeded, version}`；
+- 每个 API 响应 `X-Request-Id`；错误日志含 `requestId`、方法、路径、SQLSTATE（不含口令/令牌/哈希）；
+- `/api/health`（D-62）；`--log` 访问日志可选（simple 模式）；
+- 配置全部经 `config.mjs` 从环境变量读取；不在代码里写死口令/密钥。
 
-**R2 的 `save-unknown` 处理**：不实现幂等键（PRD 未要求）；客户端在未知结果后**不自动重试**，提示用户到「我的订单」核对（延续 R1 DX1「未知写入必须人工核对」的决定），避免重复下单（D-30）。
+### 5.11 文档、证据与义务追溯
 
-**前端模块**：`assets/api-client.mjs`（fetch 封装、Cookie 同源、错误码映射）、`assets/controller.mjs`（纯 reducer 扩展登录/管理态，仍不依赖 DOM）、`assets/app.mjs`（渲染与事件）、`assets/domain.mjs`（不动）、`assets/catalog.mjs`（退役，改由 API 提供）、`assets/order-store.mjs`（退役）。
+- 7 环产物：`SPEC.md`、`DECISIONS.md`、`BUILD.md`、`review.md`、`qa-report.md`、`CHANGELOG.md`、`retro.md`；
+- 新增/更新：`docs/architecture.md`、`docs/contracts.md`、`docs/api.md`、`docs/error-catalog.md`、`docs/deploy.md`、`docs/backup-restore.md`、`docs/obligations.md`、`docs/branch-matrix.md`、`docs/decision-log.md`、`docs/coverage-audit.md`；
+- 证据：`evidence/ring-*.md`、`evidence/spec-forensics.md`、`evidence/spec-quality-gate.md`、`evidence/test-count.txt`、`evidence/manifest.json`、`evidence/visual/`、`evidence/container/`、`evidence/codex/`、`evidence/cso/`；
+- 追溯链：`F-R3-NN → OB-R3-<PHASE>-NN → AC-NN → 证据路径`；`BUILD.md` 验收表同时引 `AC` 与 `OB`；`scripts/check-traceability.mjs` 机械校验；
+- 判定只用 `closed` / `downgraded`（附理由）/ `not-covered`（附理由）；不得把"未覆盖"写成"通过"。
 
-### 5.7 视觉规范（Apple 式高冷克制）
+### 5.12 R1/R2 隔离（硬约束）
 
-> 这是方向变更：PRD FR-7 原写「参照亚马逊商品列表风格」。本节取代该方向，A11 判定以下文为准。
+1. R3 只写 `r3-fruitlab`；不把 `package.json`/`pg`/Dockerfile/compose/Postgres 数据写回 R2；
+2. 不运行会写入 R1/R2 文件的命令；`start-all.mjs` 用 R2 内存库；
+3. 每环收尾跑 `git -C ..\r1-fruitlab status --short` 与 `..\r2-fruitlab status --short`，必须为空；
+4. 端口/卷/镜像/项目名固定（D-65），并发演示无碰撞。
 
-**设计词元**（写入 `docs/design-tokens.md`，CSS 变量落 `assets/styles.css`）：
+## 6. Acceptance Criteria（AC-49 起）
 
-| 类别 | 值 |
-|---|---|
-| 背景 / 表面 | `#ffffff` / `#f5f5f7` |
-| 主文字 / 次文字 | `#1d1d1f` / `#6e6e73` |
-| 分隔线 | `rgba(0, 0, 0, 0.08)` |
-| 强调色（仅主 CTA 与链接） | `#0071e3` |
-| 危险色 | `#b3261e` |
-| 字体 | 系统栈：`-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", system-ui, sans-serif`；**不引入任何外部字体** |
-| 字号 | 12 / 14 / 17 / 21 / 28 / 40 / 56，`display` 用 `clamp(40px, 6vw, 56px)`；大标题字距 `-0.01em` |
-| 字重 | 400 / 500 / 600，不加 700+ |
-| 圆角 | 图片瓦片 `18px`；按钮胶囊 `980px` |
-| 间距 | 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96 |
-| 容器 | 最大宽 `1280px`；页边距 24px（≥1024px 时 48px） |
-| 动效 | 220ms `cubic-bezier(0.25, 0.1, 0.25, 1)`；尊重 `prefers-reduced-motion` |
-
-**版式规则**：
-1. **留白优先**：首屏上下留白 ≥ 96px；区块之间 ≥ 48px；不做密集堆叠。
-2. **商品网格**：4 列（≥1068px）/ 3 列（≥834px）/ 2 列（≥600px）/ 1 列（<600px）；间距 20～24px。
-3. **商品卡**：无边框、无投影；照片区为 1:1 浅灰底（`#f5f5f7`）瓦片，`object-fit: contain`，四周留白；名称 17px/600（最多两行）；规格 14px 次文字；价格 17px/600；CTA 胶囊按钮「加入购物袋」。
-4. **售罄**：照片区降饱和度/降透明度，文字「已售罄」，按钮禁用（灰底）。
-5. **高冷约束**：不做渐变、不做 emoji、不做促销角标、不做大红大紫、不做卡片投影、不使用感叹号。文案短句、克制、只陈述事实。
-6. **响应式**：≥1440px 居中最大宽 1280；移动端导航收为一行可横向滚动的文字链；购物袋在 <720px 使用紧凑入口条。
-7. **无障碍**：正文对比度 ≥ 4.5:1；所有图片有 `alt`；焦点环 3px `#0071e3` + 2px offset；状态区 `aria-live`；键盘可完成浏览→加购→结账→查单全流程。
-
-**禁止项（视觉验收会逐条查）**：外部字体、远程图片、渐变横幅、emoji 装饰、多色促销块、超过两级文字颜色。
-
-### 5.8 商品照片资产
-
-- **数量与命名**：14 张，`assets/images/products/<product-id>.jpg`（如 `fuji-apple.jpg`），1:1 裁切、最短边 ≥ 800px、JPEG q≥80、单张 ≤ 300 KB；
-- **来源**：Openverse API（`https://api.openverse.org/v1/images/?q=...&license=cc0,by`），回源下载；**仅 CC0 / CC BY**，排除 NC / ND / SA 歧义；
-- **授权台账**：`docs/assets-credits.md`（人读）+ `evidence/assets-manifest.json`（机读，字段：`product_id`、`file`、`sha256`、`title`、`creator`、`license`、`license_url`、`source_url`、`retrieved_at`）；
-- CC BY 图片在页脚「图片来源与授权」链接到台账，履行署名义务；
-- **品种匹配**：优先找品种级照片；找不到时用同品类真实照片，并在台账 `title` 中标明「品类级」，不得用 AI 生成图或插画冒充；
-- `alt` = 商品名 + 规格（如「红富士苹果 500g」），由种子数据生成，不手写 14 份散落在 HTML 里。
-
-### 5.9 静态服务与 CSP
-
-- CSP 调整为：`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`（`connect-src` 从 `'none'` 改 `'self'` 是本轮**必要**变更）；
-- 启动自检：Node ≥ 22 且 `node:sqlite` 可用；不可用则打印稳定码 `[sqlite-unavailable]`、退出码 1。`node:sqlite` 为实验特性，同步 `DatabaseSync` 会阻塞事件循环；本版接受该限制（单进程演示），记录在 `docs/decision-log.md`（D-31）；
-- 白名单条目必须与磁盘一致，由 `scripts/check-links.mjs` 机械校验（G1）；
-- 静态层拒绝规则、`problem+json`、405 `Allow`、脱敏 500、`no-store` 全部保留并加测试。
-
-### 5.10 测试策略
-
-| 层 | 覆盖 |
-|---|---|
-| 领域纯函数 | `tests/domain.test.mjs` **原样保留**，证明 R1 领域层未被破坏 |
-| DB 集成 | 临时文件库（`fs.mkdtemp`）+ 建表 + 种子；覆盖建表、唯一约束、外键、库存原子扣减（并发两次只成功一次）、事务回滚 |
-| 认证 | 哈希/校验、错误口令、重名注册、会话创建/失效、Cookie 属性 |
-| 权限 | userA 查 userB 订单 403；user 调管理接口 403；admin 可查全部 |
-| HTTP | 端口 0 启动；状态码、`Set-Cookie`、失败形状、405 `Allow`、404、500 脱敏 |
-| CLI | 子进程 `spawnSync` 跑 `cli.mjs`；退出码 0/1/2；`--help`/`--version`；帮助不泄漏口令 |
-| 静态扫描 | 沿用 `innerHTML`/`outerHTML`/`insertAdjacentHTML`/`document.write` 禁令；新增「无远程资源」扫描 |
-| 前端 DOM | 最小 fake DOM，覆盖登录态渲染、购物袋、查单聚焦、错误码文案 |
-| 机械校验 | 链接存在、编号一致、义务追溯、证据清单逐一可验证 |
-
-**测试计数权威**：`scripts/record-test-count.mjs` 运行 `node --test`，把命令、原始输出、git hash、时间写入 `evidence/test-count.txt`；其它文档出现计数时只允许引用该文件（AC-12/AC-24）。
-
-### 5.11 追溯、文档与 G1–G7 机械形态
-
-**义务编号**：`OB-<阶段>-<序号>`（`OB-CEO-01`…、`OB-DES-01`…、`OB-DX-01`…、`OB-ENG-01`…），在 autoplan 阶段产生；R1 的 F/DF/DX/E 编号不被复用，避免歧义。**时序说明**：spec 阶段 `docs/obligations.md` 只有表头与来源说明（义务尚未产生）；`check-traceability.mjs` 在 build 环才要求每条 OB 有内容与证据——这是流程时序，不构成缺口。
-
-**单一台账** `docs/obligations.md`：
-
-| 编号 | 来源发现 | 义务原文 | 完成判据（机械可查） | 判定 | 证据位置 |
-|---|---|---|---|---|---|
-
-判定只允许：`closed` / `downgraded`（附理由）/ `not-covered`（附理由并上报）。**文档类义务必须给出可机械核对的形态**（文件存在、链接可解析、矩阵条目、哈希、脚本输出），不得以「已实现」代替。
-
-**`BUILD.md` 验收表**：`AC 编号 | 规格条款 | OB 编号 | 证据位置 | 判定`。`review.md` / `qa-report.md` 各加义务逐项核对表。
-
-**机械校验脚本**（全部零依赖）：
-- `scripts/check-links.mjs`：白名单、页脚、文档内部链接目标必须存在；
-- `scripts/check-numbering.mjs`：扫描 `SPEC/DECISIONS/BUILD/review/qa-report/retro` 中 `AC-`、`OB-`、`M\d+` 引用，必须能解析到定义；
-- `scripts/check-traceability.mjs`：每个 OB 在 BUILD 表出现且证据路径存在；每个 AC 有映射；
-- `scripts/record-test-count.mjs`：生成唯一计数；
-- `scripts/verify-evidence.mjs`：按 `evidence/manifest.json` 重算 SHA-256 并比对。
-
-**G1–G7 处置**：
-
-| # | 处置 | 机械形态 |
-|---|---|---|
-| G1 | 生成 `evidence/index.md`、`evidence/clean-run.md`、`evidence/manual-checks/browser.md`；`/BUILD-LOG.md` 引用改指真实 `BUILD.md`；页脚链接指向真实文件 | `check-links.mjs` 通过 |
-| G2 | 生成 `evidence/manifest.json`（逐文件 SHA-256）+ `evidence/clean-run.sha256` + 校验脚本，替代完整证据包 | `verify-evidence.mjs` 输出 `OK` |
-| G3 | `docs/contracts.md` 逐导出冻结签名/类型/精确失败形状；`docs/branch-matrix.md` 命名分支矩阵；`tests/contracts.test.mjs` 断言导出形状 | 测试 + 文档存在 |
-| G4 | 查单输入框加 `aria-invalid` 与 `aria-describedby` 指向错误文案；补测试 | 测试断言 |
-| G5 | `check-numbering.mjs` 通过；`M18/M19` 若需要先定义再用，否则删除引用 | 脚本通过 |
-| G6 | 唯一计数文件；文档禁止硬编码计数 | `record-test-count.mjs` + `check-numbering.mjs` |
-| G7 | 记录合并证据（`git merge-base --is-ancestor` 输出）到 `evidence/g7-release-merge.txt` | 文件存在 |
-
-**文档清单**（复盘的依据）：
-
-| 文件 | 内容 |
-|---|---|
-| `docs/decision-log.md` | 追加式决策台账：日期、编号、决策、备选项、理由、影响面 |
-| `docs/obligations.md` | 义务单一台账 |
-| `docs/contracts.md` | 契约冻结（签名/类型/失败形状） |
-| `docs/branch-matrix.md` | 状态/结果码 × 测试的命名矩阵 |
-| `docs/api.md` | API 契约（含示例请求/响应） |
-| `docs/error-catalog.md` | 错误码目录（R1 基础上扩充 API 层） |
-| `docs/design-tokens.md` | 视觉词元与版式规则 |
-| `docs/assets-credits.md` | 14 张照片的来源与授权 |
-| `evidence/index.md` | 证据索引（真实链接） |
-| `evidence/test-count.txt` | 唯一测试计数 |
-| `evidence/manifest.json` | 证据文件哈希清单 |
-| `evidence/ring-*.md` | 逐环证据：真实命令、原始输出、门禁行为、决策记录、环境坑 |
-
-### 5.12 降级边界
-
-| 档 | 项 | 规则 |
-|---|---|---|
-| **不可降级** | 登录与账号隔离、管理员三项能力、重启后数据仍在、G1–G7 逐项处置、义务追溯表、契约对照表、唯一测试计数、无失效链接、14 张本地照片+授权台账、alt 与无远程资源、Apple 版式核心规则 | 缺一即本轮不合格 |
-| **可降级（唯一原因是外部能力不可用）** | 跨模型外部评审（`unavailable`）、人工浏览器验收（`UNVERIFIED`）、推送/PR/部署（`requires-remote`）、完整 WCAG 人工审查（`provisional`） | 如实标注，不伪造；标注位置：对应环报告 + `evidence/` |
-| **可替代形态** | G2 证据包（PRD 允许「一次校验替代」）、G3 契约冻结中的「分支矩阵」（允许机读矩阵 + 测试，不要求人工清单） | 必须在 `docs/obligations.md` 写明替代形态与理由 |
-
-**降级留痕规则**：任何降级必须同时出现在 ① `docs/obligations.md` 的判定 ② `BUILD.md` 验收表 ③ 最终 A5 汇总。只出现在一处视为未留痕。
-
-## 6. Acceptance Criteria（验收标准）
-
-| 编号 | 判定 | 对应 PRD |
-|---|---|---|
-| AC-01 | `userA`、`userB`、`admin` 三个种子账号可登录，登录后 Cookie 为 `HttpOnly` 且同源请求生效 | A1 |
-| AC-02 | `userA` 查询 `userB` 的订单号返回 403 `order-not-owned`；`userA` 的「我的订单」不含 `userB` 数据 | A1 |
-| AC-03 | 未登录访问受保护接口返回 401 `auth-required` | A1 |
-| AC-04 | `admin` 改价格后商品列表价格立即变化，且历史订单金额不变 | A2 |
-| AC-05 | `admin` 改库存后列表显示变化；库存 0 显示「已售罄」且不可加购 | A2 |
-| AC-06 | `admin` 下架后商品从列表消失；上架后重新出现 | A2 |
-| AC-07 | 下单 → 停服 → 重启 → 订单与库存扣减仍在（数据库文件持久） | A3 |
-| AC-08 | `cli.mjs` 的 `db init/seed`、`user`、`product`、`orders` 子命令可运行；退出码 0/1/2 正确；`serve.mjs --help/--version/--port` 沿用 R1 契约 | A4 |
-| AC-09 | G1–G7 处置结果逐项列出（关闭/降级 + 理由 + 证据位置） | A5 |
-| AC-10 | 义务追溯表存在；每条 OB 在 `BUILD.md` 出现且有证据路径；`check-traceability.mjs` 通过 | A6 |
-| AC-11 | 契约变更前后对照表存在（旧签名/新签名/原因/兼容性） | A7 |
-| AC-12 | 测试计数只有一个权威来源；文档中不出现互相矛盾的数字 | A8 |
-| AC-13 | 白名单、页脚、文档链接全部可解析；`check-links.mjs` 通过 | A9 |
-| AC-14 | 14 张商品照片均为仓库内本地文件；每张在台账中有 `license` 与 `source_url`；`verify-evidence.mjs` 通过 | A10 |
-| AC-15 | 商品列表呈现 Apple 式版式：最大宽 1280、4/3/2/1 列断点、卡片结构符合 5.7 | A11 |
-| AC-16 | 商品卡包含照片、名称、规格、价格、CTA；不再有纯文字卡 | A11 |
-| AC-17 | 售罄态与下架态视觉符合 5.7（售罄在列表、下架不出现） | A11 |
-| AC-18 | 每张商品图有非空 `alt`；页面无外部字体/远程图片请求 | A12 |
-| AC-19 | G1：4 个失效引用全部有真实目标，`check-links.mjs` 通过 | G1 |
-| AC-20 | G2：`evidence/manifest.json` 与校验脚本存在，重算哈希一致 | G2 |
-| AC-21 | G3：`docs/contracts.md` + `docs/branch-matrix.md` 存在，`contracts.test.mjs` 通过 | G3 |
-| AC-22 | G4：查单格式错误时输入框有 `aria-invalid="true"`，错误文案被 `aria-describedby` 关联 | G4 |
-| AC-23 | G5：`check-numbering.mjs` 通过，无悬空编号引用 | G5 |
-| AC-24 | G6：`evidence/test-count.txt` 为唯一计数，文档无冲突数字 | G6 |
-| AC-25 | G7：合并证据文件存在，`main` 包含 release 分支 | G7 |
-| AC-26 | 所有 SQL 使用参数化（`prepare` + 绑定），无字符串拼接 SQL；静态扫描断言 | 安全 |
-| AC-27 | 水平越权与垂直越权各有测试并返回 403 | 安全 |
-| AC-28 | 数据库内无明文口令；口令哈希带盐；日志与 CLI 输出不含口令 | 安全 |
-| AC-29 | 会话令牌不可预测（32 字节随机）；退出登录后旧令牌失效 | 安全 |
-| AC-30 | 仓库中无密钥/口令明文（种子口令只出现在 README 演示口令表，且标注非生产） | 安全 |
-| AC-31 | R1 的 8 条交互契约全部成立（5.6 逐条验证）；**访客查单按 U2=A 移除**：查单需登录、只能查自己的订单，breaking 变更写入 README/CHANGELOG | 兼容 |
-| AC-32 | `tests/domain.test.mjs` 原样通过（领域层未被破坏） | 兼容 |
-| AC-33 | `docs/decision-log.md` 存在且为追加式，覆盖本规格 D-01～D-32 与后续各环决策 | 文档 |
-| AC-34 | 每个环节有 `evidence/ring-*.md`，含真实命令、原始输出、门禁行为、决策记录、环境坑 | 文档 |
-| AC-35 | `README.md` 更新为 R2 运行说明（4174、建库、种子、演示口令、测试命令） | 文档 |
-| AC-36 | `docs/error-catalog.md` 覆盖新增 API 错误码，逐码给 surface/文案/补救 | 文档 |
-| AC-37 | 页面加载无失败请求；`GET /api/products` 返回 14 条且下架项不出现 | 功能 |
-| AC-38 | 10 种 R1 商品的 `id/name/unit/price` 与 R1 一致（迁入数据库不丢数据） | 功能 |
-| AC-39 | 下单事务原子性：库存不足时订单与明细均不落库；并发两次下单只有一次成功、库存不为负 | 正确性 |
-| AC-40 | 请求体超过 64 KiB 返回 413 `payload-too-large`；非法 JSON 返回 400 `invalid-json` | 安全 |
-| AC-41 | **端到端用户旅程**：新用户注册→登录→浏览 14 商品→加购→下单→「我的订单」看到该单，全程不超过 3 分钟（真实 Chromium 记录） | Outcome |
-| AC-42 | `evidence/demo-script.md` 存在，可照做的 5 分钟演示脚本（含预期截图位） | Outcome |
-| AC-43 | `node cli.mjs dev` 一键启动（自动 init+seed+serve）；`GET /api/health` 返回 200 且含 `version/schemaVersion/dbPath/seeded`；README 有 60 秒快速开始 | DX |
-| AC-44 | 同一 `clientOrderId` 并发两次下单只产生一单、库存只扣一次 | 正确性 |
-| AC-45 | `GET /api/admin/products` 返回含下架商品的全量列表，admin 可据此重新上架 | 功能 |
-| AC-46 | 登出后旧 Cookie 访问 `/api/auth/me` 返回 401（服务端会话行已删除） | 安全 |
-| AC-47 | `docs/error-catalog.md` 为唯一真源；`tests/contracts.test.mjs` 断言实现错误码集合与其一致 | 契约 |
-| AC-48 | CLI `--json` 输出稳定形状；退出码 0/1/2/3/4 正确；`--help` 与文档命令集合一致 | DX |
-
-**AC-15～AC-18 的验证方式（D-24）**：qa 环用真实 Chromium 在 1440/1068/834/600/390 五个断点截图，逐条对照 5.7 判定；截图存入 `evidence/`。无法自动判定的布局项由人工确认并在证据文件签字，记为 `manual-verified`；**不得**用 fake DOM 断言冒充视觉验收。
+| 编号 | 判定 | 对应 | 证据形态 |
+|---|---|---|---|
+| AC-49 | R1 可独立启动（4173），`r1-fruitlab` 工作树空、HEAD `3087a05` | A1 | qa 3 版本实跑 + git status |
+| AC-50 | R2 可独立启动（4174），`r2-fruitlab` 工作树空、仍零依赖、HEAD `5f4dd87` | A2 | qa 实跑 + git status |
+| AC-51 | R3 `docker compose up --build` 后 `http://127.0.0.1:4175` 200，`/api/health` `db:"up"` | A3 | 容器日志 + curl |
+| AC-52 | R1/R2/R3 同时启动，各自可访问、互不影响、端口/数据/容器无碰撞 | A4 | qa 三版本并排截图 |
+| AC-53 | `scripts/start-all.mjs` 存在，能按序启动三版本且不写 R1/R2 | A4 | 脚本 + qa 记录 |
+| AC-54 | `package.json` 运行时依赖恰好 `{pg}`，lockfile 已提交；无其它第三方依赖 | A6 | static-scan + `npm ls --omit=dev` |
+| AC-55 | ship 后 `VERSION` = `3.0.0.0`；`package.json` 版本用合法 SemVer `3.0.0`（4 段→3 段映射写入版本校验脚本与 README）；CHANGELOG 记录 breaking（依赖口径/端口/数据库/404 变更） | A16 | 文件 + 版本校验测试 |
+| AC-56 | 迁移幂等：重复执行不改变 schema，`schema_migrations` 记录版本 | A7 | db 测试 |
+| AC-57 | seed 幂等：重复执行不重复数据，14 商品 + 3 账号 | A7 | db 测试 |
+| AC-58 | 不依赖 R2 的 SQLite 文件；R3 空库可启动并 seed | A7 | 代码扫描 + 容器 |
+| AC-59 | L1 分层成立：router 不含 SQL/pg/repositories；services 不含 HTTP；repositories 不含业务分支 | A9 | `tests/layering.test.mjs` |
+| AC-60 | 依赖规则由测试机械断言（import 图 + SQL 关键字扫描） | A9 | 同上 |
+| AC-61 | 各层导出签名与 `docs/contracts.md` 一致 | A9 | contracts 测试 |
+| AC-62 | 下单事务原子性：库存不足不落单、库存不为负 | 正确性 | db 测试 |
+| AC-63 | 并发两次下单不超卖（真实并发连接，库存 1 只有 1 单成功） | 正确性 | 并发测试 |
+| AC-64 | 同 `clientOrderId` 并发：一个 201、一个 200 `existing`、同一订单号、库存只扣一次；库存为 0 后重放仍返回 200 existing | 正确性 | 并发测试 |
+| AC-65 | `40001/40P01` 有界重试；耗尽返回 `server-busy` 503 | 正确性 | 单元 + 注入测试 |
+| AC-66 | 订单号唯一冲突重试 ≤10；耗尽 409 `order-number-exhausted` | 正确性 | 注入测试 |
+| AC-67 | 订单列表/详情无 N+1（批量/JOIN），按用户隔离 | 正确性 | db 测试 + SQL 断言 |
+| AC-68 | 他人订单返回 404 `order-not-found`；admin 可查任意（D-32 superseded） | A12 | API 测试 |
+| AC-69 | 管理端可查/改/重新上架下架商品 | 功能 | API 测试 |
+| AC-70 | C-1：`db reset` 备份失败即中止、数据保留；成功重置后校验 schema/种子；无"假成功" | A7 | CLI 测试（失败/成功两路） |
+| AC-71 | C-2：SQLSTATE 映射齐全（23505/40001/40P01/53300）；真实并发/持锁测试；`enqueueWrite` 退役留痕 | A11 | 测试 + decision-log |
+| AC-72 | C-3：全部已知路由（含动态）405 表驱动，`Allow` 正确 | A11 | 表驱动测试 |
+| AC-73 | C-4：未登录 + 非法 JSON/415/413 先返回体协议错误（非 401） | A11 | 优先级组合测试 |
+| AC-74 | C-5：api-client 超时覆盖响应体卡住；headers-then-hang/abort/非 JSON 测试 | A11 | 客户端单测 |
+| AC-75 | C-6：畸形百分号路径 → 400 稳定码，不再 500 | A11 | API 测试 |
+| AC-76 | C-7：login/register/me 统一 `{id,username,role}`，形状断言 | A11 | API 测试 |
+| AC-77 | S-1：缺失用户执行 dummy scrypt；两条登录路径各一次 verify（分支断言） | A12 | auth 测试 |
+| AC-78 | S-2：15 分钟窗口失败 5 次 → 429 + `Retry-After`；成功清零 | A12 | auth 测试（注入时钟） |
+| AC-79 | S-3：过期会话 401；过期清理；登录轮换；Cookie `Max-Age` | A12 | auth/API 测试 |
+| AC-80 | S-4：已由 AC-68 覆盖（404），decision-log 记录 D-32 superseded | A12 | 文档 + 测试 |
+| AC-81 | CSRF：带会话写请求缺/错 token → 403 `csrf-token-invalid`；正确 token 通过；跨源 403 | A12 | API 测试 |
+| AC-82 | 生产口令：`APP_ENV=production` 时缺 `ADMIN_PASSWORD`、`ADMIN_PASSWORD=demo1234`、长度 <12、或 `COOKIE_SECURE≠1` → seed/启动失败；生产模式不创建 userA/userB；`.env` 不入 git | A13 | CLI/配置测试 + 扫描 |
+| AC-83 | 库内无明文口令/令牌；日志与 CLI 不打印口令/哈希 | A13 | 测试 + 扫描 |
+| AC-84 | compose 三容器健康（web/api/db），`4175` 同源 `/api` 经 Caddy 反代可达 | A10 | 容器实跑 + curl |
+| AC-85 | volume 持久化：重启后订单/库存仍在 | A5 | 容器重启证据 |
+| AC-86 | api/web 非 root；healthcheck 有效；`SIGTERM` 优雅停机 | A13 | `id -u` + 日志 |
+| AC-87 | 备份/恢复：`pg_dump`/`pg_restore` 真实命令，恢复后数据一致 | A14 | 备份文件 + 恢复后查询 |
+| AC-88 | 镜像/项目/卷/端口命名 `fruitlab-r3*`、`4175`/`55432`，不与 R1/R2 冲突 | A4/A16 | compose 静态检查 |
+| AC-89 | `compose.simple.yml` 两容器模式可启动（api+db，无 web） | A10 | qa 记录 |
+| AC-90 | 测试跑真实 Postgres；README 写明 Docker 前置；测试计数唯一来源 | A8 | 测试输出 + test-count |
+| AC-91 | BUILD.md 给出 96 项逐测试处置表（原样保留/等价迁移/预期契约变更/删除理由）；预期变更限于 D-32/D-53/D-55/D-57/D-58/D-64 明确项，且由 contracts 测试固定新契约 | A8 | BUILD.md + contracts 测试 |
+| AC-92 | codex 独立子代理 `/review` 报告落盘（同族标注，不冒充跨模型） | A15 | `evidence/codex/` |
+| AC-93 | 官方 `/cso` run 完成（start/submit/finish），findings 与 `partial` 边界如实记录 | A15 | `evidence/cso/` |
+| AC-94 | 11 个缺陷点（10 条 findings）台账逐条 `closed/downgraded/not-covered`，`F→OB→AC` 双向引用 | A11 | `docs/obligations.md` + 脚本 |
+| AC-95 | `BUILD.md` 同时引 AC 与 OB；`check-traceability.mjs` 通过 | A11 | 脚本输出 |
+| AC-96 | `verify.mjs` 全链 PASS（测试+链接+编号+追溯+证据+compose 配置）；证据索引无死链 | A15/A16 | verify 输出 |
+| AC-97 | 事务边界：`23505`/`23514`/`23503` 后必须先 ROLLBACK 再回查/重试；幂等键冲突不重复扣库存；订单号冲突重试 ≤10 且不留下空单（F-01） | 正确性 | 并发 + 注入测试 |
+| AC-98 | 组合根/工厂：`createApp`/`createServices` 注入 pool/clock/rateLimiter/config；contracts 测试断言工厂与实例方法签名（F-02） | A9 | contracts + layering 测试 |
+| AC-99 | 容器 Host：api 监听 `0.0.0.0`；Caddy 保留外部 Host；healthcheck 与外部 Public URL 均通过 Host 校验（F-03） | A10 | 容器实跑 + 测试 |
+| AC-100 | DB 身份：`POSTGRES_USER/DB` 与 `DATABASE_URL`、`pg_isready`、备份脚本同源；空卷首次启动成功（F-04） | A3/A14 | 容器实跑 |
+| AC-101 | npm 版本映射：`VERSION=3.0.0.0` 与 `package.json=3.0.0` 的映射由脚本机械校验（F-05） | A16 | 版本校验测试 |
+| AC-102 | 生产加固：production 缺/弱/默认 admin 口令或 `COOKIE_SECURE=0` 拒绝启动；不建演示用户（F-06） | A13 | CLI/配置测试 |
+| AC-103 | 连接池：`connectionTimeoutMillis`/pool error 处理；PG 不可达时 health ≤5s 返回 503 不挂起；DB 重启后自动恢复（F-07） | A13 | 故障注入测试 + 容器 |
+| AC-104 | 反代 IP：Caddy 覆盖 XFF；`TRUST_PROXY=0/1` 行为测试；伪造 XFF 不能绕过限流；限流 Map 有容量上限（F-08） | A12 | 测试 + compose 静态检查 |
+| AC-105 | 输入约束：clientOrderId 8–128、maxItems 10、重复 productId 合并、username/password/价格/库存边界继承并测试；DB CHECK 同步（F-10） | 契约 | 测试 + schema 断言 |
 
 ## 7. Testing Plan
 
-1. **单元**：领域纯函数（原样）、认证工具、错误映射；
-2. **集成**：临时库建表/种子/约束/事务/库存并发/`SQLITE_BUSY` 重试/失败回滚；会话生命周期与令牌哈希；
-3. **HTTP**：端口 0 的真实服务器，覆盖全部路由、权限矩阵、失败形状、405/404/500 脱敏、Cookie 属性、413 与非法 JSON；
-4. **CLI**：`spawnSync` 子进程，覆盖退出码与输出脱敏；
-5. **前端**：最小 fake DOM 覆盖登录态、购物袋、查单聚焦、错误码文案等**交互状态**；视觉与布局由 qa 环真实 Chromium 三视口截图验收（D-24），人工判定项如实记 `manual-verified` 或 `UNVERIFIED`，不用 fake DOM 冒充视觉证据；
-6. **机械**：链接、编号、追溯、证据清单、测试计数；
-7. **回归**：`tests/domain.test.mjs` 与 R1 静态扫描禁令必须原样通过。
+1. **纯逻辑**：domain 17 项、controller 11 项、app fake DOM 19 项、assets 3 项——保留；
+2. **数据库集成**（真实 PG，每用例独立库）：迁移/种子/约束/事务回滚/并发扣减/幂等并发/死锁重试/订单号耗尽/会话过期/清理；
+3. **HTTP**：端口 0 真实服务器，覆盖全部路由、权限、405 表、优先级组合、CSRF、限流、404、413/415/400、500 脱敏、health up/down；
+4. **CLI**：`spawnSync` 子进程，覆盖 0/1/2/3/4、`--url`、`db backup` 往返、`db reset` 失败/成功、`--json` 形状、生产口令检查；
+5. **客户端**：`createApiClient` 超时/响应体卡住/abort/非 JSON/CSRF 头；
+6. **静态/契约**：依赖口径、无远程资源、无注入、router 无 SQL、分层 import、错误码集合、编号、compose 静态检查；
+7. **回归**：R1 的 8 条交互契约与静态扫描禁令；`tests/domain.test.mjs` 原样通过；
+8. **容器/浏览器**：qa 环实跑 compose、三版本并排、重启持久化、备份恢复、Chromium 五断点截图。
 
 ## 8. Rules for the Implementing Agent
 
-1. **`D:\vibecoding\easyvibe\r1-fruitlab` 一行都不能改**；本目录任何改动不得写回 R1；
-2. **零第三方依赖**：不新增 `package.json` 依赖、不引入 CDN/远程字体/远程图片；
-3. **不伪造证据**：代码、终端输出、测试结果、哈希必须来自真实执行；
-4. **门禁不可用就写「不可用」**：不得换模型充数、不得把「未覆盖」写成「通过」；
-5. **没发现问题就写「未发现」**：不得为凑数编造缺陷；
-6. **机械型缺陷直接修；需要权衡的先问人**；不静默修正已知问题；
-7. **文档与代码同一提交**：改了行为就同步 `docs/` 与 `evidence/`；
-8. **测试计数只从 `evidence/test-count.txt` 读**，不手写；
-9. **义务编号先定义后引用**，任何 `OB-`/`AC-`/`M` 编号必须可解析；
-10. **每环结束只核对产物是否就位，不越权审内容**；环间制衡交给下游环节。
+1. R1/R2 一行不改；R3 只写自己目录；
+2. 运行时依赖只允许 `{pg}`；不引入 CDN/远程字体/远程图片；
+3. 不伪造证据：代码、命令、输出、测试、哈希必须来自真实执行；
+4. 门禁不可用写 `unavailable`；未测写 `UNVERIFIED`；不完整写 `partial`；不得换模型/工具充数；
+5. 没发现问题写"未发现"，不为凑数编造缺陷；
+6. 机械型缺陷直接修；需要取舍的先记录再执行（本规格已把 A–E 拍板，见 D-54/D-55/D-57/D-58/D-63）；
+7. 文档与代码同一提交；每环证据落 `evidence/`；
+8. 测试计数只从 `evidence/test-count.txt` 读；
+9. 编号先定义后引用；
+10. 每环收尾自检产物与证据，再进入下一环（用户已授权代理自行审批，但产物与证据必须真实）。
 
 ## 9. Rollback Plan
 
-- 代码回退：`git reset --hard r1-baseline`（`r1-baseline` 是当前 `main` 的祖先，重置即回到 R1 状态；若已推送远端则改用 `git revert`，不重写公共历史）；
-- 数据回退：删除 `data/` 目录，`node cli.mjs db init && node cli.mjs db seed` 重建；
-- 视觉回退：`assets/styles.css` 与 `index.html` 可从 `r1-baseline` 取回；
-- 契约回退：`docs/contracts.md` 记录旧签名，可对照恢复；
-- 发布回退：版本 `2.0.0.0` 失败时 `CHANGELOG.md` 记录并回退到 `1.0.0.0` 标签。
+- 代码回退：`git reset --hard r2-baseline`（R3 内回到 R2 快照；R2 仓库独立，不受影响）；
+- 数据回退：删卷重建 `wsl -e docker volume rm fruitlab-r3-pgdata` + `compose up`（仅演示数据）；
+- 容器回退：`docker compose down`；镜像保留 `fruitlab-r3:3.0.0.0`；
+- 契约回退：`docs/contracts.md` 记录 R2→R3 变更；404 越权变更可按 git 回退；
+- 版本回退：`CHANGELOG.md` 记录 `3.0.0.0`，失败可回 `2.0.0.0`（R2 目录不动）。
 
 ## 10. Effort Estimate
 
-| 环节 | 预估（agent 工时） | 说明 |
+| 环节 | 预估 | 说明 |
 |---|---|---|
-| spec | 0.5 天 | 本文件 + 门禁 |
-| autoplan | 0.5～1 天 | 四阶段串行；跨模型评审 `unavailable` |
-| build M1 | 3～5 小时 | `node:sqlite` spike + 建库/迁移 + 认证/会话 + DB/auth 测试 |
-| build M2 | 3～5 小时 | 订单事务/幂等 + API 路由 + CLI（dev/init/seed/user/product/orders/db check）+ API/CLI 测试 |
-| build M3 | 2～4 小时 | 前端接入：api-client、登录/我的订单/查单、商品列表接入 |
-| build M4 | 2～3 小时 | 管理端两面板（订单/商品）与状态 |
-| build M5 | 4～6 小时 | Apple 视觉重写 + 14 张图与台账 + 治理/文档/证据 |
-| review | 0.5 天 | 结构排雷 + 安全（`/cso` 视可用性） |
-| qa | 0.5 天 | 真实 HTTP + Chromium 五断点截图（人工项 `UNVERIFIED`） |
-| ship | 0.3 天 | 覆盖率审计 + 文档同步 + 版本 |
-| retro | 0.2 天 | Git 量化复盘 |
-| **合计** | **约 15～25 agent 工时** | 不含等待审批；里程碑各自可验收、可回退 |
+| spec | 已完成 | 本文件 + 取证 + 门禁 |
+| autoplan | 0.5 天 | 四方评审（codex 外部声音）+ OB 清单 + 终门 |
+| build M1 | 4–6 h | package/pg、迁移、repositories/services、测试基础设施 |
+| build M2 | 4–6 h | 11 findings + 安全四项 + 测试 |
+| build M3 | 4–6 h | Dockerfile×2、compose、Caddy、备份恢复、容器验收 |
+| review | 0.5 天 | codex 复核 + 官方 cso + 处置 |
+| qa | 0.5 天 | 容器/浏览器/三版本/持久化/备份恢复 |
+| ship | 0.3 天 | 覆盖率审计、文档同步、版本、verify |
+| retro | 0.2 天 | 量化复盘 |
+| **合计** | **约 20–30 agent 工时** | 不含等待审批；里程碑可独立验收/回退 |
 
 ## 11. Files Reference
 
-**保留不动**：`assets/domain.mjs`（10 个纯函数 + `limits`）、`tests/domain.test.mjs`、`PRD-R2.md`。
-
-**改造**：`index.html`、`assets/app.mjs`、`assets/controller.mjs`、`assets/styles.css`、`assets/boot-guard.js`、`serve.mjs`、`tests/controller.test.mjs`、`tests/app.test.mjs`、`tests/server.test.mjs`、`tests/static-scan.test.mjs`、`README.md`、`.gitignore`（加 `data/`）。
-
-**新增**：`server/db.mjs`、`server/auth.mjs`、`server/products.mjs`、`server/orders.mjs`、`server/router.mjs`、`server/errors.mjs`、`cli.mjs`、`assets/api-client.mjs`、`assets/images/products/*.jpg`（14）、`tests/db.test.mjs`、`tests/auth.test.mjs`、`tests/api.test.mjs`、`tests/cli.test.mjs`、`tests/contracts.test.mjs`、`tests/docs.test.mjs`、`scripts/record-test-count.mjs`、`scripts/check-links.mjs`、`scripts/check-numbering.mjs`、`scripts/check-traceability.mjs`、`scripts/verify-evidence.mjs`、`docs/*`（见 5.11）、`evidence/*`。
-
-**退役**：`assets/catalog.mjs`、`assets/order-store.mjs`（职责迁移，契约对照见 5.4）。
+**保留不动**：`assets/domain.mjs`、`tests/domain.test.mjs`、`PRD-R2.md`、`PRD-R3.md`、`assets/images/products/*.jpg`、`R1-*` 文档。
+**改造**：`server/db.mjs`、`server/auth.mjs`、`server/products.mjs`、`server/orders.mjs`、`server/router.mjs`、`server/errors.mjs`、`serve.mjs`、`cli.mjs`、`assets/api-client.mjs`、`tests/*`、`README.md`、`CHANGELOG.md`、`BUILD.md`、`review.md`、`qa-report.md`、`retro.md`、`docs/*`、`scripts/*`、`SPEC.md`、`DECISIONS.md`（autoplan）。
+**新增**：`server/app.mjs`、`server/services/index.mjs`、`package.json`、`package-lock.json`、`Dockerfile`、`Dockerfile.web`、`Caddyfile`、`docker-compose.yml`、`compose.simple.yml`、`compose.debug.yml`、`.dockerignore`、`.env.example`、`server/migrations/0001_init.sql`、`server/repositories/*.mjs`、`server/services/*.mjs`、`server/allowlist.mjs`、`config.mjs`、`scripts/build-public.mjs`、`scripts/check-redaction.mjs`、`scripts/check-compose.mjs`、`scripts/backup.sh`、`scripts/restore.sh`、`scripts/start-all.mjs`、`tests/helpers/pg.mjs`、`tests/layering.test.mjs`、`tests/compose.test.mjs`、`evidence/*`。
+**退役**：`tests/helpers/db.mjs`（改为 pg helper）、`server/db.mjs` 的 `enqueueWrite`。
 
 ## 12. Out of Scope
 
-PRD 第 7 节全部非目标，另加：会话过期/续期与清理、CSRF、登录限流/锁定、HTTPS/`Secure`、记住我、跨设备会话、审计日志、深色模式、国际化、多标签页实时同步、**分页与列表上限**、**R1 历史订单迁移（D-26）**、真实支付/物流/退款/税费/运费/折扣、部署/CI/CD/域名、第三方依赖与远程资源、图片处理后端（裁剪/压缩用静态文件，不做运行时处理）。
+PRD §6 全部非目标，另加：完整微服务/L3/L4、云平台部署（M5 选修）、Vercel/CF 运行时改写、CI/CD、水平扩展/读写分离/多租户、真实支付/物流/退款、审计日志、密码找回/改密、深色模式、分页（默认上限 100）、R1 localStorage 迁移、R2 SQLite 数据迁移、图片重制。
 
-## 13. Decisions confirmed（2026-10-18 项目负责人确认，按此执行）
+## 13. Related
 
-| # | 决策 | 推荐 | 备选 | 影响 |
-|---|---|---|---|---|
-| D-16 | 订单状态 | **不加状态机**，订单即完成记录 | 加 `status` 五态 | 加状态会扩大测试面与 UI，PRD 未要求 |
-| D-17 | 深色模式 | **不做** | 做双主题 | PRD 未要求，验收面翻倍 |
-| D-18 | 管理界面 | **单页两面板 + 内联编辑** | 独立管理页 | 独立页需路由，增加零依赖复杂度 |
-| D-19 | 测试计数 | **脚本生成唯一文件** | 文档手写计数 | 手写必然再次漂移（G6 根因） |
-| D-20 | 照片处理 | **静态 1:1 裁切，CSS `object-fit`** | 运行时缩放 | 运行时处理需图片库（违反零依赖） |
+- `PRD-R3.md` — R3 需求（本规格输入）
+- `HANDOFF.md` 第七节 — 当前权威状态与工具链
+- `evidence/spec-forensics.md` — 32 项耦合点 / 96 项测试结构 / 11 findings 位置
+- `docs/decision-log.md` — D-47～D-70 追加留痕
+- R2 `SPEC.md`/`DECISIONS.md`/`BUILD.md`/`review.md`/`qa-report.md` — 契约与缺陷基线
 
-## 14. Related
+## 14. 风险与降级边界
 
-- `PRD-R2.md` — R2 需求（本规格的输入；FR-7 版式方向经 D-08 变更）
-- `R1-八环讲解记录.md`、`R1-义务覆盖率核查.md`、`R1-操作经验教训.md` — R1 证据与教训
-- `通用AI_Coding课程与教材/HANDOFF.md` 第六节 — R2 计划与硬约束
-- `01_通用AI_Coding课程配套示范应用程序设计规范（全知识点映射与八环埋点蓝本）.md` — 4+1 表契约的精神来源
-- `DECISIONS.md` — autoplan 产出：四阶段发现、42 条义务 `OB-*` 的定义处、终门记录
+| # | 风险 | 应对 |
+|---|---|---|
+| 1 | 测试从 SQLite 迁到真实 PG，夹具/断言重写量大 | 先 spike（端口/并发/隔离），按层迁移，逐项对照断言 |
+| 2 | Windows Node ↔ WSL Docker 55432 的确定性 | 固定端口/每用例独立库/健康轮询；失败保留原始输出，不静默重跑 |
+| 3 | 容器构建联网/供应链 | `postgres:16-alpine`、`node:22-alpine`、`caddy:2-alpine` 本地已有；lockfile 锁定 pg |
+| 4 | `db reset`/备份恢复破坏性 | 先备份后重建；失败显式退出；容器内先在临时卷演练 |
+| 5 | 证据链门槛多（codex/cso/容器/浏览器） | 先定证据矩阵，逐项真实执行；门禁不可用如实 `unavailable` |
+| 6 | 范围与工期 | M1–M3 分里程碑；每段可停可回退；复核后如实记录 |
+| 7 | R1/R2 冻结纪律 | 每环跑两次 `git status`；R3 只写自己目录 |
 
-## 15. autoplan 修订并入（v1.1，优先于前文冲突条款）
+**降级边界**：跨模型门禁 `unavailable`（同族第二智能体复核替代，单独标注）；cso 离线 `partial`（scanner profiles/history-inputs 不可用）；读屏器人工审查 `UNVERIFIED`；云平台部署 `requires-remote`（M5）。以上降级必须在 obligations/BUILD/qa 三处留痕。
 
-> 本节为 v1.1 新增。四阶段评审（CEO 6.5 / Design 7.0 / DX 5.7 / Eng 6.5，均 FAIL）接受的问题转为 42 条义务；本节把**会改变规格文字**的部分并入。**与 §1–§14 冲突时以本节为准**；施工依据是本节 + `DECISIONS.md` 的 OB 清单。
+---
 
-| # | 涉及条款 | v1.0 原状 | v1.1 修订 | 依据 |
-|---|---|---|---|---|
-| 1 | §10 | 4.5–5.5 天 | **15–25 agent 工时**，按 M1–M5 里程碑交付 | OB-CEO-01 |
-| 2 | §6 | 40 条机制 AC | 增 **AC-41 用户旅程 / AC-42 demo 脚本 / AC-43 health+TTHW / AC-44 幂等 / AC-45 管理商品接口 / AC-46 登出失效 / AC-47 错误单源 / AC-48 CLI JSON+退出码** | OB-CEO-02 |
-| 3 | §5.6、AC-31 | R1 访客查单保留 | **访客查单移除**（U2=A）；拆为「交互契约保留」与「权限行为变更（breaking）」 | OB-CEO-03 |
-| 4 | §5.2 | 无健康检查、无管理商品列表 | 增 `GET /api/health`、`GET /api/admin/products`（含下架） | OB-DX-01、OB-ENG-02 |
-| 5 | §5.1、§5.2 | 无幂等 | `orders` 增 `client_order_id`；唯一约束 `(user_id, client_order_id)`；重复请求返回原订单。**supersede D-30** | OB-DX-07 |
-| 6 | §5.3 | 登出仅清 Cookie | 登出 **`DELETE FROM sessions`**；会话无过期（PRD 边界） | OB-CEO-09 |
-| 7 | §5.5 | 三步启动、CLI 0/1/2 | `node cli.mjs dev` 一键启动；`db reset --yes` + 自动备份 + 持锁检测；`--password-stdin`；`product list/unlist/relist` 拆分；`orders show`、`db check`；全局 `--json`；退出码 0/1/2/3/4 | OB-DX-01..06、OB-CEO-13 |
-| 8 | §5.2、§5.9 | 错误形态可能混用 | API 用 `{ok:false}`；静态层用 `problem+json`；`docs/error-catalog.md` 唯一真源，测试断言集合一致 | OB-DX-11 |
-| 9 | §5.3 | 「校验 Origin」一句 | 精确矩阵：`Host ∈ {127.0.0.1:4174, localhost:4174}`；`Origin` 存在须精确同源；`Sec-Fetch-Site ∈ {same-origin, none}`；缺失头放行非浏览器客户端并记录风险 | OB-ENG-04 |
-| 10 | §5.1 | `busy_timeout=5000` + 同步重试 | **单写者队列** + `busy_timeout` 250–500ms + 异步退避；文档化单进程假设 | OB-ENG-01 |
-| 11 | §5.8 | Openverse 单点 | fallback：Openverse → Wikimedia Commons → 停止并上报；禁止 AI 图/插画冒充 | OB-CEO-05 |
-| 12 | §5.11 | 5 个独立脚本 | 增 `scripts/verify.mjs` 单一验证入口，串联测试与全部机械检查 | OB-CEO-06 |
-| 13 | §5.2 | 校验规则不全 | 单笔 `maxItems=10`；重复 `productId` 合并数量；非 JSON/缺失 Content-Type → 415；username 3–32、password 8–128 | OB-ENG-03、OB-CEO-10 |
-| 14 | §5.2 | 列表无上限 | 列表默认上限 100 | OB-ENG-08 |
-| 15 | §5.6 | 购物车未说明 | **仅内存、刷新清空**（与 R1 一致） | OB-ENG-09 |
-| 16 | §5.9 | CSP 双写 | CSP 以 **HTTP 响应头为唯一来源**（`index.html` meta 仅兼容） | OB-ENG-06 |
-| 17 | §5.7、§6 | 状态与视觉证据不足 | 商品卡六态；无障碍补 skip/键盘/焦点/错误汇总；视觉证据固定路径 + commit + 复核人 | OB-DES-02..06、OB-CEO-12/14 |
-| 18 | §3 | D-01～D-32 | 增 **D-33～D-42**（见 `docs/decision-log.md`） | autoplan |
-| 19 | §4 | — | 5 项 TODOS：取消/回补、审计、会话过期、分页、scrypt 升级 | `DECISIONS.md` |
-| 20 | §13 | U1/U2 待定 | **U1=A（全量 + 里程碑）、U2=A（移除访客查单）**，2026-10-18 项目负责人确认 | 终门 |
+## 15. spec 门禁结果（2026-10-18）
+
+| 门禁 | 状态 | 结果 |
+|---|---|---|
+| 语义审查（人工，逐项） | **通过** | 发现 8 项：计数口径（10 findings/11 缺陷点）、CSRF 登录后补发、反代 IP 失真、容器备份目录可写、测试处置范围、本机 WSL 执行现实、优先级顺序、事务边界模糊；全部已修 |
+| 脱敏扫描（本地 fail-closed） | **通过** | `node scripts/check-redaction.mjs`：HIGH 0 / MEDIUM 0 / WARN 13（全部为 `127.0.0.1` 与版本号 `x.y.z.0` 误报） |
+| 同族第二智能体复核（codex） | **通过（需修订 → 已修订）** | 10 条 findings（F-01..F-10），全部采纳/部分采纳并落 v1.1；处置见 `evidence/codex/spec-review-disposition.md`；复核报告 `evidence/codex/spec-review-codex.md` |
+| 跨模型质量门 | **`unavailable`** | 无第二个模型家族：codex 配置为 `opencode-go/deepseek-v4.1-flash`（同族）；不换模型充数，不用同族冒充跨模型 |
+| 项目负责人确认 | **通过（授权代理自审）** | 用户明确授权执行代理自行完成选型与环审批；本环自审记录见 `evidence/ring-spec.md` |
+
+**状态**：`APPROVED v1.1`（2026-10-18，spec 环）。v1.0 快照保留在 `evidence/codex/SPEC-snapshot-v1.0.md`。

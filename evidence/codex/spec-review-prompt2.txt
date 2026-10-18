@@ -1,0 +1,20 @@
+﻿你是 FruitLab R3 的独立规格复核者（同族第二智能体，不是跨模型）。只读复核，不要修改任何代码或配置。
+
+权威输入是**冻结快照**：evidence/codex/SPEC-snapshot-v1.0.md（SHA-256 de78e754cab77d0dcc7b9084d9028a0b80941527daeb7ab2c9aa4c9e14c3b53b）。请只以该快照为准；即使仓库里 SPEC.md 继续变化，也不影响本次复核，不要因此停下来提问。可参考 PRD-R3.md、evidence/spec-forensics.md、../r2-fruitlab/SPEC.md 与 DECISIONS.md、docs/decision-log.md（D-47 之后）。
+
+任务：找出该快照的**真实问题**，不要为凑数编造。重点：
+1. 内部矛盾/优先级冲突（HTTP 优先级、CSRF 与认证顺序、405 与体校验顺序、health 与 DB down）。
+2. AC-49..AC-96 是否机械可验证，有无遗漏/不可测表述。
+3. L1 分层接口与依赖规则是否自洽；withTransaction 重试是否会破坏幂等/库存语义。
+4. Postgres schema/错误映射漏洞（并发、唯一冲突、锁超时、NULL/类型、时区、bigint、连接池超时）。
+5. 安全设计漏洞（会话、限流、CSRF、时序、404、生产口令、反代 IP）。
+6. 容器/compose/备份恢复可执行性（非 root、healthcheck、Caddy、pg_dump、端口、卷）。
+7. 与 PRD 硬约束（A1-A16、版本隔离、仅 pg、真实 PG 测试）的偏差。
+
+输出：只写报告文件 evidence/codex/spec-review-codex.md，不改动其它文件。格式：
+- 开头一行：本报告由 codex 同族第二智能体生成，非跨模型；复核对象为 SPEC-snapshot-v1.0.md（SHA-256 de78e754cab77d0dcc7b9084d9028a0b80941527daeb7ab2c9aa4c9e14c3b53b）。
+- 结论（可实施 / 需修订）。
+- findings 表：编号、严重度（High/Medium/Low）、位置（章节或 AC 编号）、问题、建议。
+- 未评估/不可用项。
+- 若未发现问题，明确写“未发现”。
+禁止运行测试、禁止启动容器、禁止清理临时目录、禁止 git 操作。完成后直接写报告，不要等待确认。
