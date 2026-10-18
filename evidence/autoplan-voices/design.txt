@@ -1,0 +1,72 @@
+﻿Claude Code doesn't recognize the model "deepseek-v4-flash", so it assumes a context window of 200k tokens. Update Claude Code, or see https://code.claude.com/docs/en/model-config#correct-the-window-for-a-gateway-or-custom-model-id to set the window.
+[claude-code:unrecognized_model] {"model":"deepseek-v4-flash","query_source":"sdk"}
+> 说明：你粘贴的 SPEC 中文部分存在乱码（mojibake），以下审查基于可读的结构、英文错误码、SQL、API 表与验收标准。涉及可能被乱码影响的判断（尤其 D-03 会话有效期）我已标注“需核对”。
+
+## 总评
+
+**可以进入实现，但建议先补齐 1 个 High + 4 个 Medium 的契约缺口；未发现 Critical。**
+
+SPEC 的整体质量明显高于平均水平：状态码判定顺序、金额用整数分、并发扣库存、证据链（G1–G7）、AC/OB 追溯都写得很实。主要问题集中在**会话生命周期、管理端能力、幂等语义、响应/错误契约**这几处“没写死”的地方——实现者会各自发挥，最后在 review/qa 阶段返工。
+
+## 评分（0–10）
+
+| 维度 | 分数 | 依据 |
+|---|---|---|
+| 完整性 | 8.5 | 主流程、AC、文件清单齐全；管理端枚举、响应 schema、输入策略有缺口 |
+| 一致性 | 8.5 | 金额、库存、状态码顺序一致；错误码表与正文、sessions 表与 D-03 有出入 |
+| 可执行性 | 9.5 | Node 22 内置 `node:sqlite`、零新依赖、目录/文件明确，可直接开工 |
+| 风险控制 | 8.0 | 并发与回滚设计好；会话失效、CSRF 缺省行为、seed 幂等是主要风险 |
+| 可测试性 | 9.5 | AC 可验证、`evidence/` 与脚本链完整；仅浏览器视觉项需人工/Chromium |
+| 可维护性 | 9.0 | `server/*` 分层清晰；`catalog.mjs` 静态与 DB 双源需约束 |
+| 文档与追溯 | 9.0 | G1–G7、OB/AC 映射完备；错误目录与部分契约未闭环 |
+| **综合** | **8.8** | 高质量 SPEC，差在若干“未定义即由实现者决定”的契约 |
+
+## 问题清单（按严重度，共 7 项）
+
+### 1. [High] 会话生命周期与登出失效未定义
+**位置**：§5.1 `sessions` 表、§5.2 `POST /api/auth/logout`、§5.3 Cookie、D-03  
+**问题**：`sessions` 只有 `token/user_id/created_at`，没有 `expires_at`；登出只写“清除 Cookie”，未要求删除服务端会话行；Cookie 也未下发 `Max-Age`。若 D-03 实际约定了 12 小时有效期（乱码处需核对），则表结构与 §5.3 三处互相矛盾。  
+**影响**：登出后 token 在服务端永久有效；会话行无限增长；AC-01 只测“能登出”，测不出 token 仍可用。  
+**修复**：`sessions` 增 `expires_at TEXT NOT NULL`；认证时校验过期并顺手清理；logout 在同一请求 `DELETE` 当前会话（可选 `?all=1` 清该用户全部）；`Set-Cookie` 明确 `Max-Age` 并与 D-03 对齐；新增 AC：登出后用旧 Cookie 请求 `/api/auth/me` 必须 401。
+
+### 2. [Medium] 缺少管理员商品枚举接口
+**位置**：§5.2 API 表  
+**问题**：只有 `PATCH /api/admin/products/{id}`，而 `GET /api/products` 只返回 `listed=1`。管理员无法通过 API 看到已下架商品的 `stock/listed/price`，只能依赖静态 `catalog.mjs` 里的 id；一旦 DB 成为真源，会出现“看不到、也无法确认下架状态”的管理盲区。  
+**影响**：AC-04/AC-05/AC-06 的管理闭环在真实数据上不完整。  
+**修复**：新增 `GET /api/admin/products`（admin，返回全量含 `listed/stock/soldOut`，按 `sort_order`）；或允许 `GET /api/products?includeUnlisted=1` 仅对 admin 生效。同步 `docs/api.md`、`contracts.md`、`error-catalog.md` 与测试。
+
+### 3. [Medium] `db seed` 的幂等语义未定义
+**位置**：§5.5 CLI、AC-08  
+**问题**：只列了命令，没写重复执行会怎样。两次 `db seed` 可能因 `products.product_id` / `users.username` UNIQUE 冲突失败，也可能覆盖价格库存、甚至影响既有订单，全凭实现者决定。  
+**影响**：AC-08 只验证“命令能跑”，无法防止部署脚本重复执行导致的事故。  
+**修复**：明确二选一：a) 幂等 upsert（按 id/username，订单不动）；b) 已 seed 则退出码 1 + `db-already-seeded`，须 `--force` 重置。写进 CLI 文档并新增“连续执行两次”的测试（退出码 + 数据状态）。
+
+### 4. [Medium] CSRF 头缺失时的行为未定义
+**位置**：§5.3、§5.2 错误表、D-27  
+**问题**：要求校验 `Origin` / `Sec-Fetch-Site`，但没写“两者都不存在”时是放行还是 403。HTTP 测试、`curl`、未来 CLI 客户端默认都不带这些头；实现者会自行选择，测试再把这个偶然选择固化。且 `403 cross-origin-blocked` 未进入错误表。  
+**影响**：安全策略不可验证，contracts 测试与实现可能各说各话。  
+**修复**：写死规则：有 `Origin` 必须与 `Host` 同源；无 `Origin` 时要求 `Sec-Fetch-Site ∈ {same-origin, none}`；两者皆无 → `403 cross-origin-blocked`（若选择放行，须在 DECISIONS 记录威胁模型理由）。补入错误目录与 `contracts.test.mjs`。
+
+### 5. [Medium] 订单响应契约不完整
+**位置**：§5.2 `GET /api/orders/mine`、`GET /api/orders/{orderNumber}`、`GET /api/admin/orders`  
+**问题**：只写 `{ok, orders}`，未定义订单对象是否内嵌 `items`、字段名、`created_at` 格式（时区/精度）。admin 接口提到“JOIN 明细”但同样没有形状。前端“我的订单/订单详情”完全依赖这份契约。  
+**影响**：前后端并行开发时必然返工，且时间排序在不同格式下不可靠。  
+**修复**：在 `docs/contracts.md` 定义统一 Order：`orderNumber, createdAt(RFC3339 UTC, 毫秒), subtotalCents, items[]{productId,name,unit,quantity,unitPriceCents,subtotalCents}`，mine/detail/admin 共用；明确是否分页（当前可全量，但需写明上限）。补 contracts 测试。
+
+### 6. [Medium] 错误目录未达到 AC-36 的“完整”
+**位置**：§5.2 错误表、AC-36  
+**问题**：表内缺 `403 cross-origin-blocked`、`409 product-unlisted`（正文仅一处旁注）、`400 invalid-listed`（只出现在校验步骤）；`details` 字段结构也未定义。AC-36 却要求“每个 API 错误都有 surface/触发/响应”。  
+**影响**：错误目录天然不完整，测试无法枚举覆盖。  
+**修复**：以一张表作为唯一真源，列出 `code / HTTP / surface / 触发条件 / body 示例 / details 结构`；在测试中扫描 `server/errors.mjs` 做“实现错误码集合 == 目录集合”的断言。
+
+### 7. [Low] 注册输入策略缺失
+**位置**：§5.2 `POST /api/auth/register`  
+**问题**：只定义 `{username,password}`，没有用户名字符集/长度、密码长度上下限。配合 64 KiB 请求上限，意味着近 64 KB 的密码会进入 scrypt，形成 CPU 放大；空密码或 1 字符密码也能通过。  
+**影响**：异常输入行为不可测，且注册路径存在低成本资源消耗面。  
+**修复**：定义 username 3–32 且 `[A-Za-z0-9_-]`，password 8–128，返回 `400 invalid-username` / `400 invalid-password`；补边界测试。若刻意不做密码强度策略，需在 DECISIONS 中记录。
+
+## 结论建议
+
+- 当前状态：**Approve with comments**。无 Critical，不必重写 SPEC。
+- 建议把问题 1、3、4 在开工前补进 SPEC/DECISIONS（都是几句话的事），问题 2、5、6 在 build 第一阶段落到 `docs/contracts.md` 与 `docs/error-catalog.md`，问题 7 可随实现补。
+- 若只允许改一处：优先修 **会话生命周期**——它是唯一会在安全审查（`/cso`、`/review`）阶段被反复打回的结构性缺口。

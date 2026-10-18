@@ -1,0 +1,106 @@
+﻿Claude Code doesn't recognize the model "deepseek-v4-flash", so it assumes a context window of 200k tokens. Update Claude Code, or see https://code.claude.com/docs/en/model-config#correct-the-window-for-a-gateway-or-custom-model-id to set the window.
+[claude-code:unrecognized_model] {"model":"deepseek-v4-flash","query_source":"sdk"}
+> 说明：本会话无法访问 `D:\vibecoding\easyvibe\r1-fruitlab`，以下评审基于你粘贴的 SPEC 全文；涉及 R1 实现的判断以 SPEC 的描述为准。
+
+## 一、总体结论与评分
+
+这份 SPEC 的工程质量明显高于普通 demo 规格：4+1 表结构、整数分计价、参数化 SQL、`BEGIN IMMEDIATE` + 条件扣减、统一错误信封、保留 R1 纯函数域、无障碍与设计令牌都考虑到了。主要问题集中在**同步 SQLite 的可用性、后台管理闭环、下单幂等、会话生命周期，以及错误码/校验契约的内部不一致**。未发现需要立即阻断的 Critical 问题，但有 3 个 High 建议在开工前修掉。
+
+| 维度 | 评分 | 简评 |
+|---|---:|---|
+| 架构 | 7.0 | 分层清晰，domain 保持不变是亮点；同步 DB 访问与 HTTP 服务模型存在张力 |
+| 安全 | 6.0 | scrypt、HttpOnly、SameSite、token 哈希、预编译 SQL 到位；会话过期、限流、Host/Origin 精确规则缺失 |
+| 可维护性 | 7.0 | 决策日志、契约文档、义务矩阵齐全；错误码与 AC 存在漂移风险 |
+| 性能 | 5.0 | `DatabaseSync` + 5 秒 `busy_timeout` + 同步重试会阻塞事件循环 |
+| 可用性/UX | 7.5 | Apple 设计令牌、响应式、焦点与错误提示要求具体；购物车刷新丢失、后台商品管理闭环缺失 |
+| 测试 | 6.5 | 真 HTTP、临时 DB、CLI `spawnSync`、domain 回归设计合理；缺并发、幂等、校验边界测试 |
+| 文档 | 6.5 | 文档清单完整，但错误码、AC 措辞、验收方式存在自相矛盾 |
+| **综合** | **6.5** | 方向正确，需收口 8 个问题后再进入 build |
+
+---
+
+## 二、问题清单（按严重度排序，共 8 条）
+
+### 1. [High] 同步 SQLite + 5 秒 busy_timeout + 同步重试会阻塞整个 HTTP 服务
+
+- **位置**：§5.1「事务与并发」、§5.2 `503 server-busy`、D-22。
+- **证据**：`DatabaseSync` 是同步 API；`PRAGMA busy_timeout = 5000` 的等待发生在 JS 线程内；`SQLITE_BUSY` 后还有 3 次 50/100/200ms 重试。SPEC 未说明重试或等待如何让出事件循环。
+- **影响**：CLI 进程或另一个连接持有写锁时，所有 HTTP 请求（包括静态资源和健康检查）可能被阻塞数秒；`busy_timeout` 越长，阻塞越明显。SPEC 同时宣称 503 降级，但服务可能先整体卡死。
+- **修复**：服务端使用单写者队列（Promise 串行化所有写事务）；`busy_timeout` 降到 250–500ms；重试改为 `setTimeout` 异步退避；在 SPEC 中明确“单进程单连接”假设，或把 DB 放入 worker thread。补一个“CLI 持锁时 HTTP 仍可响应”的测试。
+
+### 2. [High] 缺少管理员商品列表接口，商品一旦下架就无法在 UI 重新上架
+
+- **位置**：§5.2 API 表、AC-05/AC-06、§5.6 管理界面。
+- **证据**：商品读取只有 `GET /api/products`（`listed=1`）；管理写操作只有 `PATCH /api/admin/products/{id}`。没有 `GET /api/admin/products` 或 `includeUnlisted` 参数。
+- **影响**：`listed=0` 后商品从公开列表消失，管理员刷新页面后拿不到该 `product_id`，AC-06「上架/下架」在 Web UI 上无法闭环，只能退回 CLI。AC-05 对下架商品改价/改库存同样不可达。
+- **修复**：新增 `GET /api/admin/products`（或 `GET /api/products?includeUnlisted=1`，仅 admin），返回全部商品及 `listed/stock/soldOut`；补 contracts 与测试。
+
+### 3. [High] `POST /api/orders` 没有幂等键，重复提交会重复下单和重复扣库存
+
+- **位置**：§5.2 `POST /api/orders`、§5.4 `appendOrder`、§5.6 的 `save-unknown` 处理。
+- **证据**：R1 通过客户端订单号与 `save-unknown` 处理未知保存结果；R2 改为服务端生成订单号，SPEC 未定义幂等键或重复请求识别。UI 仅靠“保存中禁用按钮”防抖。
+- **影响**：双击、刷新重试、代理重放都会创建新订单并二次扣减库存；`save-unknown` 在 R2 语义下无法区分“已写入”和“未写入”，R1 DX1 的保障被削弱。
+- **修复**：要求客户端为每次结算生成 `idempotencyKey`（UUID），`orders` 增加 `(user_id, idempotency_key)` 唯一约束；重复请求返回原订单（200/201 明确其一）。补“同一 key 并发两次只产生一单”的测试。
+
+### 4. [Medium] 会话生命周期不完整：无过期、无清理、登出撤销未明确
+
+- **位置**：§5.1 `sessions` 表、§5.3 Cookie 规则、`POST /api/auth/logout`。
+- **证据**：`sessions` 只有 `token/user_id/created_at`，没有 `expires_at/last_seen_at`；Cookie 没有 `Max-Age`；登出只写“204 + 清除 Cookie”，未明确删除服务端会话行；也没有清理策略。
+- **影响**：被窃取或废弃的 token 永久有效；数据库会话行无限增长；用户登出后服务端 token 仍可用（若实现只清 Cookie）。
+- **修复**：增加 `expires_at`（如绝对 7 天或滑动过期），每次鉴权校验过期；登出 `DELETE FROM sessions WHERE token = ?`；启动或登录时清理过期行；在契约文档中写明 Cookie 生命周期。
+
+### 5. [Medium] 错误码目录在多处不一致，AC-36 无法稳定验收
+
+- **位置**：§5.2 错误码列表与校验表、§5.9、AC-36。
+- **证据**：主列表未包含 `invalid-listed`；`product-unlisted` 只在说明中出现；`duplicate-order-number` 与 `order-number-exhausted` 并存但触发条件未统一；缺少 `415 unsupported-media-type`；`404 not-found` 与具体 404 的优先级未定义。
+- **影响**：`docs/error-catalog.md`、`server/errors.mjs`、`tests/contracts.test.mjs` 三处容易各写一套，G3 契约测试会变成事后补票。
+- **修复**：以 `docs/error-catalog.md` 为唯一来源，逐条列出 `code → HTTP → 触发条件 → body 字段`；`tests/contracts.test.mjs` 从该表生成或比对；删除未使用的码，补齐 415 或明确非 JSON 请求返回 400。
+
+### 6. [Medium] 请求校验契约不完整，R1 的 `limits.maxItems` 等约束未落到 API
+
+- **位置**：§5.1/§5.2 校验规则、§5.6 R1 八条硬约束、AC-31。
+- **证据**：只写了数量 1–99；未规定单笔订单最多几个不同商品（R1 有 `limits.maxItems`）、`productId` 重复时合并还是拒绝、用户名/密码长度与字符集、是否强制 `Content-Type: application/json`。
+- **影响**：同一份 SPEC 可产出不同实现；64 KiB 请求上限只能限制体积，不能保证业务语义一致；测试无法覆盖边界。
+- **修复**：在 contracts 中明确：单笔订单 1–10 个不同商品；重复 `productId` 合并数量或返回 `400 invalid-request`（二选一并测试）；username 3–32 且限定字符集；password 8–128；非 JSON 或缺失 Content-Type 返回 415。
+
+### 7. [Medium] Origin/Sec-Fetch-Site 防护规则不精确，且缺少 Host 校验
+
+- **位置**：§5.3 CSRF 段落、D-27、§5.2 `403 cross-origin-blocked`。
+- **证据**：只写“校验 Origin 与 Sec-Fetch-Site”，未定义允许值、缺失头时的行为、`Origin: null` 的处理，也未要求校验 `Host`。同时 SPEC 声明 CSRF 不在范围内，却又依赖这层检查作为实际防护。
+- **影响**：实现可能把“缺少 Origin”一律放行或一律拒绝，前者削弱防护，后者导致 CLI/测试不可用；DNS rebinding 场景下 Host 未校验，规则不完整。
+- **修复**：明确 `Host ∈ {127.0.0.1:4174, localhost:4174}`；`Origin` 存在时必须精确等于服务端 origin；`Sec-Fetch-Site` 仅允许 `same-origin`/`none`；无浏览器头（curl、测试）走显式允许策略并加测试；覆盖跨源、`Origin: null`、缺失头、异常 Host 四类用例。
+
+### 8. [Medium] 40 条 AC + 7 道门禁 + 手工证据，与 4.5–5.5 小时估算不匹配，且证据是自证
+
+- **位置**：§5.11、§6 AC-01–AC-40、§10 估算。
+- **证据**：需要 40 条 AC、G1–G7、5 个校验脚本、10 份 docs、14 张授权图片、5 个视口的 Chromium 手工证据，同时完成 DB/API/CLI/前端改版。AC-11、AC-39 措辞宽泛；`evidence/manifest.json` 与 `verify-evidence.mjs` 由同一实现者生成并校验，属于自证。
+- **影响**：流程成本会挤压实现与真实测试时间；门禁全绿不等于功能正确；AC 追溯容易在后期补写。
+- **修复**：R2 只保留 G1（链接）、G2（证据清单）、G6（测试计数）三道机器门禁；把 AC-11/AC-39 改成可观察断言；人工浏览器检查明确标注 `manual-verified` 或 `UNVERIFIED`，不要用脚本生成的结果冒充独立验证。
+
+---
+
+## 三、其他低优先级问题
+
+- **CLI 密码明文**：`user add --password <p>` 会进入 shell 历史和进程列表，建议支持 `--password-stdin` 或交互式输入。
+- **scrypt 参数偏低**：`N=16384` 是 Node 默认值，低于 OWASP 对 scrypt 的推荐强度；demo 可接受，但应在 README 中说明并预留升级路径。
+- **无限流/锁定**：登录接口无速率限制，配合弱密码策略存在暴力尝试风险；本地 demo 可接受，建议至少记录失败次数。
+- **列表无分页**：`/api/orders/mine` 与 `/api/admin/orders` 全量返回，长期数据量下响应无上限。
+- **CSP 双写**：`index.html` meta 与 `serve.mjs` 响应头同时定义 CSP 会漂移；且 `frame-ancestors` 在 meta 中无效，应以 HTTP 头为唯一来源。
+- **CC BY 署名位置**：目前只要求写入 `docs/assets-credits.md`，若图片为 CC BY，建议在页面可见位置提供署名或链接，或统一只用 CC0。
+- **购物车持久化未定义**：订单改为服务端后，购物车是否跨刷新保留没有说明；建议明确“仅内存”或增加本地草稿，避免验收争议。
+- **管理操作无审计**：admin 改价/改库存没有操作记录，出现问题难以追溯；至少记录 `requestId + user_id + 变更前后值`。
+
+---
+
+## 四、建议的最小修订集
+
+开工前只需改 SPEC 的以下六处，即可消除大部分返工：
+
+1. 明确 DB 访问模型：单写者队列 + 低 `busy_timeout` + 异步重试。
+2. 增加管理员商品列表接口（含下架商品）。
+3. 为下单增加 `idempotencyKey` 与唯一约束。
+4. 给 `sessions` 增加 `expires_at`，并明确登出删除服务端会话。
+5. 用 `docs/error-catalog.md` 统一错误码，并让契约测试与其对齐。
+6. 补齐订单/账号校验规则与 Host/Origin 精确策略。
+
+完成这六项后，这份 SPEC 可以从“文档完备但存在实现歧义”提升到“可直接进入 build 且验收可复现”的水平。

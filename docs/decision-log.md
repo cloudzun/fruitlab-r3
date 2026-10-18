@@ -60,3 +60,22 @@
 - 项目负责人确认 SPEC v1.0 草稿（含 D-01～D-26 与 §13 开放项），授权进入后续环节。
 - 自本条起，上表中 `recommended` 条目视为 `accepted`；历史行不修改（本文件追加式）。
 - 后续若推翻上述任何决策，**追加新条目**并注明 `superseded`，不删不改旧行。
+
+## 2026-10-18 · autoplan 阶段（第 2/7 环）
+
+四阶段（CEO / Design / DX / Eng）全部 FAIL，接受项转为义务 `OB-*`。本阶段新增/推翻：
+
+| 编号 | 决策 | 备选项 | 理由 | 影响面 | 状态 |
+|---|---|---|---|---|---|
+| D-33 | 下单幂等：客户端 `clientOrderId` + `(user_id, client_order_id)` 唯一约束，重复请求返回原订单 | 无幂等（原 D-30） | 防双击/重放/未知结果重试导致重复下单；**supersede D-30** | API、DB、测试 | accepted |
+| D-34 | 新增 `GET /api/admin/products`（含下架商品） | 仅公开列表 | 下架后管理端无法再操作，AC-04/05/06 无法闭环 | API、管理 UI | accepted |
+| D-35 | 登出 `DELETE` 服务端会话行；**不做**会话过期（PRD 边界） | 加 `expires_at` | FR-2 明确「无会话过期」；登出撤销是必要下限 | 认证、测试 | accepted |
+| D-36 | 工时重估 15–25 agent 工时；按 M1–M5 里程碑交付 | 4.5–5.5 小时 | 原估算与交付面严重不符（CEO F-01/F-02） | 计划、验收 | accepted |
+| D-37 | 错误目录唯一真源：API 用 `{ok:false}`，静态层用 `problem+json`，测试断言集合一致 | 两套并行 | 避免三处各写一套 | API、文档、测试 | accepted |
+| D-38 | CLI 加 `--json`、5 档退出码（0/1/2/3/4）、`--password-stdin` | 仅人类可读、0/1/2 | agent/脚本必须能稳定消费 | CLI | accepted |
+| D-39 | `node cli.mjs dev` 一键启动 + `GET /api/health` | 三步手工 | TTHW 与可观测性 | CLI、API、README | accepted |
+| D-40 | 单写者队列 + `busy_timeout` 250–500ms + 异步退避 | 5s + 同步重试 | 防止同步 DB 阻塞整个 HTTP 服务 | DB、服务 | accepted |
+| D-41 | 图片 fallback：Openverse → Wikimedia Commons → 停止并上报；禁止 AI 图冒充 | 无 fallback | 单点依赖会阻塞发布 | 资产、验收 | accepted |
+| D-42 | 治理脚本合并为 `scripts/verify.mjs` 单一入口 | 5 个独立入口 | 降低自证成本、便于复现 | 证据、脚本 | accepted |
+
+**待项目负责人裁量（autoplan 终门）**：U1 范围与工时（全量 + 里程碑 vs 拆 R2a/R2b）；U2 R1 访客查单移除（breaking）。

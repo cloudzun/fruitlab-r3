@@ -1,0 +1,254 @@
+﻿Claude Code doesn't recognize the model "deepseek-v4-flash", so it assumes a context window of 200k tokens. Update Claude Code, or see https://code.claude.com/docs/en/model-config#correct-the-window-for-a-gateway-or-custom-model-id to set the window.
+[claude-code:unrecognized_model] {"model":"deepseek-v4-flash","query_source":"sdk"}
+# FruitLab R2 — DX 评审（phase3）
+
+> **评审对象**：SPEC v1.0-draft（AC-01~40 / D-01~D-32）  
+> **前置评审**：CEO 6.5 / 第二轮 6.1  
+> **说明**：本次仅基于粘贴的 SPEC 文本评审。`D:\vibecoding\easyvibe\r1-fruitlab` 在当前会话沙箱之外，未能直接核对 R1 代码；凡涉及 R1 的表述，均以 SPEC 自述为准。日志中的 `unrecognized_model` 属于运行环境噪声，不计入评分。
+
+---
+
+## 1. 结论
+
+**DX 总分 5.7 / 10 — 不建议按当前范围 APPROVED，建议拆 R2a / R2b 后放行。**
+
+一句话判断：这份 SPEC 对“过程正确”的投入，远大于对“第一次使用”的投入。零依赖、`node:sqlite`、统一错误目录是真正的 DX 资产；但开发者从 clone 到看见第一屏仍要手工三步，CLI 没有机器可读输出，三条主要失败路径（`save-unknown` / `--force` / `SQLITE_BUSY`）都没有恢复命令。
+
+### 评分卡
+
+| # | 维度 | 权重 | 分数 | 加权 | 关键依据 |
+|---|---|---:|---:|---:|---|
+| 1 | TTHW（Time To Hello World） | 20% | 6.0 | 1.20 | 零依赖是优势；但 `db init` + `db seed` + `serve` 三步，`data/` 目录创建未定义，无 health 检查，README 快速开始不是 AC |
+| 2 | 文档完备性 | 15% | 7.0 | 1.05 | 12 份文档 + 错误目录 + 决策日志，结构完整；缺 `docs/cli.md`，`--help` 内容无验收 |
+| 3 | 跨层一致性 | 15% | 5.0 | 0.75 | `--cents` / `--units` 与 `unitPriceCents` / `stock` 不对齐；CLI 语法本身有硬伤；错误响应形态可能自相矛盾 |
+| 4 | CLI 可达性 | 15% | 5.5 | 0.83 | db/user/product/orders 主干在；缺 `orders show/cancel`、`product add`、`db check`，无 `--json` |
+| 5 | 错误信息质量 | 10% | 6.0 | 0.60 | HTTP 错误目录很扎实；CLI 未复用错误码，stdout/stderr 契约缺失 |
+| 6 | 可恢复性 | 10% | 5.0 | 0.50 | `save-unknown` 无 DB 落点、无重试/对账命令；`db init --force` 无备份；无 backup/restore |
+| 7 | 可观测性 | 10% | 5.0 | 0.50 | 无 `/api/health`、无启动摘要、无访问日志格式；requestId 只在 500 出现 |
+| 8 | 可维护性 / 贡献者体验 | 5% | 5.5 | 0.28 | 服务层复用方向正确；但 40 AC + 12 文档 + 5 门禁塞进 4.5~5.5h，测试夹具与 R1 测试迁移未规划 |
+| | **合计** | **100%** | | **5.70** | |
+
+---
+
+## 2. DX Findings
+
+### DX-01 [Critical] 没有“一条命令从零到可用”
+
+**证据**：§5.5 要求 `db init` → `db seed` → `node serve.mjs` 三步；`data/` 在 `.gitignore` 中，但未规定 `db init` 是否自动 `mkdir -p data/`；`db seed` 是否依赖已初始化的库未说明；API 表里没有 `GET /api/health`；AC-35 只要求 README 写启动方式，没有可执行的快速开始验收。
+
+**影响**：新贡献者或 agent 第一次运行最可能死在 `ENOENT: data/fruitlab.db`、忘记 seed 导致空列表、或不知道服务是否真的起来了。TTHW 从“3 分钟”退化为“看 README + 猜”。
+
+**建议**：
+- `db init` 自动创建父目录；`db seed` 在库不存在时自动 init，且幂等。
+- 新增 `GET /api/health` → `{ok, version, schemaVersion, dbPath, port, seeded, uptime}`。
+- 新增 `npm run dev` = `db init && db seed && node serve.mjs`（或 `cli.mjs dev`），作为唯一推荐入口。
+- 把“fresh clone 后 60 秒内 health 返回 200”写成 AC。
+
+### DX-02 [Critical] CLI 语法有无法解析的写法
+
+**证据**：§5.5 中 `node cli.mjs product list|unlist --id <product-id>` —— `product list` 不需要 `--id`，`product unlist` 需要；同一行还重复出现了 `product list`。
+
+**影响**：实现者会各自猜测语义，文档与 `--help` 必然分叉；这是 CLI 契约的第一行，错在这里后面全歪。
+
+**建议**：拆成三条明确命令：
+```
+product list [--all]          # 默认 listed=1，--all 含下架
+product unlist --id <id>
+product relist --id <id>      # 或 set-listed --id <id> --listed 0|1
+```
+并在 `tests/cli.test.mjs` 中对“文档里出现的每条命令”做 `--help` 冒烟，防止再次漂移。
+
+### DX-03 [High] CLI 没有 `--json`，等于只服务人类
+
+**证据**：§5.5 所有命令只有人类可读输出；SPEC 未出现 `--json`、机器可读 schema 或非交互模式。
+
+**影响**：这个项目明确由 agent 实现和验证，`verify.mjs`、QA 脚本、未来的 CI 都要解析 CLI 输出。没有稳定 JSON，就只能正则扒文本，DX 和可靠性双输。
+
+**建议**：全局 `--json`，统一输出：
+```json
+{"ok":true,"data":{...}}
+{"ok":false,"code":"insufficient-stock","message":"...","details":{...}}
+```
+失败时 `exit != 0`；人类模式仍保留表格。`--json` 下禁用颜色、进度条和交互提示。
+
+### DX-04 [High] 退出码与错误码没有映射，stdout/stderr 契约缺失
+
+**证据**：§5.5 只说“0 成功 / 1 业务错误 / 2 用法错误”，未说明 `insufficient-stock`、`SQLITE_BUSY`、`db-locked` 分别落在哪个码；也未规定数据走 stdout、诊断走 stderr。
+
+**影响**：脚本无法区分“参数错”与“库存不足”；agent 会把可重试的 BUSY 当成永久失败。
+
+**建议**：
+| 退出码 | 含义 | 示例 code |
+|---|---|---|
+| 0 | 成功 | — |
+| 1 | 可预期的业务失败 | `insufficient-stock`, `product-not-found` |
+| 2 | 用法/参数错误 | `invalid-argument` |
+| 3 | 环境/暂时性失败（可重试） | `server-busy`, `db-locked` |
+| 4 | 内部错误 | `internal-error` |
+
+数据与 JSON 走 stdout；所有诊断、警告、`ExperimentalWarning` 走 stderr。
+
+### DX-05 [High] `--password <p>` 泄漏（F-23 应升级为 High）
+
+**证据**：§5.5 `user add --username <u> --password <p>`。第二轮评审将其列为 Medium。
+
+**影响**：argv 会进入 shell history、进程列表、以及 agent 的工具调用日志；对“由 AI 执行”的项目，日志留存是默认行为，不是边缘情况。
+
+**建议**：新增 `--password-stdin`（从 stdin 读一行），保留 `--password` 但打印弃用警告；seed 的演示密码继续写在 README，但明确标注 “demo only”。
+
+### DX-06 [High] CLI 覆盖面缺口
+
+**证据**：API 有 `GET /api/orders/{orderNumber}`，CLI 只有 `orders list`；API 无 cancel，CLI 也无；无 `product add`、无 `user passwd`、无 `db check`。CEO 的 F-08 已指出 cancel 缺失。
+
+**影响**：demo 脚本无法只靠 CLI 完成“下单 → 查单 → 取消 → 对账”；排障时只能直接开 sqlite。
+
+**建议**（按性价比排序）：
+1. `orders show <orderNumber>` —— 查单是最高频动作。
+2. `db check` —— `PRAGMA integrity_check` + `foreign_key_check` + 孤儿 `order_items` + `user_version` 报告，退出 0/1。
+3. `orders cancel <orderNumber>`（若 R2 范围允许）。
+4. `product add` / `user passwd` 可延后到 R2b。
+
+### DX-07 [High] `save-unknown` 在 DB 架构下没有落点
+
+**证据**：§5.4 保留 `appendOrder` 的 `save-unknown` 状态；§5.6 要求 UI 处理它；但订单已迁到 DB，SPEC 没有说明“状态未知”的订单写到哪里、如何展示、如何重试。R1 是写 `localStorage`，而 R2 的前端订单来源已改为 API。
+
+**影响**：这是用户最能感知的失败路径：钱/库存可能已扣，但用户看到“未保存”，刷新后订单消失或重复下单。
+
+**建议**：
+- 客户端生成 `clientOrderId`（UUID），`orders` 表加 `UNIQUE(client_order_id)`；重试天然幂等。
+- `appendOrder` 的 `save-unknown` 只表示“网络层不确定”，恢复动作是“用同一 `clientOrderId` 重试”。
+- 新增 `GET /api/orders/mine?status=pending` 或 CLI `orders pending` 作为对账入口。
+- 明确 unknown 记录在内存中的保留时长与展示位置。
+
+### DX-08 [High] `db init --force` 是破坏性操作，却没有刹车
+
+**证据**：§5.5 只写 `[--force]`；F-16 提到需要 `--yes`，但 SPEC 未吸收；无 `db backup` / `db restore`。
+
+**影响**：一条命令清空演示数据；Windows 上若 `serve` 仍持有 DB 句柄，行为更不可预期。
+
+**建议**：
+- 改为 `db reset --yes`（`--force` 保留为别名）。
+- 执行前自动备份到 `data/backups/<timestamp>.db`，并在输出中打印路径。
+- 检测到 `serve` 正在使用同一 DB 时拒绝执行，提示先停服务。
+- 新增 `db backup [--out <path>]`、`db restore <path> --yes`。
+
+### DX-09 [Medium] 运行时几乎不可观测
+
+**证据**：API 表无 health/meta；§5.2 只在 500 提 requestId；无启动摘要、无访问日志格式、无 `--log-level`。
+
+**影响**：QA 和 agent 无法用一条命令确认“服务、DB、种子数据都正常”；出问题时只能看 stderr 碎片。
+
+**建议**：
+- 启动时打印一行结构化摘要：`{"event":"listening","port":4174,"db":"...","schema":1,"seeded":true}`。
+- 所有响应带 `X-Request-Id`，不只是 500。
+- `--log` 开启单行 JSON 访问日志；默认关闭，避免污染 TTHW。
+
+### DX-10 [Medium] 跨层命名不一致
+
+**证据**：
+
+| 层 | 字段 |
+|---|---|
+| DB | `unit_price_cents` / `stock` / `listed` |
+| HTTP | `unitPriceCents` / `stock` / `listed` (0/1) |
+| CLI | `--cents` / `--units` / `list|unlist` |
+
+**影响**：用户在三层之间切换时要重新记忆；错误信息与文档容易引用错名字。
+
+**建议**：CLI flag 向 API 对齐：`--unit-price-cents`、`--stock`、`--listed 0|1`；`--cents` / `--units` 作为弃用别名保留一轮。在 `docs/contracts.md` 放一张三层映射表。
+
+### DX-11 [Medium] 错误响应形态可能自相矛盾，Origin 缺失场景未定义
+
+**证据**：§5.2 定义 `{ok:false, code, message, details}`；§5.9 又出现 `problem+json`。§5.3 要求校验 `Origin` / `Sec-Fetch-Site`，但未说明“请求没有 Origin”时怎么办。
+
+**影响**：实现者二选一，客户端解析分叉；更实际的是，`curl` / Postman / agent 默认不带 `Origin`，如果被 403，本地 API 调试直接不可用。
+
+**建议**：
+- 二选一：保留 `{ok:false}` 信封并删除 `problem+json`，或全面采用 RFC 7807；不要混用。
+- 明确矩阵：`Origin` 缺失 → 允许（非浏览器客户端）；同源 → 允许；跨源 → `403 cross-origin-blocked`；`Sec-Fetch-Site: cross-site` → 403。
+- 在 `docs/api.md` 给出 `curl` 登录 + 带 Cookie 调用的完整示例。
+
+### DX-12 [Medium] 没有 `docs/cli.md`，`--help` 内容无验收
+
+**证据**：§5.11 的文档清单里没有 CLI 文档；AC-08 只验证退出码，不验证 help 文本。
+
+**影响**：CLI 是 R2 的主要交付面之一，却只能靠 `--help` 自解释；help 写漏了没有任何门禁能发现。
+
+**建议**：`--help` 必须列出全部子命令、一行说明、一个示例；每个子命令 `--help` 退出 0。新增 `tests/cli.test.mjs` 断言“文档中的命令集合 == help 中的命令集合”。
+
+### DX-13 [Medium] 缺少统一的 `verify` 入口
+
+**证据**：§5.11 定义了 5 个脚本 + `node --test`；CEO 与 AC 提到 `scripts/verify.mjs`，但 §5.11 没有把它列入交付物。
+
+**影响**：贡献者要记住 6 条命令及顺序；G1~G7 无法用一条命令复现。这是 DX 与门禁的交汇点。
+
+**建议**：新增 `npm run verify` → `scripts/verify.mjs`，顺序执行：`node --test` → `check-links` → `check-numbering` → `check-traceability` → `verify-evidence`，最后打印单行 `PASS` / `FAIL` 摘要，任一失败即非零退出。
+
+### DX-14 [Medium] R1 测试迁移与共享夹具未规划
+
+**证据**：AC-12 要求 62 个 R1 测试不回归；§5.4 要删除 `assets/order-store.mjs` 并改 `controller.mjs`；§5.10 只提到 `fs.mkdtemp`，没有 `tests/helpers/`。
+
+**影响**：`controller.test.mjs` / `app.test.mjs` 会大面积红；新测试各自复制临时库与登录样板，贡献成本上升。
+
+**建议**：保留 `order-store.mjs` 作为 `api-client` 的薄适配层（或在测试中注入 fake client），把“删除”改为“R2b 再删”；新增 `tests/helpers/db.mjs`、`auth.mjs`、`server.mjs`，统一临时库创建/关闭（Windows 上注意先关 DB 再删目录）。
+
+### DX-15 [Low] Windows 首次运行与测试清理细节
+
+**证据**：目标环境是 Windows；`node:sqlite` 首次运行会打印 `ExperimentalWarning`；WAL 模式下打开中的 DB 文件在 Windows 上不能删除；`spawnSync` 路径含空格时需正确引用。
+
+**影响**：首次运行看起来像报错；测试在 `after` 钩子里删临时目录可能 `EBUSY`。
+
+**建议**：`npm run dev` 使用 `node --no-warnings=ExperimentalWarning`（不要全局 `--no-warnings`）；README 说明该警告可忽略；测试助手显式 `db.close()` 后再 `rm`；证据脚本统一使用 `pathToFileURL` / `fileURLToPath`。
+
+### DX-16 [Low] 时间预算会优先砍掉 DX 面
+
+**证据**：4.5~5.5h 覆盖 40 AC + 14 张图 + 12 份文档 + 5 个门禁。CEO 的 F-01 已判定不可行。
+
+**影响**：被砍的顺序通常是 help 文本、`--json`、health、CLI 文档——恰好是 DX 的全部增量。
+
+**建议**：把 DX 项显式分为“R2a 必须”（一键启动、health、`--json`、`verify`、help 完整性）与“R2b 可延后”（cancel、backup/restore、reconcile、访问日志）。
+
+---
+
+## 3. DX 的七个质疑
+
+1. **TTHW 的验收标准是什么？** SPEC 没有给出“从 clone 到首页可见”的步骤上限或时间上限，也没有把 README 快速开始写成可执行 AC。没有数字的 TTHW 无法验收，只能靠感觉。
+2. **CLI 为什么不是 HTTP 的客户端，而是第二个入口？** CLI 直连 service 层意味着“拿到 DB 文件 = 管理员”，权限模型与 HTTP 分叉。这是有意设计还是省事？如果是有意，契约写在哪？
+3. **`save-unknown` 在 DB 架构下到底写到哪里？** R1 写 `localStorage`，R2 前端订单来源改成 API，那“状态未知”的订单存在哪、活多久、怎么重试？这是用户最可能踩到的失败路径，SPEC 目前是空白。
+4. **40 个 AC 里，有几个是“一个下午能亲手验证”的？** 如果一半 AC 需要 evidence manifest、ring 文档和 SHA-256，那这个项目的真实 TTHW 不是 3 分钟，而是“读完 12 份文档的时间”。流程成本必须计入 DX。
+5. **错误码目录有 CLI 版本吗？** 用户看到的是 `insufficient-stock`，还是 `Error: stock not enough`？如果 CLI 不复用 `docs/error-catalog.md`，这份目录只覆盖了一半 surface。
+6. **`db init --force` 与 `serve` 的锁关系是什么？** Windows 的 SQLite 文件锁与 POSIX 不同，SPEC 没有写“服务运行时执行 init/reset”的行为。恢复路径很可能在 Windows 上第一个坏掉。
+7. **`--json` 的消费者是谁？** 如果答案是 agent/脚本，那就必须把“稳定 schema、无颜色、无交互、支持 stdin”写成 AC；如果答案只是人，那 CLI 的可测试性会一直靠正则。
+
+---
+
+## 4. 与前两轮评审的交叉异议
+
+- **“API/CLI/Admin 均可用”应降级为“可完成 demo 脚本”**：CLI 缺 `orders show/cancel`、`product add`、`db check`，且无 `--json`，目前不足以支撑自动验证。
+- **流程分高不等于体验分高**：第二轮给文档/流程打了高分，但 evidence 仪式越重，新贡献者的首日体验越差；建议把 evidence 与 R2a 解耦。
+- **两轮都没把“新贡献者 30 分钟内跑通并改一行代码”作为 AC**：这是 TTHW 唯一可证伪的定义，建议直接入 AC。
+- **F-23 应从 Medium 升为 High**：在 agent 执行、日志默认留存的语境下，argv 泄密不是理论风险。
+- **F-09 的 `ExperimentalWarning` 应补一条 DX 处理**：不是功能问题，但它是首次运行的“第一印象”，需要 `--no-warnings=ExperimentalWarning` 或 README 明示。
+
+---
+
+## 5. 放行条件（必须进 SPEC 才能 APPROVED）
+
+1. **一键 TTHW**：`npm run dev`（或 `cli.mjs dev`）+ `GET /api/health` + README 可复制快速开始，并写成 AC。
+2. **CLI 契约修正**：拆分 `product list/unlist`，新增 `--json`、`--password-stdin`，给出退出码/错误码映射表。
+3. **恢复路径**：`clientOrderId` 幂等 + `save-unknown` 的 DB 落点 + 至少一个对账入口。
+4. **破坏性操作刹车**：`db reset --yes` + 自动备份 + `db check`。
+5. **单一验证入口**：`npm run verify` 串联测试与 5 个门禁脚本。
+6. **文档补齐**：`docs/cli.md`，且 help 文本纳入测试。
+
+满足以上 6 条，DX 分预计从 5.7 升到 **7.6~7.8**；其余项可放 R2b。
+
+---
+
+## 6. 一句话给实现 agent
+
+先把“第一次运行”和“失败后怎么恢复”做对，再去做 Admin UI 和 evidence 仪式；前者决定项目能不能被用起来，后者只决定它能不能被盖章。
+
+---
+
+需要的话，我可以按同一口径继续产出 **Engineering 评审**（并发/事务/测试策略）和 **QA 评审**（可验证性/证据链），或把这份内容整理成 `review-dx.md`。

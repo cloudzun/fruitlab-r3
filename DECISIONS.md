@@ -1,206 +1,272 @@
-# FruitLab `/autoplan` Decision Record
+# FruitLab R2 `/autoplan` Decision Record
 
-Run: `main-20261017-141613`
-Date: 2026-10-17
-Ring: 3 (`/autoplan`)
-Status: **FINAL APPROVAL GATE APPROVED AS-IS. NO BUILD STARTED.**
+Run: `r2-20261018-0837`
+Date: 2026-10-18
+Ring: 2 / 7 (`/autoplan`)
+Status: **FINAL APPROVAL GATE `gate_rev=1` — PENDING USER APPROVAL. NO BUILD STARTED.**
 
 ## Hard Constraints
 
-- `SPEC.md` was a read-only input. Its SHA-256 after this run is `446886200D4FE3AF37F83C65504D276C5A595D7AC9BEE8C3D4A13EBD3A187B64`, unchanged from the approved 455-line specification.
-- CEO, Design, DX and Eng each ran exactly one review. No failed review was sent back for a second review and no phase was rerun.
-- The four phases ran in the required order: CEO -> Design -> DX -> Eng.
-- Each phase made one outside Claude Code attempt. All four returned `custom_provider_requires_model` before any model call, so outside coverage is `unavailable` in every phase; none was retried.
-- Final Approval Gate `gate_rev=1` approved the reviewed plan as-is with `p1a uc1a d1a`. This does not start build or claim that any implementation or manual check has passed.
+- `SPEC.md` 是只读输入。本轮结束时其 SHA-256 为 `FF3BAAFCF99738344AE54AB2E487B677131CA884A052A53990E416DC13074B1B`，559 行，与 spec 环批准的版本一致，未被本环修改。
+- 四阶段按 CEO → Design → DX → Eng **串行**执行；每阶段只采纳一轮评审结论，**未把失败评审退回重审**。
+- 每阶段的「外部声音」由本机 `claude` CLI 提供，实际模型 `deepseek-v4-flash`，**与本地同族，不构成跨模型对抗**；因此跨模型共识一律记 `N/A（覆盖缺失）`，不冒充跨模型结论。
+- **环境偏差（如实记录）**：Design 与 Eng 的外部声音各尝试了两次——第一次分别返回偏题内容（CEO 视角）与卡住的元回复，未形成评审；第二次才得到可用评审。官方 `gstack-autoplan` 运行件（bun snapshot/plan-reality 工具链）在本宿主不可用，流程按技能文档手动执行。
+- 本门禁批准的是「评审后的计划与义务清单」，**不表示 build、测试或人工检查已经通过**，也不启动 build。
 
 ## Phase Summary
 
 | Phase | Result | Native findings | Outside voice | Consensus |
-| --- | --- | --- | --- | --- |
-| CEO | **7/10, FAIL / issues_open** | 4 High, 3 Medium | unavailable (`custom_provider_requires_model`) | N/A, coverage missing |
-| Design | **7/10, FAIL / issues_open** | 1 Critical, 5 High, 4 Medium | unavailable (`custom_provider_requires_model`) | N/A, coverage missing |
-| DX | **6/10, FAIL / issues_open** | 1 Critical, 9 High, 5 Medium | unavailable (`custom_provider_requires_model`) | N/A, coverage missing |
-| Eng | **FAIL / issues_open; no numeric Eng score defined; 0 critical gaps after accepted requirements** | 11 issues; reported headline count 3 P1, 6 P2, 2 P3, detail subtotal 4 P1, 6 P2, 1 P3 | unavailable (`custom_provider_requires_model`; no model call) | N/A, coverage missing |
+|---|---|---|---|---|
+| CEO | **6.5/10, FAIL / issues_open** | 4 Critical, 6 High, 7 Medium, 3 Low | 同族（非跨模型），已记录 | N/A（覆盖缺失） |
+| Design | **7.0/10, FAIL / issues_open** | 3 High, 5 Medium | 同族（首次偏题，重问一次） | N/A（覆盖缺失） |
+| DX | **5.7/10, FAIL / issues_open** | 2 Critical, 6 High, 6 Medium, 2 Low | 同族（非跨模型） | N/A（覆盖缺失） |
+| Eng | **6.5/10, FAIL / issues_open** | 3 High, 7 Medium, 6 Low | 同族（首次卡住，重问一次） | N/A（覆盖缺失） |
 
-All phase verdicts below are the one-round native results. Accepted fixes do not convert a failed review into a pass without another review, and no such second review was run.
+四阶段均为 FAIL / issues_open。**接受的修复不把 FAIL 转为 PASS**；本记录不代表任何一项已实现或已验收。
 
-All four external reviews were unavailable for the same pre-call configuration error, `custom_provider_requires_model`. No Claude Code model call was made, no retry or replacement provider was used, and no phase received outside-voice consensus credit.
+原始发现合计 **60 条**（CEO 20 + Design 8 + DX 16 + Eng 16）；去重合并后转为 **42 条义务**（见下方 Accepted Obligations）、**5 项 TODOS** 与若干显式风险接受。
 
-## Phase 1: CEO
+## Phase 1: CEO（战略与范围）
 
-Native result: **7/10, FAIL**. Four High and three Medium findings were recorded.
+Native result: **6.5/10, FAIL**。核心判断：工程底子扎实，但**范围与估算不匹配**，且 40 条 AC 全是机制型、缺用户结果型验收。
 
-| ID | Severity | Finding | One-round disposition |
-| --- | --- | --- | --- |
-| F1 | High | P5 learner value remains outside the release gate. | User Challenge `U1`; not auto-decided. |
-| F2 | High | P6 is in tension with the storage and manual-check complexity. | No scope change. D1-D3 remain binding and the edge cases are the evidence for those decisions. |
-| F3 | High | Clean-copy evidence did not prove the evidence package itself was copied intact. | Accepted: canonical copy manifest, per-file SHA-256, copied-directory checks and local-link validation. |
-| F4 | High | The no-blocking-gate narrative was underdesigned. | Accepted: one concrete D1-or-D3 decision-to-evidence walkthrough and an honest no-block explanation. |
-| F5 | Medium | D1-D3 lacked an explicit reopening rule. | Retained: stop and return to spec review rather than silently substituting another approach. |
-| F6 | Medium | Node 18 is not an appropriate minimum. | Accepted: Node.js 22+ and record the actual tested Node and Chromium versions. |
-| F7 | Medium | Competitive advantage is thinner than assumed. | No product change; addressed by the concrete case study and factual evidence narrative. |
+| ID | 严重度 | 发现 | 一轮处置 |
+|---|---|---|---|
+| F-01 | Critical | §10 估算 4.5–5.5 agent 工时，与 20+ 新文件、40 AC、14 图、5 门禁不匹配 | **接受**：重估 15–25 agent 工时；OB-CEO-01 |
+| F-02 | Critical | 无里程碑切分，任一环节卡住全盘阻塞 | **接受**：M1 DB/auth → M2 API/CLI → M3 前端接入 → M4 管理端 → M5 视觉/资产/治理；OB-CEO-01 |
+| F-03 | Critical | 40 条 AC 无用户结果型标准，无 demo 脚本 | **接受**：补 AC-41 用户旅程、AC-42 demo 脚本；OB-CEO-02 |
+| F-04 | Critical | 治理成本（5 脚本 + manifest + 32 决策 + G1–G7）可能超过产品代码，且属自证 | **部分接受**：合并为 `scripts/verify.mjs` 单一入口；明确 G1/G2/G6 保留、G3/G4/G5/G7 合并或降级并写明理由；OB-CEO-06 |
+| F-05 | High | R1 访客查单（无账号）与 R2 登录模型冲突；AC-31 可能无法满足 | **接受**：产出 R1 行为对照表，AC-31 拆为「交互契约保留」与「权限行为变更（访客查单移除，breaking）」；OB-CEO-03 |
+| F-06 | High | Admin UI 未定义；AC-04/05/06 可能只能靠 CLI 满足 | **接受**：补 Admin 信息架构与状态；并新增 `GET /api/admin/products`；OB-CEO-04、OB-ENG-02 |
+| F-07 | High | 14 张图是发布硬阻塞，无 fallback | **接受**：Openverse → Wikimedia Commons → 停止并上报，禁止 AI 图冒充；OB-CEO-05 |
+| F-08 | High | 库存只减不增，无误下单回补 | **拒绝进 R2 范围，记入 TODOS**：PRD 未要求取消/退款；在 TODO 登记，不静默做 |
+| F-09 | High | `node:sqlite` 未做能力 spike | **接受**：M1 前置 spike（建库/WAL/busy_timeout/事务回滚/并发写/测试输出污染）；OB-CEO-07 |
+| F-10 | High | 并发不超卖缺真实并发测试 | **接受**：并发双 POST 用例；OB-CEO-08 |
+| F-11 | Medium | 会话无 `expires_at`/清理 | **部分接受**：PRD 明确「无会话过期」，保留边界；但**登出必须删除服务端会话行**；OB-CEO-09 |
+| F-12 | Medium | 注册/密码策略未定义 | **接受**：username 3–32 `[A-Za-z0-9_-]`、password 8–128；OB-CEO-10 |
+| F-13 | Medium | Admin 变更无审计 | **记入 TODOS**（PRD 未要求） |
+| F-14 | Medium | 结算时价格/下架/库存变化的 UX 未定义 | **接受**：三种提示状态；OB-CEO-11 |
+| F-15 | Medium | 视觉验收不可复现（截图无路径/commit/复核人） | **接受**：截图路径、commit、时间、复核人；OB-CEO-12 |
+| F-16 | Medium | `db init --force` 无刹车，serve 缺库行为未定义 | **接受**：自动备份 + `--yes` + 持锁检测 + 无库指引；OB-CEO-13 |
+| F-17 | Medium | 无障碍覆盖不足（键盘/焦点/skip link/错误汇总） | **接受**：OB-CEO-14 |
+| F-18 | Low | 403 vs 404 存在性泄露（D-32 已接受） | 保持，文档记录 |
+| F-19 | Low | `evidence/test-count.txt` 每次测试都改 | 只在发布/验收时生成 |
+| F-20 | Low | 列表无分页 | **部分接受**：加默认上限 100；OB-ENG-08 |
 
-Accepted CEO obligations also include treating catalog and stored-order strings as text, never HTML, and proving the behavior in manual check M18. No CEO finding requires a new product decision.
+### `U1`：范围与工时的用户裁量
 
-### `U1`: P5 learner-value validation
+**需要用户拍板，非自动决定。**
 
-**Decision needed from the user. This is not auto-decided.**
+推荐 **A**：保持 PRD 全量范围（不拆成 R2a/R2b），但按 M1–M5 里程碑顺序交付、每步可独立验收与回退；工时按 15–25 agent 工时重估。
 
-Recommendation: **A** for this delivery. Keep P5 explicitly `UNVERIFIED`; schedule a learner check later if the teaching claim matters beyond the local demo.
+| 选项 | 完整度 | 利 | 弊 |
+|---|---:|---|---|
+| A. 全量 + 里程碑 | 9/10 | 满足 PRD 与课堂「一次完整升级」叙事；每步可停可回退 | 总时长变长，需分阶段验收 |
+| B. 拆 R2a/R2b 两次交付 | 10/10 | 最快拿到可演示闭环；风险最低 | 课堂要讲两次「交付」，R2 叙事被切碎；PRD 要求全量 |
+| C. 砍视觉与治理保功能 | 7/10 | 工期最短 | 违反 A10/A11/A12 与「文档可复盘」要求 |
 
-| Option | Completeness | Pros | Cons |
-| --- | ---: | --- | --- |
-| A. Keep P5 `UNVERIFIED` and publish the demo | 6/10 | Preserves the approved scope and schedule; no fabricated teaching claim is made; evidence stays honest. | The deliverable cannot claim verified teaching value; the main product premise remains assumed. |
-| B. Make two learner observations a release condition | 9/10 | Forces the teaching claim to be tested before release; gives a clear gate and evidence target. | Requires learner access and coordination; can block delivery for reasons outside the codebase. |
-| C. Run a lightweight two-learner validation before handoff | 10/10 | Produces direct evidence for the teaching premise; exposes confusing copy or workflow before the final demo. | Adds time and a manual process; should happen only after a runnable build exists. |
+### `U2`：R1 访客查单的移除
 
-## Phase 2: Design
+**需要用户拍板。** R1 允许任何人凭订单号查单（无账号）；R2 要求登录且只能查自己的订单（PRD FR-3）。这是**有意的 breaking change**。
+推荐 **A**：移除访客查单，保留「顶层查订单入口 + 结果聚焦」的交互契约；在 README 与 CHANGELOG 写明 breaking。
 
-Native result: **7/10, FAIL / issues_open**. The score moved from 3/10 before fixes to 7/10 after the one-round dispositions. Ten findings were recorded: 1 Critical, 5 High and 4 Medium.
+| 选项 | 完整度 | 利 | 弊 |
+|---|---:|---|---|
+| A. 移除访客查单 | 9/10 | 符合 FR-3 权限模型；实现简单 | R1 行为变更，需在课堂解释 |
+| B. 保留访客查单（凭订单号可查） | 6/10 | 保住 R1 行为 | 泄露他人订单；违反 FR-3 |
+| C. 访客可查但脱敏（只显示金额与状态） | 7/10 | 折中 | 仍需额外契约与测试，范围变大 |
 
-| ID | Severity | Finding | One-round disposition |
-| --- | --- | --- | --- |
-| DF1 | Critical | A successful write could be reported as not saved after strict readback failed, inviting a duplicate order. | Accepted: distinguish `saved`, `not-written`, `duplicate-order-number` and `save-unknown`; retain the cart and lock retry after an unknown write. |
-| DF2 | High | The cart lacked line totals, a persistent total and primary checkout hierarchy. | Accepted: row math, persistent `合计`, and checkout directly below it. |
-| DF3 | High | Mobile add had no immediate feedback and the cart could be far below the catalog. | Accepted: per-item confirmation, live-region feedback and a compact sticky cart below 720px. |
-| DF4 | High | Lookup was buried and had no focus or scroll contract. | Accepted: top-level `查订单`, focus the result heading after query, and clear stale results on input. |
-| DF5 | High | Module-load failure and no-JavaScript states were unspecified. | Accepted: boot status, `<noscript>` copy, disabled controls and explicit load-failure text. |
-| DF6 | High | Success receipts and lookup results could remain visible after becoming stale. | Accepted: hide receipts on cart mutation and each new checkout attempt; clear lookup results on input. |
-| DF7 | Medium | Local order-number time and canonical UTC receipt time could be misread. | Accepted: show local time prominently plus canonical UTC. |
-| DF8 | Medium | The visual direction was generic for ten text-heavy fruit cards. | Taste decision `DV1` remains open for the user. |
-| DF9 | Medium | Corrupt-data and storage warnings lacked ownership and lifecycle. | Accepted: dedicated storage notice, refresh after reads/appends, preserve still-valid warnings. |
-| DF10 | Medium | Copy feedback, quantity boundaries, lookup idle state and ARIA error associations were missing. | Accepted: explicit copy results, 1/99 disabled boundaries, idle copy, `aria-invalid` and `aria-describedby`. |
+## Phase 2: Design（视觉与交互）
 
-Design did not pass because `DV1` remains unresolved. The report explicitly states that no external font, image, CDN or network request is allowed.
+Native result: **7.0/10, FAIL / issues_open**。方向可落地（Apple 式词元已具体化），问题集中在**状态覆盖**与**管理端信息架构**。
 
-### `DV1`: Visual direction
+| ID | 严重度 | 发现 | 一轮处置 |
+|---|---|---|---|
+| DF-01 | High | Admin 界面只有一句「单页两面板」，缺订单/商品面板的信息架构、空态、错误态 | **接受**：OB-CEO-04、OB-DES-03 |
+| DF-02 | High | 商品卡仅定义正常态；加载、空、错误、售罄、下架五态未逐一给视觉规则 | **接受**：六态齐全；OB-DES-02 |
+| DF-03 | High | 视觉验收依赖人工，缺可复现证据与复核人 | **接受**：OB-CEO-12 |
+| DF-04 | Medium | 无障碍只覆盖 alt/对比度/aria-invalid，缺 skip link、键盘全流程、焦点顺序、错误汇总 | **接受**：OB-CEO-14、OB-DES-05 |
+| DF-05 | Medium | 移动端导航与购物袋细节不足（横向滚动、<720px 紧凑条） | **接受**：OB-DES-04 |
+| DF-06 | Medium | 文案语气无验收口径（易回到促销腔） | **接受**：OB-DES-06 |
+| DF-07 | Medium | CC BY 署名未规定可见位置 | **接受**：页脚署名链接台账；OB-DES-08 |
+| DF-08 | Medium | 登录/注册表单状态（提交中、失败、已登录）未定义 | **接受**：OB-DES-03 |
 
-**Decision needed from the user. This is not auto-decided.**
+无新增品味决策：视觉方向 `DV1` 已由项目负责人于 2026-10-18 定为 Apple 式高冷风（D-08），本环不再另立。
 
-Recommendation: **A**. A hand-lettered fruit-stall identity is the most specific to this local teaching demo and gives the ten text-heavy cards a recognizable voice without external assets.
+## Phase 2.5: DX（开发者体验）
 
-All options must use local CSS and locally available system fonts only. None may load a web font, and `system-ui` must not be the primary display font.
+Native result: **5.7/10, FAIL / issues_open**。核心判断：项目由 agent 实现与验证，但 CLI/API 尚不足以被机器可靠使用。
 
-| Option | Completeness | Pros | Cons |
-| --- | ---: | --- | --- |
-| A. Handwritten fruit-stall signage | 8/10 | Strong local-market identity; local Chinese Kai or writing fonts, paper texture and seal-like fruit silhouettes fit the demo; distinctive against generic AI layouts. | Chinese Kai font availability varies by OS; uneven letterforms can hurt price and quantity legibility if overused. |
-| B. Modern produce magazine | 8/10 | Serif headline plus sans-serif body creates clear hierarchy; editorial grid suits ten text-heavy cards; system serif stacks are relatively reliable. | Can feel upmarket or generic; less directly connected to a neighborhood fruit stall. |
-| C. Retro market ticket | 7/10 | Ticket and label shapes make prices and order states feel physical; sticker-like fruit motifs create a playful demo identity. | Decorative shapes add CSS complexity and risk cramped 360px layouts; novelty can compete with checkout clarity. |
+| ID | 严重度 | 发现 | 一轮处置 |
+|---|---|---|---|
+| DX-01 | Critical | 无一条命令从零到可用（init+seed+serve 三步），无 health，`data/` 创建未定义 | **接受**：`node cli.mjs dev` + `GET /api/health` + README 60 秒 AC；OB-DX-01 |
+| DX-02 | Critical | CLI 语法有硬伤：`product list|unlist --id` 不可解析 | **接受**：拆分为 `product list` / `product unlist --id` / `product relist --id`；help 与文档一致测试；OB-DX-02 |
+| DX-03 | High | CLI 无 `--json`，无法被脚本/agent 稳定消费 | **接受**：全局 `--json` 契约；OB-DX-03 |
+| DX-04 | High | 退出码只有 0/1/2，未映射业务/暂时性/内部错误，stdout/stderr 分工缺失 | **接受**：5 档退出码 + 分工；OB-DX-04 |
+| DX-05 | High | `--password <p>` 进 shell history/进程列表/agent 日志 | **接受**：`--password-stdin`；OB-DX-05 |
+| DX-06 | High | CLI 缺 `orders show`、`db check`，排障只能开库 | **接受**：补两条；OB-DX-06 |
+| DX-07 | High | `save-unknown` 在 DB 架构下无落点，重试可能重复下单 | **接受**：`clientOrderId` + `(user_id, client_order_id)` 唯一约束，重复请求返回原订单；**supersede D-30**；OB-DX-07 |
+| DX-08 | High | `db init --force` 破坏性无刹车 | **接受**（与 F-16 合并）：OB-CEO-13 |
+| DX-09 | Medium | 运行时不可观测（无 health/启动摘要/requestId） | **接受**：OB-DX-09 |
+| DX-10 | Medium | DB/HTTP/CLI 三层命名不一致（`--cents` vs `unitPriceCents`） | **接受**：三层映射表 + CLI flag 对齐；OB-DX-10 |
+| DX-11 | Medium | 错误响应形态可能自相矛盾（`{ok:false}` 与 `problem+json` 混用） | **接受**：API 用 `{ok:false}`，静态层用 `problem+json`；目录唯一真源；OB-DX-11 |
+| DX-12 | Medium | 缺失 `Origin`/`Sec-Fetch-Site` 时行为未定义（curl/测试会被误杀或误放） | **接受**：明确矩阵；OB-ENG-04 |
+| DX-13 | Medium | 缺统一 `verify` 入口 | **接受**：OB-CEO-06 |
+| DX-14 | Medium | R1 测试迁移与共享夹具未规划 | **接受**：`tests/helpers/`；OB-DX-13 |
+| DX-15 | Low | Windows 细节（ExperimentalWarning、WAL 下删目录 EBUSY、路径引用） | **接受**：OB-DX-14 |
+| DX-16 | Low | 预算会优先砍掉 DX 面 | 已在里程碑中前置 M2 的 DX 项 |
 
-## Phase 2.5: DX
+## Phase 3: Eng（工程可实施性）
 
-Native result: **6/10, FAIL / issues_open**. Fifteen native findings were recorded: 1 Critical, 9 High and 5 Medium. The persisted disposition table also contains DX16 as an additional state-transition clarification; it does not change the native count.
+Native result: **6.5/10, FAIL / issues_open**。核心判断：架构方向正确，但**同步 SQLite 的阻塞**与**契约单源**是最大工程风险。
 
-| ID | Severity | Finding | One-round disposition |
-| --- | --- | --- | --- |
-| DX1 | Critical | `save-unknown` could be retried immediately and duplicate an order whose write outcome was unknown. | Accepted: block retry until healthy storage proves the order absent; otherwise require inspection or human escalation. |
-| DX2 | High | The CLI lacked help, port override, version, unknown-argument behavior and actionable port-conflict output. | Accepted: keep `node serve.mjs`, add `--help`, `--port`, `--version`, exit 2 for bad arguments and print a safe conflict command. |
-| DX3 | High | HTTP 404, 405, traversal and file-read failures lacked a complete response and recovery contract. | Accepted: one problem+json body, `Allow` on 405, 404 for traversal and a redacted 500 trace. |
-| DX4 | High | Storage access, quota and security failures collapsed into generic retry copy. | Accepted: distinct stable codes and actionable remedies. |
-| DX5 | High | `duplicate-order-number` had no checkout UI or bounded recovery. | Accepted: regenerate within the fixed budget, preserve the cart and expose a stable code after exhaustion. |
-| DX6 | High | The cart remained mutable during `save-unknown` and the order number was not copyable. | Accepted: freeze the attempted snapshot and cart controls, make the number copyable and resolve only against that snapshot. |
-| DX7 | High | Corrupt and duplicate storage warnings offered no safe manual recovery. | Accepted: backup/export raw storage before inspection or removal; no automatic repair. |
-| DX8 | High | Invalid-input contracts were missing for most exported domain functions. | Accepted: define accepted types, exact failure shape and tests for every exported function. |
-| DX9 | High | Module-load failures before `app.mjs` could not update boot status or provide a trace. | Accepted: a small classic-script error handler before the module; keep controls disabled. |
-| DX10 | High | Canonical order and money examples contradicted `validateOrder` and the catalog. | Accepted: replace examples with valid catalog data and add sample-consistency tests. |
-| DX11 | Medium | Stable error codes were absent across UI, HTTP and domain surfaces. | Accepted: one error catalog mapping code, surface, message, fix, recovery, side effects, retry policy and doc anchor. |
-| DX12 | Medium | Malformed lookup input was reported as not found. | Accepted: validate format before storage access and show the expected format with an example. |
-| DX13 | Medium | Manual failure checks M11, M12, M18 and M19 were not reproducible. | Accepted: self-contained setup, backup and restore snippets. |
-| DX14 | Medium | Reset instructions omitted the served origin, backup and irreversibility. | Accepted: document all three beside the reset command. |
-| DX15 | Medium | Node compatibility and readiness were documentation-only. | Accepted: Node.js 22+ preflight with a stable code and ready URL printed after bind. |
+| ID | 严重度 | 发现 | 一轮处置 |
+|---|---|---|---|
+| E-01 | High | 同步 `DatabaseSync` + 5s `busy_timeout` + 同步重试会阻塞整个 HTTP 服务（含静态资源） | **接受**：单写者队列 + `busy_timeout` 250–500ms + 异步退避；OB-ENG-01 |
+| E-02 | High | 缺 `GET /api/admin/products`，商品下架后管理端无法再操作 | **接受**：OB-ENG-02 |
+| E-03 | High | 下单无幂等键，重复提交重复下单/扣库存 | **接受**（与 DX-07 合并）：OB-DX-07 |
+| E-04 | Medium | 会话生命周期（无过期/清理/登出撤销未明确） | **部分接受**：登出删除；过期按 PRD 边界不做；OB-CEO-09 |
+| E-05 | Medium | 错误码多处不一致（`invalid-listed`、`product-unlisted`、`order-number-exhausted` vs `duplicate-order-number`） | **接受**：目录唯一真源；OB-DX-11 |
+| E-06 | Medium | 请求校验契约不完整（`maxItems`、重复 productId、Content-Type、用户名/密码边界） | **接受**：OB-ENG-03 |
+| E-07 | Medium | Origin/Sec-Fetch-Site 规则不精确，且未校验 `Host` | **接受**：OB-ENG-04 |
+| E-08 | Medium | 40 AC + 门禁 + 自证与估算不匹配 | **部分接受**：里程碑 + verify 入口；自证风险在 evidence 诚实边界中声明 |
+| E-09 | Medium | CSP 在 meta 与响应头双写会漂移，`frame-ancestors` 在 meta 无效 | **接受**：HTTP 头为唯一来源；OB-ENG-06 |
+| E-10 | Medium | scrypt `N=16384` 偏低，无升级路径说明 | **接受**：README 说明 + 升级路径；OB-ENG-07 |
+| E-11 | Low | CLI 密码明文（已由 DX-05 覆盖） | 合并 |
+| E-12 | Low | 登录无限流 | **记入风险接受**（PRD 边界） |
+| E-13 | Low | 列表无分页 | **部分接受**：默认上限 100；OB-ENG-08 |
+| E-14 | Low | 购物车是否跨刷新保留未定义 | **接受**：仅内存，与 R1 一致；OB-ENG-09 |
+| E-15 | Low | 管理操作无审计 | **TODOS** |
+| E-16 | Low | CC BY 署名位置（设计已覆盖） | 合并 |
 
-No new taste decision was created by DX. The 15 findings were treated as implementation and recovery obligations, not as permission to expand into a developer platform.
+## Accepted Obligations（进入 build 的义务清单）
 
-## Phase 3: Eng
+义务编号 `OB-<阶段>-<序号>`；判定只能 `closed` / `downgraded`（附理由）/ `not-covered`（附理由）。每条都必须落到 `BUILD.md` 验收表与 `docs/obligations.md`。
 
-Native result: **FAIL / issues_open**. No numeric Eng score is defined. The native voice reported 11 issues. The persisted detail sections show an internal severity subtotal of 4 P1, 6 P2 and 1 P3, while the native summary line says 3 P1, 6 P2 and 2 P3. This discrepancy is recorded without a second review, as required by the one-round constraint.
+| 编号 | 义务 | 完成判据（机械可查） |
+|---|---|---|
+| OB-CEO-01 | 工时重估 15–25 agent 工时；按 M1–M5 里程碑交付，每步可独立验收 | SPEC §10 修订记录 + BUILD.md 里程碑表 |
+| OB-CEO-02 | 新增 AC-41 端到端用户旅程、AC-42 五分钟 demo 脚本 | SPEC 增补 + qa 实机记录 |
+| OB-CEO-03 | R1 行为对照表（保留/变更/移除）；AC-31 拆分交互与权限 | `docs/contracts.md` 行为表 + AC-31 修订 |
+| OB-CEO-04 | Admin 信息架构（订单/商品两面板、含下架商品、空/错/加载态） | §5.6 修订 + qa 截图 |
+| OB-CEO-05 | 图片 fallback：Openverse → Wikimedia → 停止上报；禁止 AI 图 | `docs/assets-credits.md` + 风险条目 |
+| OB-CEO-06 | `scripts/verify.mjs` 串联测试与全部机械检查，单一入口 | 脚本运行输出 PASS/FAIL |
+| OB-CEO-07 | `node:sqlite` spike（建库/WAL/busy_timeout/回滚/并发/输出污染）先行 | `evidence/spike-sqlite.md` |
+| OB-CEO-08 | 并发不超卖测试：两个并发 POST 只一单成功、库存为 0 | `tests/api.test.mjs` 用例 |
+| OB-CEO-09 | 登出删除服务端会话行；旧 Cookie 再访问 `/api/auth/me` 返回 401 | `tests/auth.test.mjs` |
+| OB-CEO-10 | username 3–32 `[A-Za-z0-9_-]`、password 8–128，稳定错误码 | `docs/contracts.md` + 测试 |
+| OB-CEO-11 | 结算前重校验 UX：价格变更/已下架/库存不足三种提示 | §5.6 + fake DOM/qa |
+| OB-CEO-12 | 视觉证据可复现：`evidence/visual/<viewport>-<page>.png` + commit + 时间 + 复核人 | 证据文件 |
+| OB-CEO-13 | `db reset --yes` + 自动备份 + 服务持锁检测 + 无库指引 | `tests/cli.test.mjs` + 输出 |
+| OB-CEO-14 | 无障碍：skip link、键盘全流程、焦点环、错误汇总 | qa 手工记录 + 检查表 |
+| OB-DES-01 | 设计词元落 CSS 变量 + `docs/design-tokens.md`，脚本断言 token 存在 | 脚本 + 文件 |
+| OB-DES-02 | 商品卡六态：正常/加载/空/错误/售罄/下架 | fake DOM + 截图 |
+| OB-DES-03 | 登录/注册/管理面板的提交中、失败、已登录状态 | fake DOM + 截图 |
+| OB-DES-04 | <720px 紧凑购物袋条 + 导航横向滚动 | 390 截图 |
+| OB-DES-05 | 对比度 ≥ 4.5:1、焦点可见、键盘可达 | 手工检查表 |
+| OB-DES-06 | 文案语气：无感叹号、无促销语；错误文案按错误码 | 文案清单 + 静态扫描 |
+| OB-DES-07 | 14 张图 alt 由种子数据生成且非空 | `scripts/check-links.mjs` 或专用断言 |
+| OB-DES-08 | CC BY 署名在页脚可见并链接台账 | 页面 + 台账 |
+| OB-DX-01 | `node cli.mjs dev` 一键启动 + `GET /api/health` + README 60 秒 AC | 命令 + 测试 |
+| OB-DX-02 | CLI 命令树冻结（list/unlist/relist 拆分）；help 与文档命令集合一致 | `tests/cli.test.mjs` |
+| OB-DX-03 | 全局 `--json`：`{ok:true,data}` / `{ok:false,code,...}`；非交互 | CLI 测试 |
+| OB-DX-04 | 退出码 0/1/2/3/4 + stdout 数据 / stderr 诊断 | CLI 测试 |
+| OB-DX-05 | `--password-stdin`；`--password` 仅演示并告警 | CLI 测试 + docs |
+| OB-DX-06 | CLI 补 `orders show`、`db check`（integrity/foreign_key/user_version） | CLI 测试 |
+| OB-DX-07 | `clientOrderId` 幂等：`(user_id, client_order_id)` 唯一；重复返回原订单 | 并发测试 |
+| OB-DX-09 | 启动结构化摘要；全响应 `X-Request-Id`；`--log` 访问日志 | 测试/输出 |
+| OB-DX-10 | DB/HTTP/CLI 三层命名映射表；CLI flag 对齐 API | `docs/contracts.md` |
+| OB-DX-11 | 错误目录唯一真源；API `{ok:false}`、静态层 `problem+json`；测试断言集合一致 | `tests/contracts.test.mjs` |
+| OB-DX-12 | `tests/helpers/{db,auth,server}.mjs` 夹具 | 文件 + 测试通过 |
+| OB-DX-13 | Windows 细节：`--no-warnings=ExperimentalWarning`、先 close 再删、`pathToFileURL` | README + 测试 |
+| OB-ENG-01 | 单写者队列 + `busy_timeout` 250–500ms + 异步退避；文档化单进程假设 | 设计文档 + 持锁测试 |
+| OB-ENG-02 | `GET /api/admin/products`（含下架） | API + 测试 |
+| OB-ENG-03 | 校验契约：maxItems 10、重复 productId 合并、Content-Type 415、边界 | `docs/contracts.md` + 测试 |
+| OB-ENG-04 | Host ∈ {127.0.0.1:4174, localhost:4174}；Origin 精确匹配；Sec-Fetch-Site ∈ {same-origin, none}；缺失矩阵 | 测试 |
+| OB-ENG-06 | CSP 以 HTTP 头为唯一来源（meta 仅兼容） | 测试 |
+| OB-ENG-07 | scrypt 参数说明与升级路径 | README |
+| OB-ENG-08 | 列表默认上限 100 | 测试 |
+| OB-ENG-09 | 购物车仅内存、刷新清空，与 R1 一致 | README + 测试 |
 
-### Accepted Findings E1-E11
+## Deferred to TODOS
 
-| ID | Finding | Accepted engineering decision |
-| --- | --- | --- |
-| E1 | `save-unknown` had mutually exclusive recovery rules. | Make the frozen attempted state canonical. Retry is allowed only after healthy storage and a definitive absence proof. |
-| E2 | The canonical order and money examples were invalid. | Use two Fuji apples at 1299 cents and one banana at 899 cents: subtotal `3497` cents, display `¥34.97`; add a catalog-consistency assertion. |
-| E3 | The storage outcome taxonomy and precedence were not frozen. | Freeze `saved \| not-written \| duplicate-order-number \| save-unknown`, with stable codes and explicit precedence for access, write, readback and uniqueness failures. |
-| E4 | Checkout and lookup state transitions were manual-only. | Extract a DOM-independent reducer/controller and test saving, unknown writes, exact match, proven absence, malformed, duplicate, corrupt, unavailable and inconclusive states with `node:test`. |
-| E5 | Static serving had no public-file allowlist or cross-platform path policy. | Serve only an explicit project-root allowlist. Reject dotfiles, backslashes, NUL, encoded separators, mixed-case traversal, query variants and symlink escapes. |
-| E6 | HTTP and CLI edge behavior was only partially delegated. | Export a server factory, test on port `0`, and freeze bodyless HEAD, 405 `Allow`, exact MIME values, problem+json objects, no-store, redacted 500 responses, exit codes and child-process cleanup. |
-| E7 | Public domain and storage contracts were not exact. | Freeze every exported signature, accepted type, exact error class/message or result shape, and `duplicateNumbers: string[]`; add `docs/error-catalog.md`. |
-| E8 | Malformed lookup was absent from the normative lookup contract. | Add a distinct malformed state before storage access with the exact message `订单号格式不正确，应为 FL-YYYYMMDD-HHMMSS-XXXX，例如 FL-20261017-131500-A7K2`. |
-| E9 | The clean-run hash was self-referential. | Generate `evidence/clean-run.sha256` last, exclude the manifest itself, cover every canonical copied file and verify it from the copied directory. |
-| E10 | The assertion count was a weak coverage proxy. | Replace it with a named branch matrix covering every exported function, result code, storage transition, server route/error and the NDJSON matrix, plus a static scan rejecting `innerHTML`, `outerHTML`, `insertAdjacentHTML` and `document.write`. |
-| E11 | Oversized stored records had no resource envelope. | Limit an order to 10 items, bound strings and each NDJSON line, require safe-integer arithmetic and count over-limit records as invalid without deleting raw bytes. |
+| # | 项 | 理由 |
+|---|---|---|
+| T-01 | 订单取消/退款与库存回补 | PRD 未要求；涉及状态机与补偿，留待 R3 |
+| T-02 | 管理操作审计表 | PRD 未要求；可用日志替代 |
+| T-03 | 会话过期/续期与登录限流 | PRD FR-2 明确不做；风险已在 DECISIONS 记录 |
+| T-04 | 分页（超出默认上限后） | 演示规模不触发 |
+| T-05 | scrypt 参数升级（`N=32768+`） | 演示级；README 留升级路径 |
 
-### Eng Implementation Constraints
+## Decision Audit Trail
 
-- **Save-unknown is a hard freeze.** Preserve the cart, attempted snapshot and generated order number. Disable cart mutation and checkout. Malformed, duplicate, unavailable or inconclusive lookup results keep the frozen state. The old confirmation-based retry path is superseded.
-- **Storage outcomes are precedence-based.** A pre-write access/read failure or atomic `setItem` failure is `not-written`. A successful write followed by readback throw, mismatch or failed uniqueness is `save-unknown`. Exact expected readback with one valid occurrence is `saved`.
-- **The domain must be testable without a DOM.** The checkout/lookup reducer is independent of browser APIs; Chromium checks remain for DOM wiring, focus and clipboard behavior.
-- **The server is a security boundary.** Use an explicit allowlist and realpath containment, not prefix checks. Add `X-Content-Type-Options: nosniff` and a restrictive CSP.
-- **Errors must be machine-readable and human-recoverable.** The error catalog must cover UI, HTTP and domain surfaces, including side effects, retry policy, redaction and documentation anchors.
-- **Stored data bounds are part of validation.** At most 10 items per order; `fruitId` at most 64 UTF-16 code units and matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`; `name` at most 80; `unit` at most 32; each NDJSON line at most 16,384 UTF-16 code units.
-- **Evidence must be reproducible without a self-hash.** The clean-run manifest is generated after all recorded files are final and verifies the copied directory.
-- **Manual verification remains required.** D1 still excludes automated DOM/browser testing. Real Chromium storage, clipboard, focus, responsive layout and learner comprehension remain manual or unverified.
+| # | Phase | Decision | Classification | Principle | Rationale | Rejected |
+|---|---|---|---|---|---|---|
+| 1 | CEO | 保持全量范围，按 M1–M5 里程碑 | 用户挑战 U1（待批） | P2 爆炸半径内 | 全量是 PRD 要求；里程碑降低阻塞 | 拆 R2a/R2b（待用户裁量） |
+| 2 | CEO | 补 Outcome AC 与 demo 脚本 | 机械型 | P1 完整度 | 机制全绿不等于可用 | 只保留机制 AC |
+| 3 | CEO | 治理脚本合并为 verify 入口 | 机械型 | P5 最简 | 降低自证成本 | 保留 5 个入口 |
+| 4 | CEO | 图片 fallback 到 Wikimedia，失败即停 | 机械型 | P6 前提 | 单点依赖不可接受 | 用占位图冒充 |
+| 5 | CEO | 库存取消/回补进 TODOS | 范围 | P3 爆炸半径外 | PRD 未要求 | 本轮实现 |
+| 6 | Design | 商品卡六态、Admin 三态 | 机械型 | P1 完整度 | 状态缺失会在 QA 返工 | 只做正常态 |
+| 7 | Design | 视觉证据固定路径与复核人 | 机械型 | P1 完整度 | 人工验收也要可追溯 | 口头确认 |
+| 8 | DX | `node cli.mjs dev` + `/api/health` | 机械型 | P1 完整度 | TTHW 是可用性前提 | 三步手工启动 |
+| 9 | DX | 退出码 5 档 + stdout/stderr 分工 | 机械型 | P1 完整度 | 脚本必须能分支 | 只用 0/1/2 |
+| 10 | DX | `clientOrderId` 幂等（supersede D-30） | 机械型 | P6 前提 | 防重复下单 | 不做幂等 |
+| 11 | Eng | 单写者队列 + 低 busy_timeout | 机械型 | P6 前提 | 避免同步 DB 卡死服务 | 保持 5s + 同步重试 |
+| 12 | Eng | 错误目录唯一真源 | 机械型 | P4 去重 | 三处各写一套会漂移 | 代码内散落常量 |
+| 13 | Eng | CSP 以 HTTP 头为唯一来源 | 机械型 | P4 去重 | meta 与头双写必漂移 | 保留双写 |
 
-After these accepted changes, Eng reports **0 critical gaps**. Residual risks are the missing outside voice, manual-only browser coverage, and P5 remaining `UNVERIFIED`. Eng created no new user decision.
+## Cross-Phase Themes
 
-## Accepted Phase Artifacts
+1. **范围 vs 治理成本**：四个阶段都指向「40 AC + 5 门禁 + 自证」对小 demo 过重；处置是里程碑化 + verify 单一入口 + 保留最关键三门禁。
+2. **管理端闭环缺失**：Design 与 Eng 同时发现「下架商品无法在 UI 重新操作」，根因是缺 `GET /api/admin/products`。
+3. **契约单源**：错误码、订单响应形状、三层命名三处各自为政；处置是目录 + contracts 单源 + 测试断言。
+4. **失败路径不可恢复**：`save-unknown`、`--force`、`SQLITE_BUSY` 三条都没有恢复命令；处置是幂等键、备份、`db check`。
+5. **PRD 边界项**（会话过期、限流、CSRF、审计）被反复提出；处置是显式风险接受，不冒充已实现。
 
-| Artifact | Path / identity |
-| --- | --- |
-| Active plan | `.gstack/tmp/autoplan/main-autoplan-active-20261017-141613.md` |
-| Eng review input | `.gstack/tmp/autoplan/autoplan-eng-4hdgnZ/eng-implementation.md` |
-| Eng close packet | `.gstack/tmp/autoplan/autoplan-eng-SlEQA2/close-packet.md` |
-| Eng close-packet SHA-256 | `3ade6da41d27b9ce1cf84df922f4641e30ea313f2daf1ed5f99b0b191faaba6a` |
-| Eng test plan | `C:\Users\cheng\.gstack\projects\r1-fruitlab\cheng-main-eng-review-test-plan-20261017-150224.md` |
-| Eng test-plan SHA-256 | `4DABF10D329854D0A4847A08E8676FA4AAB4260568CD6814292034F66946B92D` |
-| Outside CEO result | `.gstack/tmp/autoplan/outside-ceo-result.json` |
-| Outside Design result | `.gstack/tmp/autoplan/outside-design-result.json` |
-| Outside DX result | `.gstack/tmp/autoplan/outside-dx-result.json` |
-| Outside Eng result | `.gstack/tmp/autoplan/outside-eng-result.json` |
-| Final Gate list | `.gstack/tmp/autoplan/gate.json` |
-| Final Gate decisions | `.gstack/tmp/autoplan/decisions.jsonl` |
+## Review Scores
 
-## Final Approval Gate
+| Phase | Native | Outside | Consensus |
+|---|---:|---|---|
+| CEO | 6.5/10 | 同族（非跨模型） | N/A |
+| Design | 7.0/10 | 同族（首次偏题） | N/A |
+| DX | 5.7/10 | 同族 | N/A |
+| Eng | 6.5/10 | 同族（首次卡住） | N/A |
 
-Gate revision: `1`. Displayed reply hash: `10ccc97994ef`. User reply: `p1a uc1a d1a`. The reply parsed with zero pending items and zero unparsed tokens.
+## Phase 4: Final Approval Gate
 
-Result: **APPROVED AS-IS. No phase rerun. No build started.**
+```text
+gate_rev=1
+status=PENDING_USER_APPROVAL
+decisions_auto=11
+user_challenges=2 (U1 范围与工时, U2 访客查单移除)
+taste_decisions=0 (DV1 已由项目负责人于 2026-10-18 决定)
+fail_phases=4 of 4
+build_started=no
+```
 
-| Gate item | User decision | Recorded effect |
-| --- | --- | --- |
-| P1 Plan approval | **A. Approve as-is** | Approved the reviewed plan together with all accepted CEO, Design, DX and Eng obligations. No override, interrogation, phase rerun or rejection was selected. |
-| U1 P5 learner-value validation | **A. Keep P5 `UNVERIFIED` and publish** | P5 remains `UNVERIFIED`. Two learner observations are not a release condition, and no learner validation is added to this round. The teaching premise remains an explicit residual risk. |
-| DV1 Visual direction | **A. Handwritten fruit-stall signage** | The build must use a handwritten fruit-stall identity with local CSS and locally available Chinese Kai or writing fonts only. It must not load web fonts, images, CDNs or other network assets, and `system-ui` must not be the primary display face. |
+本门禁若获批准，只表示「评审后的计划与义务清单被接受」，**不表示任何实现、测试或人工检查已经通过**，也不启动 build。
 
-### Four-Phase Result At Gate
+## What Already Exists（复用，不重做）
 
-| Phase | Native score | Gate-time status | Critical gaps | External review | Consensus |
-| --- | --- | --- | --- | --- | --- |
-| CEO | **7/10** | **FAIL / issues_open** | Not scored separately; 4 High and 3 Medium findings retained | **unavailable** (`custom_provider_requires_model`) | N/A, outside coverage missing |
-| Design | **7/10** | **FAIL / issues_open** | Not scored separately; 1 Critical, 5 High and 4 Medium findings retained | **unavailable** (`custom_provider_requires_model`) | N/A, outside coverage missing |
-| DX | **6/10** | **FAIL / issues_open** | Not scored separately; 1 Critical, 9 High and 5 Medium findings retained | **unavailable** (`custom_provider_requires_model`) | N/A, outside coverage missing |
-| Eng | **No numeric Eng score defined** | **FAIL / issues_open** | **0 critical gaps after accepted requirements** | **unavailable** (`custom_provider_requires_model`; no model call) | N/A, outside coverage missing |
+R1 的领域纯函数（`domain.mjs`）、无 DOM 控制器（`controller.mjs`）、静态服务安全边界（`serve.mjs` 白名单/405/CSP/脱敏 500）、错误目录（`docs/error-catalog.md`）、测试风格（`node:test` + fake DOM）、证据诚实规则。
 
-These are the original one-round native results. Gate approval accepts the plan and its recorded obligations; it does not rewrite `FAIL / issues_open` into a pass and does not create outside-review coverage.
+## NOT in Scope（本轮不做）
 
-### Eng Count Discrepancy Preserved
+PRD 第 7 节全部非目标；会话过期/CSRF/限流（PRD 边界）；订单取消/回补（TODOS）；分页（默认上限之外）；深色模式；多标签页同步；部署/CI。
 
-The Eng report remains internally inconsistent in its title count and detail subtotal:
+## Implementation Tasks（聚合，P 级）
 
-- Headline count: **3 P1, 6 P2, 2 P3**.
-- Detail subtotal: **4 P1, 6 P2, 1 P3**.
-- Both counts total 11 findings.
-
-This discrepancy is recorded exactly as reported. It was not normalized, silently corrected or hidden by a rerun. Eng has no numeric score, and the accepted requirements leave **0 critical gaps**.
-
-### Final Disposition
-
-The `/autoplan` plan is approved for the next ring with:
-
-- P5 still `UNVERIFIED`.
-- The handwritten fruit-stall visual direction selected.
-- All accepted CEO, Design, DX and Eng obligations intact.
-- Eng's headline/detail count discrepancy preserved.
-- All four outside reviews recorded as unavailable.
-- No build work started in this ring.
+- [ ] **P1** `server/db.mjs`：建库、迁移（user_version）、单写者队列、`busy_timeout`（OB-ENG-01/OB-CEO-07）
+- [ ] **P1** `server/auth.mjs`：scrypt、会话哈希、登出删除、注册校验（OB-CEO-09/10）
+- [ ] **P1** `server/orders.mjs`：事务下单、库存扣减、`clientOrderId` 幂等（OB-DX-07/OB-CEO-08）
+- [ ] **P1** `server/router.mjs` + 错误目录单源（OB-DX-11/OB-ENG-04）
+- [ ] **P1** `cli.mjs`：dev/init/seed/user/product/orders/db check + `--json` + 退出码（OB-DX-01..06）
+- [ ] **P1** `scripts/verify.mjs` + `tests/helpers/`（OB-CEO-06/OB-DX-12）
+- [ ] **P1** frontend：API 客户端、登录/我的订单/管理两面板、商品六态（OB-CEO-04/OB-DES-02/03）
+- [ ] **P1** 14 张图片 + 台账 + fallback（OB-CEO-05/OB-DES-07/08）
+- [ ] **P1** 视觉重写（Apple 词元、断点、无障碍）（OB-DES-01..06/OB-CEO-14）
+- [ ] **P2** 可观测性（health/requestId/启动摘要）（OB-DX-09）
+- [ ] **P2** 并发与持锁测试、`db check`（OB-CEO-08/OB-DX-06/OB-ENG-01）
+- [ ] **P2** R1 行为对照表与 AC-31 改写（OB-CEO-03）
+- [ ] **P3** 文档同步与证据（OB-CEO-12/OB-DX-10/OB-DX-13）

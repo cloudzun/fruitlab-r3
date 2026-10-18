@@ -1,0 +1,82 @@
+﻿Claude Code doesn't recognize the model "deepseek-v4-flash", so it assumes a context window of 200k tokens. Update Claude Code, or see https://code.claude.com/docs/en/model-config#correct-the-window-for-a-gateway-or-custom-model-id to set the window.
+[claude-code:unrecognized_model] {"model":"deepseek-v4-flash","query_source":"sdk"}
+# FruitLab R2 SPEC — CEO/产品视角评审
+
+> 说明：粘贴内容中部分决策条目（D-08、D-12、D-13、D-17 等）出现编码乱码，以下判断基于可读部分；若解码后语义不同，请指出，我再修正结论。
+
+## 1. 评分
+
+**总分：6.5 / 10**
+
+| 维度 | 分数 | 判断 |
+|---|---|---|
+| 工程严谨性 | 8.5 | 错误契约、金额用分、价格快照、防超卖 SQL、CSP、回滚方案都很扎实 |
+| 产品聚焦 | 5.5 | 40 条 AC 全是机制，没有一条回答“用户得到了什么” |
+| 可执行性（范围/估算） | 4.0 | 4.5–5.5 小时对应约 20 个新文件、5 个校验脚本、14 张授权图片、5 个视口验收，严重失真 |
+| 风险控制 | 6.5 | 想到了 SQLITE_BUSY、403/404、save-unknown，但两个外部依赖没有 Plan B |
+
+**一句话结论：** 这是一份“防御性极强、产品性偏弱”的 SPEC。它能防止你做错，但不能证明你在做对的事。
+
+如果目标是**交付一个能用的水果店**，6.5 分；如果目标是**演示这套研发方法论（G1–G7、OB、evidence）**，执行分应上调到 8 分左右——因为流程本身就是交付物。这个定位必须在开工前说清楚。
+
+---
+
+## 2. CEO 必须先回答的 7 个问题
+
+1. **R2 的唯一成功指标是什么？** 不是“40 条 AC 全绿”，而应是一句可验证的话，例如“新用户 3 分钟内完成一次下单并在‘我的订单’看到它”。
+2. **能否在 2 小时内演示一条端到端旅程？** 如果不能，说明范围没有切好。
+3. **哪 30% 的范围可以砍掉而不影响上面那个指标？** 我的答案是：视觉重设计、14 张图、部分治理脚本。
+4. **G1–G7 / OB / evidence 的消费者是谁？** 如果答案只是“流程要求”，就要明确它是有成本的方法论演示，不是免费的质量。
+5. **14 张图的许可证拿不到时怎么办？** 现在是硬阻塞，没有 fallback。
+6. **R1 的访客订单查询是有意移除的吗？** AC-31 要求保留 R1 行为，但 R2 的查询接口要求登录，两者可能冲突。
+7. **只给 4 小时，你先做哪一块？** 如果答案是“全都做一点”，估算必崩。
+
+---
+
+## 3. 问题清单（按严重性）
+
+| # | 级别 | 问题（依据） | 影响 | 建议 |
+|---|---|---|---|---|
+| F-01 | **Critical** | 估算与范围不匹配：§10 写 4.5–5.5h，但 §11 列出约 20 个新文件、5 个脚本、14 张图、5 个视口验收、40 条 AC | 排期承诺不可信；执行时必然跳过质量门或走捷径 | 重估 15–25h，或砍成 R2a（DB+auth+API+现有 UI 接入） |
+| F-02 | **Critical** | 5 个可独立交付的 epic 捆成一个 release（持久化/认证、API+CLI、Admin、视觉重设计、资产授权、治理工具），没有中间 demo 点 | 任一环节卡住全盘阻塞；集成调试时间被低估 | 拆 milestone：M1 DB+API、M2 UI 接入、M3 Admin、M4 视觉+资产、M5 治理证据；每个可独立验收/回滚 |
+| F-03 | **Critical** | AC-01..40 全是机制型验收，没有一条用户结果型标准，也没有 demo script 或成功指标（§6） | 全绿也不证明产品可用；无法据此做取舍 | 增加 3 条 outcome AC + 5 分钟 demo script（见第 2 节问题 1） |
+| F-04 | **Critical** | 治理成本未被质疑：5 个校验脚本 + evidence manifest/SHA-256 + 32 条决策 + OB 追溯 + G1–G7（§5.11/5.12） | 对 3 个用户的本地 demo，维护成本可能超过产品代码；容易“为证据而证据” | 明确消费者与复用场景；至少把 5 个脚本合并为 1 个 `verify.mjs`；若方法论是交付物，在 README 写明 |
+| F-05 | **High** | R1 访客查询 vs R2 登录模型冲突：AC-31 要求保留 R1 8 个行为，但订单查询需登录（AC-02/03、§5.2/5.3），且 D-26 不迁移 localStorage 订单 | 升级后看不到旧订单；访客查询能力静默消失；AC-31 可能无法满足 | 列出“保留行为”清单；对查询给出迁移/降级方案（如登录后按订单号认领），或明确 breaking change 并改 AC |
+| F-06 | **High** | Admin UI 未定义：AC-04/05/06 要求 admin 查看全部订单、改价、改库存、上下架，但 §5.6 没有后台页面、表格、表单与权限态 | 可能只能靠 API/CLI 满足，与“admin 用户”叙事不符；验收歧义 | 补 admin 信息架构 + 空态/错误态，或明确 AC 允许 CLI-only |
+| F-07 | **High** | 14 张图是发布硬阻塞：D-09/§5.8 依赖 Openverse，且 Pexels/Unsplash/Pixabay 已 401/403 | 拿不到合适图片或许可证 → AC-14 失败 → 无法发布 | 先做 2 小时资产 spike；准备 fallback（Wikimedia、自制、或 10 张 R1 图 + 4 个占位），并把“可替换”写进 AC |
+| F-08 | **High** | 库存只减不增：只有下单扣减 + CLI set-stock，无取消/退货/超时释放（§5.1/5.5） | 误下单会永久占用库存；demo 中很容易把库存打空 | 至少加 admin `order cancel` 回补库存，并更新 API/文档 |
+| F-09 | **High** | `node:sqlite` 未做 spike：D-01 把整个持久层押在实验性 `DatabaseSync` 上，只写了 D-31 的告警处理 | API/事务/并发语义或 stderr 警告与预期不符时，DB 层返工 | 30 分钟 spike：建库、WAL、busy_timeout、事务回滚、并发写、测试输出污染；通过后再冻结 D-01 |
+| F-10 | **High** | 并发不超卖缺真实并发测试：D-07 设计正确，但 §7 未明确“两个连接同时抢最后一件”的用例与断言 | 核心卖点未被验证 | 在 `tests/api.test.mjs` 加 `Promise.all` 双 POST 用例，断言一 201 一 409、库存为 0 |
+| F-11 | **Medium** | 会话生命周期缺失：sessions 无 `expires_at`/清理/改密撤销；Cookie 无 Max-Age（§5.3） | 陈旧会话累积；无法强制下线；安全姿态不完整 | 加 `expires_at` + 登录清理 + logout 删除；文档写明会话策略 |
+| F-12 | **Medium** | 注册/密码策略未定义：§5.2 只说 `{username,password}`，无长度/字符集/强度/登录限流 | 弱口令、暴力破解；验收无依据 | username 3–32 `[a-zA-Z0-9_-]`，password ≥ 8；登录失败做简单退避 |
+| F-13 | **Medium** | Admin 变更无审计：改价/改库存/上下架没有 audit 表或结构化日志 | 出问题无法追责/复现 | 加 `admin_audit` 表或至少记录 who/what/when/before/after |
+| F-14 | **Medium** | 购物车重校验 UX 未定义：服务端以 DB 价为准（好），但客户端旧价、商品下架/删除时的提示与自动修正没写 | 结算时价格跳变，用户困惑 | 补“刷新/价格变更/商品失效”三种 UI 状态与文案 |
+| F-15 | **Medium** | 视觉验收不可复现：AC-15..18 要求 Chromium 5 视口 + 截图，但未指定工具/脚本/判定人；“manual-verified” 无签名/日期/复核 | 证据可信度低，容易橡皮图章 | 固定截图到 `evidence/visual/<viewport>.png`，记录 commit + 时间 + 复核人 |
+| F-16 | **Medium** | 破坏性 CLI 与缺失 DB 的失败路径：`db init --force` 无二次确认/备份；serve 在 DB 不存在/损坏时行为未定义 | 误删数据；首次启动报错不友好 | `--force` 要求 `--yes` 或打印将删除路径；serve 给出 `db init/seed` 指引并以 1 退出 |
+| F-17 | **Medium** | 可访问性覆盖不足：只提 `aria-invalid`/`aria-describedby` 与对比度，缺键盘导航、focus 可见、skip link、读屏顺序、错误汇总 | “Apple 级”体验打折；WCAG 声明不成立 | 补 5 条键盘/焦点 AC，用 axe 或人工清单验收 |
+| F-18 | **Low** | 403 vs 404 枚举侧信道：D-32 已知并接受；若订单号可猜，会泄露存在性 | 低（本地 demo） | 保持，但在 `docs/decision-log.md` 记录风险 |
+| F-19 | **Low** | `evidence/test-count.txt` 每次跑测试都改文件 | 制造 diff 噪音 | 只在发布/验收时生成，或作为 CI artifact |
+| F-20 | **Low** | 无分页/上限：admin orders 全量返回 | demo 规模无感 | 加 `?limit&offset` 或明确上限 |
+| F-21 | **Low** | requestId 只回传不落盘 | 500 无法关联日志 | stderr 结构化日志包含 requestId |
+
+---
+
+## 4. 开工前建议的 5 个动作
+
+1. **重估并切分**：把 R2 拆成 R2a/R2b，先交付“登录 + 下单 + 我的订单”闭环。
+2. **做两个 spike**：`node:sqlite` 能力验证（30 分钟）、14 张图资产获取（2 小时）。两者任一失败都会改变 SPEC。
+3. **补 3 条 outcome AC + 1 个 demo script**，放在 §6 最前面，作为“真正完成”的定义。
+4. **澄清两处冲突**：R1 行为保留清单（尤其访客查询）、Admin 是否有 UI。
+5. **合并治理脚本**：5 个变 1 个，明确 evidence 的消费者，避免流程成本反噬产品。
+
+---
+
+## 5. 做得好的地方（不应在重构中丢掉）
+
+- 金额全用整数分，订单项保存价格快照——这是正确的电商建模。
+- 防超卖用 `UPDATE ... WHERE stock >= ?` + `BEGIN IMMEDIATE`，比“先查后写”可靠。
+- 错误契约完整（400/401/403/404/405/409/413/500/503），且区分 `invalid-json` 与 `payload-too-large`。
+- CSP、`SameSite=Lax`、32 字节 token + `sha256` 存储、Origin/Sec-Fetch-Site 检查，安全基线清楚。
+- 回滚计划具体到 `git reset --hard r1-baseline`，并说明数据目录的处理。
+
+**最终建议：** 不要按当前 SPEC 直接开工。先花 30 分钟做第 4 节的第 1、3、4 项，把“成功定义”和“范围切分”定下来，再进入 build。否则 4.5 小时的估算会在第一天就破产。
