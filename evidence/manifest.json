@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T01:25:53.763Z",
+  "generatedAt": "2026-10-18T01:27:12.950Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -43,8 +43,8 @@
     },
     {
       "file": "evidence/index.md",
-      "sha256": "33f98d8bbcb827e3dc7c94f7b48cc075055c532f66ca3880773fc5bbf5b197ab",
-      "bytes": 2181
+      "sha256": "1e58d1b75283b4a8233a3de59d9b72060b0ac4ad9cb6b6a3ba54dff09d25681f",
+      "bytes": 2205
     },
     {
       "file": "evidence/learner-checks/pre-spec.md",
@@ -75,6 +75,11 @@
       "file": "evidence/ring-review.md",
       "sha256": "81e9c46f9f5fd4021edb55b3d532936004866b11ad42b74e163d5f4f3d105a63",
       "bytes": 2710
+    },
+    {
+      "file": "evidence/ring-ship.md",
+      "sha256": "8100b5f1ead74b3c3c02e456141143089d31152eda3b73d197b0c20921e6e318",
+      "bytes": 2931
     },
     {
       "file": "evidence/ring-spec.md",
