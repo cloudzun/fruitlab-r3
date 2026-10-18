@@ -1,20 +1,20 @@
 == Docker Hub api ==
 Name:      docker.io/chengzh/fruitlab-r3:3.5.0.0
 MediaType: application/vnd.oci.image.index.v1+json
-Digest:    sha256:706149f56eba8dba87139191c288d44239dc43710dc4f57bf2765750c989f487
+Digest:    sha256:14c9b5bb3aa38a890b0e8006813fadd1e5aecb782b03aab05bdba50708599606
            
 == Docker Hub web ==
 Name:      docker.io/chengzh/fruitlab-r3-web:3.5.0.0
 MediaType: application/vnd.oci.image.index.v1+json
-Digest:    sha256:2cfa598c472ed4080e15f2c793f9af2e514f6baeb4eab1183dfeb739acfbf516
+Digest:    sha256:121a2bc3a9b32c8ea17720d513c731d6c6809366ed4b27747f25fea52fa0c7cc
            
 == GHCR api ==
 Name:      ghcr.io/cloudzun/fruitlab-r3:3.5.0.0
 MediaType: application/vnd.oci.image.index.v1+json
-Digest:    sha256:706149f56eba8dba87139191c288d44239dc43710dc4f57bf2765750c989f487
+Digest:    sha256:14c9b5bb3aa38a890b0e8006813fadd1e5aecb782b03aab05bdba50708599606
            
 == GHCR web ==
 Name:      ghcr.io/cloudzun/fruitlab-r3-web:3.5.0.0
 MediaType: application/vnd.oci.image.index.v1+json
-Digest:    sha256:2cfa598c472ed4080e15f2c793f9af2e514f6baeb4eab1183dfeb739acfbf516
+Digest:    sha256:121a2bc3a9b32c8ea17720d513c731d6c6809366ed4b27747f25fea52fa0c7cc
            

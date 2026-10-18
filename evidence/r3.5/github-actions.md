@@ -15,6 +15,8 @@
 | `39176077847` | release | dispatch deploy=true | **failure** | deploy 失败：known_hosts 不匹配 |
 | `39176200583` | ci | push | success | deploy host key 修复后 CI |
 | `39176206939` | release | dispatch deploy=true | **success** | build-push + deploy 全通 |
+| `39176752094` | ci | push | success | R3.5 证据/文档提交后 CI |
+| `39176757030` | release | tag `v3.5.0.0` | **success** | 正式发版：build-push + deploy 全通 |
 
 ## 2. ci.yml
 
