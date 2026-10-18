@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-10-18T01:14:17.546Z",
+  "generatedAt": "2026-10-18T01:25:53.763Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
-      "sha256": "fed995f51f2a097b65b7f6d3563075f2e2726e07bb6b7f93cd84dfeec0817277",
-      "bytes": 7385
+      "sha256": "087dccc9a5b8be4e74190dc6311d0c035c247d3cdaa5d071ab542c0efb3ba2f9",
+      "bytes": 7137
     },
     {
       "file": "evidence/autoplan-voices/ceo.txt",
@@ -43,8 +43,8 @@
     },
     {
       "file": "evidence/index.md",
-      "sha256": "14bd55e1912b84526d9104579a33b9cf4a26efd89a13aa4f494f1176cf98b097",
-      "bytes": 2182
+      "sha256": "33f98d8bbcb827e3dc7c94f7b48cc075055c532f66ca3880773fc5bbf5b197ab",
+      "bytes": 2181
     },
     {
       "file": "evidence/learner-checks/pre-spec.md",
@@ -53,8 +53,8 @@
     },
     {
       "file": "evidence/manual-checks/browser.md",
-      "sha256": "26ba2874499e7b2e3c66dde6fab430a07fc4a31221c07b776046e74c5df68cf2",
-      "bytes": 1327
+      "sha256": "2138d726b7cd2214947fe338b1a4f61f7c829e4d732336d411df5e3986f72afe",
+      "bytes": 1952
     },
     {
       "file": "evidence/ring-autoplan.md",
@@ -65,6 +65,11 @@
       "file": "evidence/ring-build.md",
       "sha256": "981096d5a1885944a6c37a21fee92e118cbb2543d8cc9def30462730178d4b01",
       "bytes": 4134
+    },
+    {
+      "file": "evidence/ring-qa.md",
+      "sha256": "1855abe98a51f3655093c358ceccb4ef8ab34b93c9a132b307b9d89d5b18bea5",
+      "bytes": 3714
     },
     {
       "file": "evidence/ring-review.md",
@@ -83,8 +88,28 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "0fe49da02de9a9933d9f128213e0dff39d05f240ac22ce4ef80a5c28e2cf8d4e",
-      "bytes": 1064
+      "sha256": "958647b515ace28b46a458dbe4b292f70bfca240cfe1e0d2f22787887c58a70a",
+      "bytes": 1065
+    },
+    {
+      "file": "evidence/visual/home-1440.png",
+      "sha256": "4a89ca43839931c0aad4bcd772f2b1c2d65fc6451ad9eadb4fe5b9107e79a096",
+      "bytes": 326245
+    },
+    {
+      "file": "evidence/visual/home-390-cart.png",
+      "sha256": "5475040826b9ad20054999f4c031b30caefbfd88a5e2f8418828b1d741dc4e3a",
+      "bytes": 172023
+    },
+    {
+      "file": "evidence/visual/home-390-top.png",
+      "sha256": "0058ef8985b10d7ea437284a746e19c22e4e95e960f53c95861910f4a3c72c4f",
+      "bytes": 126251
+    },
+    {
+      "file": "evidence/visual/home-834.png",
+      "sha256": "fb3afcb17e87a7f8a1996a8931b58823b829f839fc0592dabc686ee4db072f01",
+      "bytes": 189815
     }
   ]
 }

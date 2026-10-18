@@ -12,7 +12,7 @@
 | autoplan 原始声音 | [`autoplan-voices/`](autoplan-voices/) | CEO / Design / DX / Eng 的原始输出 |
 | build | [`ring-build.md`](ring-build.md) | 里程碑、测试、集成、未完成项 |
 | review | [`ring-review.md`](ring-review.md) | 结构排雷、安全审计、6 项自动修复 |
-| qa | `ring-qa.md`（qa 环产出） | 真实 Chromium 五断点截图与人工判定 |
+| qa | [`ring-qa.md`](ring-qa.md) | 真实 Chromium 五断点、健康分 94、截图 |
 | ship | `ring-ship.md`（ship 环产出） | 覆盖率审计、文档同步、版本 |
 | retro | `ring-retro.md`（retro 环产出） | 量化复盘 |
 

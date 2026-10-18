@@ -97,11 +97,14 @@ test("HTML CSP meta is compatibility-only: self scripts/styles, self connect", a
     "connect-src 'self'",
     "object-src 'none'",
     "base-uri 'none'",
-    "frame-ancestors 'none'",
     "form-action 'self'",
   ]) {
     assert.ok(policy.includes(directive), `CSP is missing ${directive}`);
   }
+  // frame-ancestors 在 <meta> 中被浏览器忽略，必须由 HTTP 头下发，不能写在 meta 里（qa 环修复）。
+  assert.equal(policy.includes("frame-ancestors"), false, "frame-ancestors must be delivered by HTTP header, not meta");
+  const serve = await readFile(path.join(ROOT, "serve.mjs"), "utf8");
+  assert.ok(serve.includes("frame-ancestors 'none'"), "HTTP header CSP must include frame-ancestors 'none'");
   assert.equal(policy.includes("unsafe-inline"), false);
   assert.equal(policy.includes("http://"), false);
   assert.equal(policy.includes("https://"), false);

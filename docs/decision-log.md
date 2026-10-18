@@ -79,3 +79,13 @@
 | D-42 | 治理脚本合并为 `scripts/verify.mjs` 单一入口 | 5 个独立入口 | 降低自证成本、便于复现 | 证据、脚本 | accepted |
 
 **待项目负责人裁量（autoplan 终门）**：U1 范围与工时（全量 + 里程碑 vs 拆 R2a/R2b）；U2 R1 访客查单移除（breaking）。
+
+## 2026-10-18 · review 环 ASK 确认
+
+项目负责人确认 review 环 7 项 ASK 均按推荐保留：①会话过期/续期不做（PRD FR-2）；②CSRF Token 不做（PRD）；③登录限流/锁定不做（PRD）；④他人订单 403 保留（D-32）；⑤管理审计进 TODOS；⑥分页进 TODOS；⑦图片尺寸降级如实记录。以上状态：accepted。
+## 2026-10-18 · qa 环记录
+
+| 编号 | 决策 | 说明 | 状态 |
+|---|---|---|---|
+| D-44 | 图片授权策略扩展为 CC0 / CC BY / CC BY-SA / Public Domain | 真实图库可用性所迫；逐张在 docs/assets-credits.md 记录作者与授权，CC BY/BY-SA 署名；作为对 SPEC §5.8「仅 CC0/BY」的**降级**记录 | accepted |
+| D-45 | 页面标题由 R1「果子摊」改为「FruitLab · 按份买水果」 | 视觉方向变更后的文案一致性 | accepted |

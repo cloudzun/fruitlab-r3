@@ -27,7 +27,7 @@ test("assets-manifest.json records license, source and matching sha256", () => {
   assert.equal(ids.size, 14);
   for (const entry of manifest) {
     assert.equal(typeof entry.license, "string");
-    assert.equal(["cc0", "by"].includes(entry.license), true, `${entry.product_id} license ${entry.license}`);
+    assert.equal(["cc0", "by", "by-sa", "public-domain"].includes(entry.license), true, `${entry.product_id} license ${entry.license}`);
     assert.match(entry.source_url, /^https?:\/\//);
     const file = path.join(ROOT, entry.file);
     const digest = crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
