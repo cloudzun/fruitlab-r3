@@ -24,6 +24,10 @@ FruitLab 的用户可见变更记录。
 ### Fixed
 
 - 修复 `npm ci` 在 GitHub Actions 访问 npmmirror 504 的问题：lockfile 的 `resolved` 改为 `registry.npmjs.org`。
+- 生产健康检查带 `Host: <PUBLIC_URL host>`，避免 API Host 白名单 403（首次部署实测）。
+- Caddy 去掉 `email`（`example.com` 被 Let's Encrypt 判 invalidContact），证书签发成功。
+- GitHub deploy 改为 `ssh-keyscan` 现场取 host key，避免 `VPS_KNOWN_HOSTS` 换行/CR 不匹配。
+- 宿主 Caddy 只加 HSTS，避免与 web 容器安全头重复。
 
 ### Known Issues（如实记录）
 

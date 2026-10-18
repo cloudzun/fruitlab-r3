@@ -1,0 +1,21 @@
+vm-fruitlab-r3
+7.0.0-1017-azure
+fruitlab-r3-prod-api-1 Up 36 seconds (healthy)
+fruitlab-r3-prod-db-1 Up 8 minutes (healthy)
+fruitlab-r3-prod-web-1 Up 31 seconds (healthy)
+--- users ---
+ username | role  
+----------+-------
+ admin    | admin
+(1 row)
+
+--- backups ---
+-rw------- 1 azureuser azureuser 15K Oct 18 23:19 fruitlab-20261018-231908.dump
+-rw------- 1 azureuser azureuser 15K Oct 18 23:23 fruitlab-20261018-232307.dump
+-rw------- 1 azureuser azureuser 15K Oct 18 23:24 fruitlab-20261018-232411.dump
+-rw------- 1 azureuser azureuser 15K Oct 18 23:24 fruitlab-20261018-232424.dump
+-rw------- 1 azureuser azureuser 15K Oct 18 23:25 fruitlab-20261018-232507.dump
+--- timer ---
+NEXT                            LEFT LAST PASSED UNIT                  ACTIVATES
+Mon 2026-10-19 03:15:00 UTC 3h 49min -         - fruitlab-backup.timer fruitlab-backup.service
+

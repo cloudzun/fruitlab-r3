@@ -60,7 +60,8 @@ node scripts/verify.mjs --quick
 | `VPS_HOST` | Azure VM 公网 IP / DNS |
 | `VPS_USER` | `azureuser` |
 | `VPS_SSH_KEY` | VM 私钥（专用 key） |
-| `VPS_KNOWN_HOSTS` | 固定 host key |
+
+> 不再使用 `VPS_KNOWN_HOSTS` secret：deploy 时用 `ssh-keyscan -t ed25519 "$VPS_HOST"` 现场写入 known_hosts，避免跨平台换行/CR 差异导致匹配失败。
 
 GHCR 用 `GITHUB_TOKEN`（workflow 已声明 `packages: write`），无需额外 secret。
 
@@ -106,3 +107,18 @@ git push origin v3.5.0.0
 - CI 未跑 `verify --full`（需要 Docker build/preflight；后续可加）。
 - 部署为单机、无零停机；发布瞬间有短暂重启。
 - 未做自动回滚数据库迁移（R3.5 无 schema 变更）；未来有迁移时先备份并人工确认。
+
+## 8. R3.5 实测
+
+| run id | workflow | 结果 |
+|---|---|---|
+| `39174842686` | ci | failure（npmmirror 504） |
+| `39175247654` | ci | success（138/138） |
+| `39175675684` | ci | success |
+| `39175688760` | release | success（build+push） |
+| `39176037433` | ci | success |
+| `39176077847` | release+deploy | failure（known_hosts） |
+| `39176200583` | ci | success |
+| `39176206939` | release+deploy | success（Azure VM 部署） |
+
+证据：`evidence/r3.5/`。

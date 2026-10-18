@@ -1,0 +1,19 @@
+[backup] /var/backups/fruitlab/fruitlab-20261018-232605.dump
+backup_file=/var/backups/fruitlab/fruitlab-20261018-232605.dump
+before=2
+DELETE 2
+DELETE 2
+after_delete=0
+[restore] stop api
+ Container fruitlab-r3-prod-api-1 Stopping 
+ Container fruitlab-r3-prod-api-1 Stopped 
+[restore] pg_restore /var/backups/fruitlab/fruitlab-20261018-232605.dump
+[restore] start api
+ Container fruitlab-r3-prod-db-1 Waiting 
+ Container fruitlab-r3-prod-db-1 Healthy 
+ Container fruitlab-r3-prod-api-1 Starting 
+ Container fruitlab-r3-prod-api-1 Started 
+[health] {"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,"uptimeSeconds":2}
+[restore] done
+after_restore=2
+[health] {"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,"uptimeSeconds":2}

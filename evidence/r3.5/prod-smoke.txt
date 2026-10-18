@@ -1,0 +1,8 @@
+{"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,"uptimeSeconds":31}
+admin_login=200
+{"ok":true,"user":{"id":"U0eadecc9dd4af672","username":"admin","role":"admin"}}
+userA_login=401
+{"ok":false,"code":"auth-invalid-credentials","message":"用户名或口令不正确"}
+create_order=201
+{"ok":true,"order":{"orderNumber":"FL-20261018-232521-D2QC","userId":"U0eadecc9dd4af672","createdAt":"2026-10-18T23:25:21.293Z","subtotalCents":899,"items":[{"productId":"banana","name":"海南香蕉","unit":"1kg","quantity":1,"unitPriceCents":899,"subtotalCents":899}]}}
+orders_count=2

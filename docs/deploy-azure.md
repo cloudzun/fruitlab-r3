@@ -136,3 +136,28 @@ systemctl list-timers fruitlab-backup.timer
 az vm deallocate -g rg-fruitlab-r3 -n vm-fruitlab-r3   # 停机省钱，保留磁盘
 az group delete -n rg-fruitlab-r3 --yes                # 彻底删除（含 VM/磁盘/IP）
 ```
+
+## 11. R3.5 实测结果（2026-10-19）
+
+```text
+GET https://fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com/api/health
+{"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,...}
+
+HTTP → 308 Permanent Redirect → HTTPS
+证书：CN=fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com
+      issuer=Let's Encrypt CN=YE2，有效期至 2027-01-16
+HSTS：max-age=31536000; includeSubDomains
+三容器：api/db/web 全部 healthy
+生产用户：仅 admin（seed_mode=production）
+冒烟：admin 登录 200；userA 401；下单 201；订单数 2
+备份恢复：before=2 → after_delete=0 → after_restore=2
+回滚：3.5.0.0 → 3.0.0.0 → rollback.sh → 3.5.0.0
+```
+
+**实测中修掉的三个部署问题**：
+
+1. 内网 `curl 127.0.0.1:4175` 的 Host 不在白名单 → `wait-health.sh` 带 `Host: <PUBLIC_URL host>`。
+2. Caddyfile `email admin@example.com` 被 Let's Encrypt 判 `invalidContact` → 去掉 email，清 ACME 状态后签发成功。
+3. GitHub Actions 的 `VPS_KNOWN_HOSTS` 换行/CR 不匹配 → deploy 时 `ssh-keyscan` 现场取 host key。
+
+> NSG 当前开放 22/80/443；建议后续把 22 限制到管理 IP，或改用 Azure OIDC + `az vm run-command` 免 SSH。

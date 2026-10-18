@@ -1,0 +1,8 @@
+{
+  "fqdns": "fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com",
+  "location": "eastasia",
+  "name": "vm-fruitlab-r3",
+  "power": "VM running",
+  "publicIp": "20.239.58.133",
+  "size": "Standard_B2s"
+}

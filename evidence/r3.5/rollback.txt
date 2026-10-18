@@ -1,0 +1,47 @@
+current="version":"3.5.0.0"
+[backup] /var/backups/fruitlab/fruitlab-20261018-232613.dump
+[deploy] image tag=3.0.0.0 (previous=3.5.0.0)
+ Image chengzh/fruitlab-r3-web:3.0.0.0 Pulling 
+ Image postgres:16-alpine Pulling 
+ Image chengzh/fruitlab-r3:3.0.0.0 Pulling 
+ Image chengzh/fruitlab-r3-web:3.0.0.0 Pulled 
+ Image postgres:16-alpine Pulled 
+ Image chengzh/fruitlab-r3:3.0.0.0 Pulled 
+ Container fruitlab-r3-prod-db-1 Running 
+ Container fruitlab-r3-prod-api-1 Recreate 
+ Container fruitlab-r3-prod-api-1 Recreated 
+ Container fruitlab-r3-prod-web-1 Recreate 
+ Container fruitlab-r3-prod-web-1 Recreated 
+ Container fruitlab-r3-prod-db-1 Waiting 
+ Container fruitlab-r3-prod-db-1 Healthy 
+ Container fruitlab-r3-prod-api-1 Starting 
+ Container fruitlab-r3-prod-api-1 Started 
+ Container fruitlab-r3-prod-api-1 Waiting 
+ Container fruitlab-r3-prod-api-1 Healthy 
+ Container fruitlab-r3-prod-web-1 Starting 
+ Container fruitlab-r3-prod-web-1 Started 
+[health] {"ok":true,"db":"up","version":"3.0.0.0","schemaVersion":2,"seeded":true,"uptimeSeconds":7}
+[deploy] success: 3.0.0.0
+after_deploy_3.0="version":"3.0.0.0"
+[rollback] -> 3.5.0.0
+ Image postgres:16-alpine Pulling 
+ Image chengzh/fruitlab-r3:3.5.0.0 Pulling 
+ Image chengzh/fruitlab-r3-web:3.5.0.0 Pulling 
+ Image chengzh/fruitlab-r3-web:3.5.0.0 Pulled 
+ Image postgres:16-alpine Pulled 
+ Image chengzh/fruitlab-r3:3.5.0.0 Pulled 
+ Container fruitlab-r3-prod-db-1 Running 
+ Container fruitlab-r3-prod-api-1 Recreate 
+ Container fruitlab-r3-prod-api-1 Recreated 
+ Container fruitlab-r3-prod-web-1 Recreate 
+ Container fruitlab-r3-prod-web-1 Recreated 
+ Container fruitlab-r3-prod-db-1 Waiting 
+ Container fruitlab-r3-prod-db-1 Healthy 
+ Container fruitlab-r3-prod-api-1 Starting 
+ Container fruitlab-r3-prod-api-1 Started 
+ Container fruitlab-r3-prod-api-1 Waiting 
+ Container fruitlab-r3-prod-api-1 Healthy 
+ Container fruitlab-r3-prod-web-1 Starting 
+ Container fruitlab-r3-prod-web-1 Started 
+[health] {"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,"uptimeSeconds":8}
+after_rollback="version":"3.5.0.0"

@@ -1,0 +1,18 @@
+== http ==
+HTTP/1.1 308 Permanent Redirect
+Connection: close
+Location: https://fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com/
+Server: Caddy
+== https ==
+HTTP/2 200 
+referrer-policy: no-referrer
+server: Caddy
+strict-transport-security: max-age=31536000; includeSubDomains
+x-content-type-options: nosniff
+== cert ==
+subject=CN = fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com
+issuer=C = US, O = Let's Encrypt, CN = YE2
+notBefore=Oct 18 22:20:14 2026 GMT
+notAfter=Jan 16 22:20:13 2027 GMT
+== health ==
+{"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,"uptimeSeconds":74}

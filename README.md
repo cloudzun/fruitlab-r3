@@ -9,6 +9,8 @@
 > **形态**：PostgreSQL 16 + L1（router → services → repositories）+ L2（Caddy web / Node api / Postgres db）
 > **依赖**：运行时恰好 `{pg}`（R1/R2 仍为零依赖，互不影响）
 > **对应课程**：GStack 七环迭代第三幕 + R3.5 部署收口（spec → build/deploy → review+qa → ship）
+> **线上**：<https://fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com>（Azure VM + Caddy TLS，3.5.0.0）
+> **部署/CI**：[docs/deploy-azure.md](docs/deploy-azure.md)、[docs/ci-cd.md](docs/ci-cd.md)、[R3.5-执行记录.md](R3.5-执行记录.md)、[R3.5-retro.md](R3.5-retro.md)
 
 ## 1. 三个版本（课堂并排）
 

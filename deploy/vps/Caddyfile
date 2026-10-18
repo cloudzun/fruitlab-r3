@@ -1,12 +1,11 @@
 # 宿主机 Caddy：TLS 终止 + 反代到本机 4175（web 容器的 Caddy）
 # 安装/更新：sudo cp Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
 # 不配置 email：Let's Encrypt 对 example.com 联系邮箱会返回 invalidContact。
+# 安全头只加宿主层独有的 HSTS；其余由 web 镜像内的 Caddy 提供，避免重复冲突。
 fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com {
     encode zstd gzip
     reverse_proxy 127.0.0.1:4175
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
     }
 }

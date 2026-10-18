@@ -1,0 +1,8 @@
+completed	success	release	release	main	workflow_dispatch	39176206939	1m33s	2026-10-18T23:21:57Z
+completed	success	ci: fetch VM host key at deploy time	ci	main	push	39176200583	1m31s	2026-10-18T23:21:52Z
+completed	failure	release	release	main	workflow_dispatch	39176077847	1m7s	2026-10-18T23:20:10Z
+completed	success	fix(deploy): health check Host header and Caddy ACME contact	ci	main	push	39176037433	1m40s	2026-10-18T23:19:36Z
+completed	success	release	release	main	workflow_dispatch	39175688760	1m3s	2026-10-18T23:14:43Z
+completed	success	feat(r3.5): production deploy assets, release workflow, 3.5.0.0, Azur…	ci	main	push	39175675684	1m32s	2026-10-18T23:14:31Z
+completed	success	ci: use npmjs registry for reproducible installs	ci	main	push	39175247654	1m24s	2026-10-18T23:08:30Z
+completed	failure	chore: public repo readiness (LICENSE, CI badge, GitHub Actions CI)	ci	main	push	39174842686	5m10s	2026-10-18T23:02:57Z
