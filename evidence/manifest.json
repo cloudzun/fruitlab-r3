@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T01:39:10.425Z",
+  "generatedAt": "2026-10-18T01:46:35.232Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -100,6 +100,11 @@
       "file": "evidence/test-count.txt",
       "sha256": "567150145a6e16d77ae324c97dbe462573a06bd68606630bcaa2662ec9055bea",
       "bytes": 1065
+    },
+    {
+      "file": "evidence/toolchain-recon.md",
+      "sha256": "9fdf760b8fdbc9e536784ea2875a936fe3dd73241aa7f1e96ee0ad3564bed101",
+      "bytes": 4088
     },
     {
       "file": "evidence/visual/home-1440.png",
