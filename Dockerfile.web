@@ -1,0 +1,22 @@
+# syntax=docker/dockerfile:1
+# web 镜像：builder 按白名单生成 public/ → Caddy 托管静态 + 反代 /api；非 root。
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY index.html VERSION README.md SPEC.md DECISIONS.md BUILD.md BUILD-LOG.md CHANGELOG.md PRD-R2.md PRD-R3.md OFFICE_HOURS.md ./
+COPY assets ./assets
+COPY docs ./docs
+COPY evidence ./evidence
+COPY server/allowlist.mjs ./server/allowlist.mjs
+COPY scripts/build-public.mjs ./scripts/build-public.mjs
+RUN node scripts/build-public.mjs --out /out/public
+
+FROM caddy:2-alpine
+COPY Caddyfile /etc/caddy/Caddyfile
+COPY --from=builder /out/public /srv
+RUN chown -R 1000:1000 /srv /data /config
+ENV XDG_DATA_HOME=/tmp/caddy-data \
+    XDG_CONFIG_HOME=/tmp/caddy-config
+USER 1000:1000
+EXPOSE 8080
+HEALTHCHECK --interval=5s --timeout=3s --retries=20 --start-period=5s \
+  CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1

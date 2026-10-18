@@ -8,7 +8,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const problems = [];
 
 const decisions = fs.readFileSync(path.join(ROOT, "DECISIONS.md"), "utf8");
-const obIds = [...decisions.matchAll(/^\| (OB-[A-Z]+-\d{2}) \|/gm)].map((m) => m[1]);
+const obIds = [...decisions.matchAll(/^\| (OB-R3-[A-Z]+-\d{2}) \|/gm)].map((m) => m[1]);
 
 const buildPath = path.join(ROOT, "BUILD.md");
 if (!fs.existsSync(buildPath)) {
@@ -27,7 +27,7 @@ for (const id of acIds) {
 }
 
 if (obIds.length !== 42) problems.push(`DECISIONS.md 义务数量应为 42，实际 ${obIds.length}`);
-if (acIds.length < 40) problems.push(`SPEC.md AC 数量异常: ${acIds.length}`);
+if (acIds.length < 60) problems.push(`SPEC.md AC 数量异常: ${acIds.length}`);
 
 if (problems.length > 0) {
   console.error(problems.slice(0, 50).join("\n"));

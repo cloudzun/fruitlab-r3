@@ -5,3 +5,11 @@
 
 # R2 运行时数据库（可重建；种子由 CLI 写入）
 data/
+
+# R3
+node_modules/
+.env
+backups/
+public/
+dist/
+*.log

@@ -1,68 +1,16 @@
-// FruitLab R2 服务端：静态托管 + 同源 API。
-// CSP 以本文件下发的 HTTP 头为唯一来源（index.html 中的 meta 仅作兼容）。
+// HTTP 服务：API handler + 可选静态托管（simple/本地模式）。
+// CSP 以 HTTP 头为唯一来源；静态白名单来自 server/allowlist.mjs。
 import http from "node:http";
-import { readFile, realpath } from "node:fs/promises";
-import { statSync } from "node:fs";
 import path from "node:path";
+import { readFile, realpath } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { openDb, migrate, schemaVersion, isSeeded, defaultDbPath } from "./server/db.mjs";
-import { createApiHandler } from "./server/router.mjs";
+import { isAllowedPublicPath, mimeTypeFor } from "./server/allowlist.mjs";
+import { createApp, formatStartupError } from "./server/app.mjs";
+import { loadConfig, ConfigError, readVersion } from "./config.mjs";
 
-export const HOST = "127.0.0.1";
-export const DEFAULT_PORT = 4174;
-export const SERVER_VERSION = "2.0.0.0";
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
 
-export const PUBLIC_ALLOWLIST = new Set([
-  "/index.html",
-  "/README.md",
-  "/SPEC.md",
-  "/DECISIONS.md",
-  "/OFFICE_HOURS.md",
-  "/BUILD.md",
-  "/CHANGELOG.md",
-  "/VERSION",
-  "/BUILD-LOG.md",
-  "/assets/app.mjs",
-  "/assets/api-client.mjs",
-  "/assets/boot-guard.js",
-  "/assets/controller.mjs",
-  "/assets/domain.mjs",
-  "/assets/styles.css",
-  "/docs/error-catalog.md",
-  "/docs/api.md",
-  "/docs/contracts.md",
-  "/docs/design-tokens.md",
-  "/docs/assets-credits.md",
-  "/docs/branch-matrix.md",
-  "/docs/obligations.md",
-  "/docs/decision-log.md",
-  "/docs/cli.md",
-  "/docs/designs/fruitlab-traceable-demo.md",
-  "/evidence/index.md",
-  "/evidence/clean-run.md",
-  "/evidence/manual-checks/browser.md",
-  "/evidence/spec-quality-gate.md",
-  "/evidence/learner-checks/pre-spec.md",
-  "/evidence/test-count.txt",
-]);
-
-const IMAGE_RE = /^\/assets\/images\/products\/[a-z0-9-]+\.jpg$/;
-
-export const MIME_TYPES = Object.freeze({
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".md": "text/markdown; charset=utf-8",
-  ".txt": "text/plain; charset=utf-8",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
-});
-
-const CONTENT_SECURITY_POLICY = [
+export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
@@ -73,8 +21,6 @@ const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
   "form-action 'self'",
 ].join("; ");
-
-const LAB_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 
 function commonHeaders(extra = {}) {
   return {
@@ -93,50 +39,36 @@ function problem(res, status, code, detail, extra = {}) {
   res.end(body);
 }
 
-export function supportsNodeVersion(version = process.versions.node) {
-  const major = Number(String(version).split(".")[0]);
-  return major >= 22;
-}
-
-export function isAllowedPublicPath(pathname) {
-  return PUBLIC_ALLOWLIST.has(pathname) || IMAGE_RE.test(pathname);
-}
-
-export function createStaticServer({ port = DEFAULT_PORT, root = LAB_ROOT, db, dbPath = "", version = SERVER_VERSION, startedAt = Date.now() } = {}) {
-  const portRef = { value: port };
-  const handler = db ? createApiHandler({ db, version, dbPath, port: () => portRef.value, startedAt }) : null;
-
+export function createStaticServer(app, config) {
   const server = http.createServer(async (req, res) => {
     let url;
     try {
-      url = new URL(req.url, `http://${req.headers.host ?? `${HOST}:${port}`}`);
+      url = new URL(req.url, `http://${req.headers.host ?? `${config.host}:${config.port}`}`);
     } catch {
       return problem(res, 400, "bad-request", "malformed request URL");
     }
 
-    if (handler && url.pathname.startsWith("/api")) {
-      const handled = await handler(req, res);
+    if (url.pathname.startsWith("/api")) {
+      const handled = await app.handler(req, res);
       if (handled) return;
     }
+
+    if (!config.serveStatic) return problem(res, 404, "not-found", "static hosting is disabled (web container serves files)");
 
     if (req.method !== "GET" && req.method !== "HEAD") {
       return problem(res, 405, "method-not-allowed", "only GET and HEAD are supported", { Allow: "GET, HEAD" });
     }
-
     const rawPath = String(req.url ?? "");
     if (/%2f|%5c|%00/i.test(rawPath)) {
       return problem(res, 404, "not-found", "encoded path separators are not allowed");
     }
-
     let pathname;
     try {
       pathname = decodeURIComponent(url.pathname);
     } catch {
       return problem(res, 404, "not-found", "invalid path encoding");
     }
-
     if (pathname === "/") pathname = "/index.html";
-
     if (
       pathname.includes("\\") ||
       pathname.includes("\0") ||
@@ -147,16 +79,14 @@ export function createStaticServer({ port = DEFAULT_PORT, root = LAB_ROOT, db, d
     ) {
       return problem(res, 404, "not-found", "path is not public");
     }
-
-    const candidate = path.join(root, pathname);
+    const candidate = path.join(ROOT, pathname);
     try {
       const real = await realpath(candidate);
-      if (!real.startsWith(root + path.sep) && real !== root) {
+      if (!real.startsWith(ROOT + path.sep) && real !== ROOT) {
         return problem(res, 404, "not-found", "path escapes root");
       }
       const body = await readFile(real);
-      const type = MIME_TYPES[path.extname(real).toLowerCase()] ?? "application/octet-stream";
-      res.writeHead(200, commonHeaders({ "Content-Type": type, "Content-Length": body.length }));
+      res.writeHead(200, commonHeaders({ "Content-Type": mimeTypeFor(real), "Content-Length": body.length }));
       if (req.method === "HEAD") return res.end();
       return res.end(body);
     } catch (error) {
@@ -166,35 +96,33 @@ export function createStaticServer({ port = DEFAULT_PORT, root = LAB_ROOT, db, d
       return problem(res, 500, "internal-error", "file read failed");
     }
   });
-
   return new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(port, HOST, () => {
+    server.listen(config.port, config.host, () => {
       const address = server.address();
-      const actualPort = typeof address === "object" && address ? address.port : port;
-      portRef.value = actualPort;
-      resolve({ server, url: `http://${HOST}:${actualPort}`, port: actualPort });
+      const actualPort = typeof address === "object" && address ? address.port : config.port;
+      resolve({ server, port: actualPort });
     });
   });
 }
 
-export function parseCliArgs(argv) {
-  const options = { port: DEFAULT_PORT, dbPath: defaultDbPath(), help: false, version: false };
+export function parseArgs(argv) {
+  const options = { port: undefined, host: undefined, url: undefined, help: false, version: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--help") options.help = true;
     else if (arg === "--version") options.version = true;
     else if (arg === "--port" || arg.startsWith("--port=")) {
       const value = arg === "--port" ? argv[++index] : arg.slice("--port=".length);
-      const parsed = Number(value);
-      if (!value || !Number.isInteger(parsed) || parsed < 0 || parsed > 65535) {
-        return { kind: "invalid", message: "--port must be an integer from 0 to 65535" };
-      }
-      options.port = parsed;
-    } else if (arg === "--db" || arg.startsWith("--db=")) {
-      const value = arg === "--db" ? argv[++index] : arg.slice("--db=".length);
-      if (!value) return { kind: "invalid", message: "--db requires a path" };
-      options.dbPath = value;
+      const port = Number(value);
+      if (!Number.isInteger(port) || port < 0 || port > 65535) return { kind: "invalid", message: "--port must be 0-65535" };
+      options.port = port;
+    } else if (arg === "--host" || arg.startsWith("--host=")) {
+      options.host = arg === "--host" ? argv[++index] : arg.slice("--host=".length);
+      if (!options.host) return { kind: "invalid", message: "--host requires a value" };
+    } else if (arg === "--url" || arg.startsWith("--url=")) {
+      options.url = arg === "--url" ? argv[++index] : arg.slice("--url=".length);
+      if (!options.url) return { kind: "invalid", message: "--url requires a DATABASE_URL" };
     } else {
       return { kind: "invalid", message: `unknown argument: ${arg}` };
     }
@@ -202,12 +130,8 @@ export function parseCliArgs(argv) {
   return { kind: "ok", options };
 }
 
-export async function startStaticServer({ port = DEFAULT_PORT, db, root = LAB_ROOT, dbPath = "", version = SERVER_VERSION } = {}) {
-  return createStaticServer({ port, root, db, dbPath, version });
-}
-
 export async function main(argv = process.argv.slice(2)) {
-  const parsed = parseCliArgs(argv);
+  const parsed = parseArgs(argv);
   if (parsed.kind === "invalid") {
     process.stderr.write(`${parsed.message}\n`);
     process.exitCode = 2;
@@ -216,42 +140,42 @@ export async function main(argv = process.argv.slice(2)) {
   const { options } = parsed;
   if (options.help) {
     process.stdout.write(
-      `FruitLab R2 server\n\nUsage: node serve.mjs [--port <0-65535>] [--db <path>]\n\nDefault address: http://${HOST}:${DEFAULT_PORT}\n`,
+      "FruitLab R3 server\n\nUsage: node serve.mjs [--port <0-65535>] [--host <addr>] [--url <DATABASE_URL>]\n\nDefault: http://127.0.0.1:4175\n",
     );
     return;
   }
   if (options.version) {
-    process.stdout.write(`${SERVER_VERSION}\n`);
+    process.stdout.write(`${readVersion()}\n`);
     return;
   }
-  if (!supportsNodeVersion()) {
-    process.stderr.write(`[node-version-unsupported] Node.js 22 or newer is required; found ${process.versions.node}\n`);
+  let config;
+  try {
+    config = loadConfig({ databaseUrl: options.url });
+  } catch (error) {
+    process.stderr.write(`${error instanceof ConfigError ? `[config-invalid] ${error.message}` : error}\n`);
     process.exitCode = 1;
     return;
   }
-  if (options.dbPath !== ":memory:" && !statSync(path.dirname(options.dbPath), { throwIfNoEntry: false })) {
-    process.stderr.write(`[db-missing] ${path.dirname(options.dbPath)} 不存在；请先运行 node cli.mjs db init && node cli.mjs db seed\n`);
-    process.exitCode = 1;
-    return;
-  }
-  if (options.dbPath !== ":memory:" && !statSync(options.dbPath, { throwIfNoEntry: false })) {
-    process.stderr.write(`[db-missing] 数据库 ${options.dbPath} 不存在；请先运行 node cli.mjs db init && node cli.mjs db seed\n`);
-    process.exitCode = 1;
-    return;
-  }
+  if (options.port !== undefined) config.port = options.port;
+  if (options.host !== undefined) config.host = options.host;
+  if (!config.publicUrl.includes(":")) config.publicUrl = `http://${config.host}:${config.port}`;
 
-  const db = openDb(options.dbPath);
-  migrate(db);
-  const { server, url, port } = await startStaticServer({ port: options.port, db, dbPath: options.dbPath });
+  let app;
+  try {
+    app = await createApp({ config });
+  } catch (error) {
+    process.stderr.write(`${formatStartupError(error, config)}\n`);
+    process.exitCode = 1;
+    return;
+  }
+  const { server, port } = await createStaticServer(app, config);
   process.stdout.write(
-    JSON.stringify({ event: "listening", url, port, db: options.dbPath, schema: schemaVersion(db), seeded: isSeeded(db) }) + "\n",
+    `${JSON.stringify({ event: "listening", url: `http://${config.host}:${port}`, port, db: "postgres", schema: app.schemaVersion, seeded: true, version: app.version, static: config.serveStatic })}\n`,
   );
-
-  const shutdown = () => {
-    server.close(() => {
-      try { db.close(); } catch { /* already closed */ }
-      process.exit(0);
-    });
+  const shutdown = async () => {
+    await new Promise((resolve) => server.close(resolve));
+    await app.close();
+    process.exit(0);
   };
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);

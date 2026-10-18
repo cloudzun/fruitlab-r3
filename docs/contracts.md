@@ -1,63 +1,65 @@
-# 契约冻结（R2）
+# 契约冻结（R3）
 
-> 目的：让"改了哪些契约、为什么"可核对（G3 / AC-11 / A7）。导出签名与失败形状在此冻结；`tests/contracts.test.mjs` 断言错误码集合与编号一致性。
+> 目的：让“改了哪些契约、为什么”可核对（AC-61、AC-91）。导出签名、错误形状、分层边界在此冻结；`tests/contracts.test.mjs` 与 `tests/layering.test.mjs` 机械断言。
 
-## 1. 服务端模块导出
+## 1. 模块导出
 
-| 模块 | 导出 | 形状/说明 |
-|---|---|---|
-| `server/db.mjs` | `openDb(path?)` | `DatabaseSync`；`PRAGMA foreign_keys=ON`、`busy_timeout=300`、文件库尝试 WAL |
-| | `migrate(db)` | 幂等建表；`PRAGMA user_version = 1` |
-| | `seed(db, {hashPassword, demoPassword})` | 14 商品 + 3 账号；已存在则跳过 |
-| | `isSeeded(db)` / `schemaVersion(db)` | `boolean` / `number` |
-| | `enqueueWrite(fn)` / `inTransaction(db, fn)` | 单写者队列 / 事务包装（失败回滚） |
-| `server/auth.mjs` | `hashPassword(pw, salt?)` | `scrypt$N$r$p$saltB64$hashB64` |
-| | `verifyPassword(pw, stored)` | `boolean`（`timingSafeEqual`） |
-| | `createSession(db, userId)` | 返回明文 token（库中存 sha256） |
-| | `getSessionUser(db, token)` / `deleteSession(db, token)` | 用户对象或 `null` / 删除行数 |
-| | `validateCredentials({username,password})` | `null` 或稳定 code |
-| `server/products.mjs` | `listProducts(db, {includeUnlisted})` | `Product[]`，按 `sort_order, product_id` |
-| | `getProduct(db, id)` / `updateProduct(db, id, patch)` | `Product` 或 `null` / `{ok, product}` 或 `{ok:false, code}` |
-| `server/orders.mjs` | `normalizeItems(items)` | `{ok, items}` 或 `{ok:false, code}`；合并重复、上限 10 |
-| | `createOrder(db, {userId, items, clientOrderId, now, suffixFactory})` | `{ok, status:'created'|'existing', order}` 或 `{ok:false, code}`；事务内扣库存 |
-| | `listOrdersByUser(db, userId)` / `getOrderByNumber(db, number)` / `listAllOrders(db)` | `Order[]` / `Order|null` / `Order[]` |
-| `server/router.mjs` | `createApiHandler({db, version, dbPath, port, startedAt})` | `(req,res)=>Promise<boolean>` |
-| `serve.mjs` | `createStaticServer({port, db, dbPath})` | `{server, url, port}`；静态 + `/api` 路由 |
-| | `PUBLIC_ALLOWLIST` / `MIME_TYPES` / `HOST` / `DEFAULT_PORT(4174)` | 静态白名单与常量 |
+| 模块 | 导出 |
+|---|---|
+| `server/db.mjs` | `createPool(config)`、`migrate(client)`、`withTransaction(pool, fn)`、`runMigrations(pool)`、`resetDatabase(pool,{seed})`、`schemaVersion(pool)`、`isSeeded(pool)`、`checkDatabase(pool)`、`verifyMigrationChecksums(pool)`、`closePool(pool)` |
+| `server/repositories/users.mjs` | `findByUsername`、`findById`、`create`、`list` |
+| `server/repositories/sessions.mjs` | `create`、`findUserByToken`、`deleteByToken`、`purgeExpired` |
+| `server/repositories/products.mjs` | `list`、`get`、`getForUpdate`、`update` |
+| `server/repositories/orders.mjs` | `create`、`createItems`、`deductStock`、`assertSubtotal`、`findByClientOrderId`、`findByNumber`、`listByUser`、`listAll`、`itemsByOrderIds`、`loadOrder` |
+| `server/services/auth.mjs` | `createAuthService({pool,repos,config,clock,dummyHash,rateLimiter,scryptGate})` → `{register,login,logout,me,resetRateLimiter,rateLimiter,verifyCsrf}` |
+| `server/services/catalog.mjs` | `createCatalogService({pool,repos})` → `{listPublic,listAdmin,updateProduct}` |
+| `server/services/orders.mjs` | `createOrderService({pool,repos,clock})` → `{checkout,listMine,getForViewer,listAll}`；`normalizeItems`、`OrderFailure` |
+| `server/services/health.mjs` | `createHealthService({pool,config,clock})` → `{health}` |
+| `server/services/index.mjs` | `createServices({pool,config,clock,repos})` |
+| `server/app.mjs` | `createApp({config,clock})` → `{pool,services,handler,version,schemaVersion,close}`；`formatStartupError` |
+| `server/router.mjs` | `createApiHandler({services,config,version})` |
+| `server/allowlist.mjs` | `PUBLIC_ALLOWLIST`、`IMAGE_RE`、`isAllowedPublicPath`、`listPublicFiles`、`mimeTypeFor` |
+| `config.mjs` | `loadConfig({env,databaseUrl})`、`readVersion`、`ConfigError` |
 
-## 2. R1 行为对照（A7 / OB-CEO-03）
+## 2. 分层与依赖规则
 
-| R1 行为 | R2 状态 | 说明 |
-|---|---|---|
-| 顶层「查订单」入口 | **保留** | 仍在导航首层 |
-| 查询后聚焦结果标题 | **保留** | 查询成功即聚焦 |
-| 输入即清过期结果 | **保留** | |
-| 数量 1/99 边界禁用 | **保留** | |
-| 收据/结果失焦隐藏 | **保留** | 购物车变动与新结账都隐藏 |
-| 错误按码给具体文案 | **保留** | 错误码映射到 `docs/error-catalog.md` |
-| 结账中禁用、`save-unknown` 不自动重试 | **保留** | 引导到「我的订单」核对 |
-| <720px 紧凑购物袋 | **保留** | |
-| **访客凭订单号查单（无需登录）** | **移除（breaking）** | 按 U2=A；查单需登录且只能查自己的订单；README/CHANGELOG 记录 |
-| 订单存 `localStorage` | **移除** | 改为服务端数据库 |
-| 商品为纯文字卡 | **移除** | 改为照片卡（Apple 式版式） |
-| 手写果摊招牌视觉（DV1） | **移除** | 改为 Apple 式高冷克制风（D-08） |
+1. `router` 不 import `pg`/`repositories`/`db`；不含 SQL；
+2. `services` 不 import HTTP/router；不接触 `req`/`res`；
+3. `repositories` 不 import services/router；
+4. `domain`（`assets/domain.mjs`）不依赖服务端模块；
+5. `server/app.mjs` 是唯一组合根；
+6. 依赖规则由 `tests/layering.test.mjs` 断言。
 
-## 3. 三层命名映射（OB-DX-10）
+## 3. R2 → R3 契约变更
 
-| 概念 | DB 列 | HTTP JSON | CLI flag |
+| 契约 | R2 | R3 | 原因 | 兼容性 |
+|---|---|---|---|---|
+| 数据库 | `node:sqlite` 单文件 | PostgreSQL 16 + `pg.Pool` | PRD 目标 1 | **破坏性**（部署形态变） |
+| 依赖 | 零第三方依赖 | 恰好 `{pg}` | PRD 目标 1 | **破坏性**（课程口径正式变更） |
+| `/api/health` | `dbPath` 字段 | `db:"up|down"`、`schemaVersion`、`uptimeSeconds`；down → 503 | 可部署探活 | **破坏性**（字段变） |
+| 他人订单 | 403 `order-not-owned` | 404 `order-not-found` | 消除存在性泄露（D-57） | **破坏性**（状态码变） |
+| 会话 | 无过期 | `expires_at` + Max-Age + 轮换 | 关闭 S-3 | 兼容（更严格） |
+| CSRF | 无 | 双提交 Cookie + 头；登录/注册豁免 | 关闭安全缺口 | 前端需带 token |
+| 认证/体校验优先级 | 认证先 | 体协议 → 405 → 401 → CSRF → 403 | 关闭 C-4 | **行为变更** |
+| CLI 数据库参数 | `--db <path>` | `--url <DATABASE_URL>`；`--db` 用法错误 | PG 无文件库 | **破坏性** |
+| CLI 命令 | `db init` | `db migrate`（幂等）；新增 `db backup/restore` | PG 迁移语义 | **破坏性** |
+| 版本 | `2.0.0.0` | `VERSION=3.0.0.0`；`package.json=3.0.0` | npm SemVer 约束 | — |
+
+## 4. 三层命名映射
+
+| 概念 | DB 列 | HTTP JSON | CLI |
 |---|---|---|---|
-| 单价（分） | `unit_price_cents` | `unitPriceCents` | `--unit-price-cents`（`--cents` 兼容别名） |
-| 库存 | `stock` | `stock` | `--stock`（`--units` 兼容别名） |
-| 上下架 | `listed`（0/1） | `listed`（boolean） | `--listed 0|1`；子命令 `unlist`/`relist` |
-| 订单号 | `order_number` | `orderNumber` | 位置参数 `<orderNumber>` |
-| 幂等键 | `client_order_id` | `clientOrderId` | 由前端生成（CLI 不暴露） |
+| 单价（分） | `unit_price_cents` | `unitPriceCents` | `--unit-price-cents` |
+| 库存 | `stock` | `stock` | `--stock` |
+| 上下架 | `listed`（boolean） | `listed`（boolean） | `unlist`/`relist` |
+| 订单号 | `order_number` | `orderNumber` | 位置参数 |
+| 幂等键 | `client_order_id` | `clientOrderId` | 前端生成（CLI 不暴露） |
+| 用户 | `user_id` | `id`（统一 `{id,username,role}`） | `--username` |
 
-## 4. 领域层复用
+## 5. 错误契约
 
-`assets/domain.mjs` 的 10 个纯函数与 `limits` **签名与实现不变**；`tests/domain.test.mjs` 原样通过。服务端 `createOrder` 复用 `generateUniqueOrderNumber`（10 次预算）。
+`docs/error-catalog.md` 是唯一真源；`server/errors.mjs` 镜像；`tests/contracts.test.mjs` 断言集合一致。API 一律 `{ok:false,code,message,details?}`；静态层 `problem+json`。
 
-## 5. 数据源边界
+## 6. 领域层复用
 
-- 商品真源：数据库；`assets/catalog.mjs` 退役；
-- 订单真源：数据库；`assets/order-store.mjs` 退役；
-- 前端不得直接读 `localStorage` 作为订单来源。
+`assets/domain.mjs` 的纯函数与 `limits` 签名/实现不变；`tests/domain.test.mjs` 原样通过。服务端复用 `createOrderNumber`。

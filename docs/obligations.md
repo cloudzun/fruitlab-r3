@@ -1,49 +1,49 @@
-# 义务台账（OB-*）
+# 义务台账（R3）
 
-> 来源：`DECISIONS.md` 的 Accepted Obligations（autoplan 四阶段接受项）。
-> 判定词汇：`closed` / `downgraded`（附理由）/ `not-covered`（附理由）。build 环填「实现状态」，最终判定在 ship/retro 汇总。
+> 来源：`DECISIONS.md` 的 Accepted Obligations（42 条）。
+> 判定词汇：`closed` / `downgraded`（附理由）/ `not-covered`（附理由）。build 填实现状态，最终判定在 ship 环。
 
 | 编号 | 义务 | 完成判据 | build 实现状态 | 最终判定 |
 |---|---|---|---|---|
-| OB-CEO-01 | 工时重估 15–25 agent 工时；按 M1–M5 里程碑交付，每步可独立验收 | SPEC §10 修订记录 + BUILD.md 里程碑表 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-02 | 新增 AC-41 端到端用户旅程、AC-42 五分钟 demo 脚本 | SPEC 增补 + qa 实机记录 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-03 | R1 行为对照表（保留/变更/移除）；AC-31 拆分交互与权限 | `docs/contracts.md` 行为表 + AC-31 修订 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-04 | Admin 信息架构（订单/商品两面板、含下架商品、空/错/加载态） | §5.6 修订 + qa 截图 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-05 | 图片 fallback：Openverse → Wikimedia → 停止上报；禁止 AI 图 | `docs/assets-credits.md` + 风险条目 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-06 | `scripts/verify.mjs` 串联测试与全部机械检查，单一入口 | 脚本运行输出 PASS/FAIL | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-07 | `node:sqlite` spike（建库/WAL/busy_timeout/回滚/并发/输出污染）先行 | `evidence/spike-sqlite.md` | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-08 | 并发不超卖测试：两个并发 POST 只一单成功、库存为 0 | `tests/api.test.mjs` 用例 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-09 | 登出删除服务端会话行；旧 Cookie 再访问 `/api/auth/me` 返回 401 | `tests/auth.test.mjs` | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-10 | username 3–32 `[A-Za-z0-9_-]`、password 8–128，稳定错误码 | `docs/contracts.md` + 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-11 | 结算前重校验 UX：价格变更/已下架/库存不足三种提示 | §5.6 + fake DOM/qa | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-12 | 视觉证据可复现：`evidence/visual/<viewport>-<page>.png` + commit + 时间 + 复核人 | 证据文件 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-13 | `db reset --yes` + 自动备份 + 服务持锁检测 + 无库指引 | `tests/cli.test.mjs` + 输出 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-CEO-14 | 无障碍：skip link、键盘全流程、焦点环、错误汇总 | qa 手工记录 + 检查表 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DES-01 | 设计词元落 CSS 变量 + `docs/design-tokens.md`，脚本断言 token 存在 | 脚本 + 文件 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DES-02 | 商品卡六态：正常/加载/空/错误/售罄/下架 | fake DOM + 截图 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DES-03 | 登录/注册/管理面板的提交中、失败、已登录状态 | fake DOM + 截图 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DES-04 | <720px 紧凑购物袋条 + 导航横向滚动 | 390 截图 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DES-05 | 对比度 ≥ 4.5:1、焦点可见、键盘可达 | 手工检查表 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DES-06 | 文案语气：无感叹号、无促销语；错误文案按错误码 | 文案清单 + 静态扫描 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DES-07 | 14 张图 alt 由种子数据生成且非空 | `scripts/check-links.mjs` 或专用断言 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DES-08 | CC BY 署名在页脚可见并链接台账 | 页面 + 台账 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-01 | `node cli.mjs dev` 一键启动 + `GET /api/health` + README 60 秒 AC | 命令 + 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-02 | CLI 命令树冻结（list/unlist/relist 拆分）；help 与文档命令集合一致 | `tests/cli.test.mjs` | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-03 | 全局 `--json`：`{ok:true,data}` / `{ok:false,code,...}`；非交互 | CLI 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-04 | 退出码 0/1/2/3/4 + stdout 数据 / stderr 诊断 | CLI 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-05 | `--password-stdin`；`--password` 仅演示并告警 | CLI 测试 + docs | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-06 | CLI 补 `orders show`、`db check`（integrity/foreign_key/user_version） | CLI 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-07 | `clientOrderId` 幂等：`(user_id, client_order_id)` 唯一；重复返回原订单 | 并发测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-09 | 启动结构化摘要；全响应 `X-Request-Id`；`--log` 访问日志 | 测试/输出 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-10 | DB/HTTP/CLI 三层命名映射表；CLI flag 对齐 API | `docs/contracts.md` | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-11 | 错误目录唯一真源；API `{ok:false}`、静态层 `problem+json`；测试断言集合一致 | `tests/contracts.test.mjs` | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-12 | `tests/helpers/{db,auth,server}.mjs` 夹具 | 文件 + 测试通过 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-DX-13 | Windows 细节：`--no-warnings=ExperimentalWarning`、先 close 再删、`pathToFileURL` | README + 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-ENG-01 | 单写者队列 + `busy_timeout` 250–500ms + 异步退避；文档化单进程假设 | 设计文档 + 持锁测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-ENG-02 | `GET /api/admin/products`（含下架） | API + 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-ENG-03 | 校验契约：maxItems 10、重复 productId 合并、Content-Type 415、边界 | `docs/contracts.md` + 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-ENG-04 | Host ∈ {127.0.0.1:4174, localhost:4174}；Origin 精确匹配；Sec-Fetch-Site ∈ {same-origin, none}；缺失矩阵 | 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-ENG-06 | CSP 以 HTTP 头为唯一来源（meta 仅兼容） | 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-ENG-07 | scrypt 参数说明与升级路径 | README | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-ENG-08 | 列表默认上限 100 | 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
-| OB-ENG-09 | 购物车仅内存、刷新清空，与 R1 一致 | README + 测试 | implemented（待 review/qa 复核） | closed（build/review/qa 证据） |
+| OB-R3-CEO-01 | 工时重估 35–45h；M1/M2/M3 各有上限与停止线 | SPEC §10/§16 + BUILD.md 里程碑表 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-CEO-02 | 结果型 AC-106..109（旅程/管理变更/DB down/备份恢复） | AC 表 + qa 证据 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-CEO-03 | R2 用仓库外临时 SQLite 文件启动，重启仍在 | `start-all.mjs` + AC-111 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-CEO-04 | 课程目标矩阵 + 5–8 分钟三幕 demo 脚本 | SPEC §4.1 + `evidence/demo-script.md` | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-CEO-05 | 范围裁剪建议的拒绝/降级留痕 | SPEC §16.3 + DECISIONS | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-CEO-06 | `start-all` 探测原生 Docker/WSL；README 双预检 | 脚本 + README + qa | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-CEO-07 | `check-docs-stale.mjs`：R3 学员文档无旧口径 | 脚本 + AC-114 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DES-01 | 4175 经 Caddy 的真实 Chromium 购买闭环 | AC-106 + 截图/日志 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DES-02 | CSRF 客户端 `ensureCsrfToken` + 403 重试一次 + 文案 | 客户端测试 + AC-116 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DES-03 | 三个新错误码文案/恢复；health 503 统一信封 | error-catalog + 前端映射测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DES-04 | README 重写 + demo 三幕脚本 | README + AC-110 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DES-05 | 启动错误模板 + 四类排障 + web healthcheck | README + AC-115 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DES-06 | R2 UI 回归矩阵（三档/键盘/焦点/aria） | qa 记录 + AC-112 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-01 | clean-room quickstart + `preflight.mjs` | README + AC-113 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-02 | `VERSION`/包版本分离 + engines/packageManager | 版本校验测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-03 | CLI `db restore` + 容器 backups 卷 + 往返 | CLI 测试 + AC-109 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-04 | `HOST=0.0.0.0` + `PUBLIC_URL` 派生 + 三层探活 | compose + 容器测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-05 | `pgctl.mjs up/status/down` readiness/清理 | 脚本 + README + AC-118 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-06 | `docs/cli.md` 命令矩阵 + help 一致测试 | 文档 + 表驱动测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-07 | `verify --quick/--full` + preflight | 脚本输出 + AC-113 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-08 | 路径可移植 + PowerShell backup/restore 包装 | 脚本 + README | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-DX-09 | 镜像 digest 记录 + lockfile/registry 说明 | `docs/deploy.md` + evidence | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-01 | client 级 migrate/seed/reset + 同事务 + 三路失败测试 | db/CLI 测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-02 | 商品排序后扣库存 + 反向购物车测试 | 并发测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-03 | 异步 scrypt + 信号量/队列 + 限流前置 | auth 测试 + 延迟证据 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-04 | Caddy `/healthz` + web healthcheck | compose + 容器证据 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-05 | restore 停写/断连/单事务/校验/重启 | restore 脚本 + AC-109 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-06 | CLI JSON 备份/恢复契约与 pg_dump 双轨 | CLI 测试 + deploy 文档 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-07 | 测试池/并发/清理/预算 | helper + AC-118 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-08 | 两桶限流 + 喷洒测试 | auth 测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-09 | CSRF 轮换/Secure/登出清理 | auth/API 测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-10 | int8 安全解析/ID 不暴露 | contracts + 测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-11 | 迁移 advisory lock + checksum + 并发测试 | db 测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-12 | 路径规范化 + `400 invalid-path` + 405 表 | API 表驱动测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-ENG-13 | v1.2 快照重冻；build 只认 v1.2 哈希 | 快照 + DECISIONS 哈希 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-SPEC-01 | compose/DSN/health/备份全变量化 | compose + 非默认值实测 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-SPEC-02 | `seedClassroom`/`seedProductionAdmin` 拆分 | CLI/seed 测试 + AC-57/82 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-SPEC-03 | health 3s 时限 + 池参数映射 | 故障注入测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-SPEC-04 | AC-91 白名单补 D-47/62/79/82 | BUILD 逐测试处置表 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-SPEC-05 | D-82 唯一 XFF 决策；compose TRUST_PROXY | SPEC/DECISIONS + 测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-SPEC-06 | username/价格/库存上限 CHECK；password 只 service | schema 断言 + API 测试 | implemented（待 review/qa 复核） | 待定 |
+| OB-R3-SPEC-07 | 状态 v1.2、D 范围、F-09→AC-91 | SPEC/decision-log | implemented（待 review/qa 复核） | 待定 |

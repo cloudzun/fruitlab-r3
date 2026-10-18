@@ -1,20 +1,29 @@
+// 测试 HTTP 服务夹具：真实端口 0 + 真实 Postgres + 真实 router/services。
 import http from "node:http";
+import { createApp } from "../../server/app.mjs";
 import { createStaticServer } from "../../serve.mjs";
+import { testConfig } from "./pg.mjs";
 
-export async function startTestServer(db, dbPath = ":memory:") {
-  const { server, url, port } = await createStaticServer({ port: 0, db, dbPath });
-  const base = url;
+export async function startTestServer(databaseUrl, { configOverrides = {}, clock } = {}) {
+  const config = testConfig(databaseUrl, configOverrides);
+  const app = await createApp({ config, clock });
+  const { server, port } = await createStaticServer(app, config);
+  config.port = port;
+  config.publicUrl = `http://127.0.0.1:${port}`;
+  config.publicOrigin = new URL(config.publicUrl);
   return {
-    server,
-    base,
+    app,
+    config,
     port,
+    base: config.publicUrl,
     async close() {
       await new Promise((resolve) => server.close(resolve));
+      await app.close();
     },
   };
 }
 
-export function request(base, method, path, { body, headers = {} } = {}) {
+export function request(base, method, path, { body, headers = {}, cookies = [] } = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(path, base);
     const payload = body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body);
@@ -26,6 +35,7 @@ export function request(base, method, path, { body, headers = {} } = {}) {
         method,
         headers: {
           ...(payload !== undefined ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) } : {}),
+          ...(cookies.length ? { Cookie: cookies.join("; ") } : {}),
           ...headers,
         },
       },
@@ -36,7 +46,13 @@ export function request(base, method, path, { body, headers = {} } = {}) {
         res.on("end", () => {
           let json;
           try { json = data === "" ? undefined : JSON.parse(data); } catch { json = undefined; }
-          resolve({ status: res.statusCode, headers: res.headers, body: json, raw: data });
+          resolve({
+            status: res.statusCode,
+            headers: res.headers,
+            setCookies: res.headers["set-cookie"] ?? [],
+            body: json,
+            raw: data,
+          });
         });
       },
     );
@@ -46,8 +62,17 @@ export function request(base, method, path, { body, headers = {} } = {}) {
   });
 }
 
-export async function login(base, username, password) {
+export function cookieValue(setCookies, name) {
+  for (const item of setCookies) {
+    const pair = item.split(";")[0];
+    if (pair.startsWith(`${name}=`)) return pair;
+  }
+  return "";
+}
+
+export async function login(base, username = "userA", password = "demo1234") {
   const res = await request(base, "POST", "/api/auth/login", { body: { username, password } });
-  const cookie = res.headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
-  return { res, cookie };
+  const session = cookieValue(res.setCookies, "fruitlab_session");
+  const csrf = cookieValue(res.setCookies, "fruitlab_csrf");
+  return { res, session, csrfToken: csrf.split("=")[1] ?? "" };
 }

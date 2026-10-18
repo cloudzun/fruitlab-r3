@@ -535,7 +535,7 @@ function createFakeServer(options = {}) {
       const order = server.orders.find((candidate) => candidate.orderNumber === target);
       if (!order) return apiFailure(404, "order-not-found");
       if (order.username !== server.session.username && !adminOnly()) {
-        return apiFailure(403, "order-not-owned");
+        return apiFailure(404, "order-not-found");
       }
       return jsonResponse(200, { ok: true, order: { ...order } });
     }
@@ -1075,7 +1075,7 @@ test("lookup finds an order, focuses the heading and clears stale results on inp
   }
 });
 
-test("lookup reports horizontal privilege errors with specific copy", async () => {
+test("lookup hides other users' orders with not-found copy", async () => {
   const { document, restore } = await boot({
     session: { username: "userA", role: "user" },
     orders: [makeOrderFixture({ orderNumber: "FL-20261018-120000-B7K2", username: "userB" })],
@@ -1088,7 +1088,7 @@ test("lookup reports horizontal privilege errors with specific copy", async () =
 
     assert.match(
       document.getElementById("lookup-message").textContent,
-      /该订单属于其他账号，无法查看/,
+      /未找到该订单/,
     );
   } finally {
     restore();

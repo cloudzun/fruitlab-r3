@@ -16,7 +16,7 @@ function read(name) {
 const spec = read("SPEC.md");
 const decisions = read("DECISIONS.md");
 const acDefined = new Set([...spec.matchAll(/^\| (AC-\d+) \|/gm)].map((m) => m[1]));
-const obDefined = new Set([...decisions.matchAll(/^\| (OB-[A-Z]+-\d{2}) \|/gm)].map((m) => m[1]));
+const obDefined = new Set([...decisions.matchAll(/^\| (OB-R3-[A-Z]+-\d{2}) \|/gm)].map((m) => m[1]));
 
 const documents = ["SPEC.md", "DECISIONS.md", "BUILD.md", "README.md", "review.md", "qa-report.md", "retro.md"];
 for (const name of documents) {
@@ -25,12 +25,12 @@ for (const name of documents) {
   for (const match of text.matchAll(/\b(AC-\d+)\b/g)) {
     if (!acDefined.has(match[1])) problems.push(`${name}: ${match[1]} 未在 SPEC.md 定义`);
   }
-  for (const match of text.matchAll(/\b(OB-[A-Z]+-\d{2})\b/g)) {
+  for (const match of text.matchAll(/\b(OB-R3-[A-Z]+-\d{2})\b/g)) {
     if (!obDefined.has(match[1])) problems.push(`${name}: ${match[1]} 未在 DECISIONS.md 定义`);
   }
 }
 
-if (acDefined.size < 40) problems.push(`SPEC.md 的 AC 数量异常: ${acDefined.size}`);
+if (acDefined.size < 60) problems.push(`SPEC.md 的 AC 数量异常: ${acDefined.size}`);
 if (obDefined.size !== 42) problems.push(`DECISIONS.md 的义务数量应为 42，实际 ${obDefined.size}`);
 
 if (problems.length > 0) {

@@ -211,9 +211,11 @@ test("retired frontend modules are gone and no file imports them", async () => {
   }
 });
 
-test("project remains dependency-free and has no generated build directory", async () => {
+test("runtime dependency set is exactly pg and no generated build directory exists", async () => {
+  const pkg = JSON.parse(await readFile(path.join(ROOT, "package.json"), "utf8"));
+  assert.deepEqual(Object.keys(pkg.dependencies ?? {}).sort(), ["pg"]);
+  assert.deepEqual(Object.keys(pkg.devDependencies ?? {}), []);
+  assert.equal(pkg.engines.node, ">=22.0.0");
   const rootEntries = await readdir(ROOT);
-  assert.equal(rootEntries.includes("package.json"), false);
-  assert.equal(rootEntries.includes("node_modules"), false);
   assert.equal(rootEntries.includes("dist"), false);
 });

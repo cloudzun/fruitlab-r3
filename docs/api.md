@@ -1,57 +1,74 @@
-# API 契约（R2）
+# API 契约（R3）
 
-> 唯一真源：`SPEC.md` §5.2 + `docs/error-catalog.md`。本文件给实现者与前端用的形状摘要。
-> 所有 `/api/*` 响应为 JSON；成功 `{ "ok": true, ... }`；失败 `{ "ok": false, "code", "message", "details"? }`。
-> 认证：`fruitlab_session` Cookie（`HttpOnly; SameSite=Lax`），同源 `fetch` 需 `credentials: "same-origin"`。
+> 统一前缀 `/api`；成功 `{ok:true,...}`；失败 `{ok:false,code,message,details?}`；所有响应带 `X-Request-Id`、`Cache-Control: no-store`。
+> 错误码唯一真源：`docs/error-catalog.md`；判定优先级见 `SPEC.md` §5.4。
 
-## 端点
+## 1. 认证
 
-| 方法 | 路径 | 权限 | 请求体 | 成功 |
-|---|---|---|---|---|
-| GET | `/api/health` | 公开 | — | `{ok, version, schemaVersion, dbPath, port, seeded, uptimeSeconds}` |
-| GET | `/api/products` | 公开 | — | `{ok, products: Product[]}`（只含 `listed=1`） |
-| POST | `/api/auth/register` | 公开 | `{username,password}` | 201 `{ok, user}` |
-| POST | `/api/auth/login` | 公开 | `{username,password}` | 200 `{ok, user}` + `Set-Cookie` |
-| POST | `/api/auth/logout` | 会话 | — | 204（删除服务端会话 + 清 Cookie） |
-| GET | `/api/auth/me` | 公开 | — | 200 `{ok, user}` 或 401 |
-| POST | `/api/orders` | 登录 | `{items:[{productId,quantity}], clientOrderId}` | 201 新建 / 200 幂等命中 `{ok, order}` |
-| GET | `/api/orders/mine` | 登录 | — | `{ok, orders: Order[]}`（≤100，倒序） |
-| GET | `/api/orders/{orderNumber}` | 登录 | — | `{ok, order}`；他人 403 `order-not-owned` |
-| GET | `/api/admin/orders` | admin | — | `{ok, orders: Order[]}`（含 `username`、`itemCount`） |
-| GET | `/api/admin/products` | admin | — | `{ok, products: Product[]}`（含下架） |
-| PATCH | `/api/admin/products/{id}` | admin | `{unitPriceCents?, stock?, listed?}` | `{ok, product}` |
+### POST /api/auth/register
+请求：`{"username":"userA","password":"demo1234"}` → `201 {"ok":true,"user":{"id":"U...","username":"userA","role":"user"}}`
+失败：400 `invalid-username`/`invalid-password`；409 `auth-username-taken`。
 
-## 形状
+### POST /api/auth/login
+请求：`{"username":"userA","password":"demo1234"}` → `200 {"ok":true,"user":{...}}`
+`Set-Cookie: fruitlab_session=...; HttpOnly; SameSite=Lax; Max-Age=...` + `fruitlab_csrf=...`（JS 可读）。
+失败：401 `auth-invalid-credentials`；429 `auth-rate-limited`（带 `Retry-After`）。
 
-```json
-// Product
-{ "id": "fuji-apple", "name": "红富士苹果", "unit": "500g", "unitPriceCents": 1299,
-  "stock": 120, "listed": true, "soldOut": false,
-  "image": "assets/images/products/fuji-apple.jpg", "alt": "红富士苹果 500g",
-  "description": "脆甜多汁，果香清亮", "sortOrder": 1 }
+### POST /api/auth/logout
+无请求体；有会话时需 CSRF 头。→ `204`，清两个 Cookie。
 
-// Order
-{ "orderNumber": "FL-20261018-081500-A7K2", "userId": "U...", "createdAt": "2026-10-18T08:15:00.000Z",
-  "subtotalCents": 2598,
-  "items": [ { "productId": "fuji-apple", "name": "红富士苹果", "unit": "500g",
-               "quantity": 2, "unitPriceCents": 1299, "subtotalCents": 2598 } ] }
-```
+### GET /api/auth/me
+→ `200 {"ok":true,"user":{"id","username","role"}}` 或 `401 auth-required`。
 
-## 请求约束
+## 2. 商品
 
-- `Content-Type: application/json`（POST/PATCH），否则 415；
-- 请求体 ≤ 65536 字节，否则 413；
-- 单笔订单最多 10 种商品；同一 `productId` 重复出现会合并数量，合并后数量仍须 1–99；
-- `clientOrderId` 8–128 字符，用于下单幂等；
-- 状态变更请求若带 `Origin` 必须与 `Host` 同源；`Sec-Fetch-Site` 只允许 `same-origin` / `none`；缺失头按非浏览器客户端放行（风险见 `DECISIONS.md` D-27/OB-ENG-04）。
+### GET /api/products
+→ `200 {"ok":true,"products":[{id,name,unit,unitPriceCents,stock,soldOut,image,alt,description,sortOrder}]}`（只含上架）。
 
-## 示例（curl，本机）
+### GET /api/admin/products（admin）
+→ 含下架商品的全量列表。
+
+### PATCH /api/admin/products/{id}（admin + CSRF）
+请求：`{"unitPriceCents"?:int,"stock"?:int,"listed"?:boolean}` → `200 {"ok":true,"product":{...}}`
+失败：400 `invalid-price`/`invalid-stock`/`invalid-listed`；404 `product-not-found`。
+
+## 3. 订单
+
+### POST /api/orders（登录 + CSRF）
+请求：`{"items":[{"productId":"banana","quantity":2}],"clientOrderId":"8-128-chars"}`
+→ `201 {"ok":true,"order":{orderNumber,userId,createdAt,subtotalCents,items:[...]}}`；同一 `clientOrderId` 重放 → `200` 同一订单。
+失败：400 `invalid-quantity`/`invalid-request`；404 `product-not-found`；409 `product-unlisted`/`insufficient-stock`/`order-number-exhausted`。
+
+### GET /api/orders/mine（登录）
+→ `200 {"ok":true,"orders":[...]}`（创建时间倒序）。
+
+### GET /api/orders/{orderNumber}（登录）
+自己的订单 200；**他人订单与不存在都返回 404 `order-not-found`**；admin 可查任意。
+
+### GET /api/admin/orders（admin）
+→ 全部订单（含 username/itemCount 摘要）。
+
+## 4. 健康
+
+### GET /api/health
+→ `200 {"ok":true,"db":"up","schemaVersion":1,"version":"3.0.0.0","seeded":true,"uptimeSeconds":n}`
+DB 不可达/超时 → `503 {"ok":false,"code":"db-unavailable","db":"down","message":...}`（≤ `healthTimeoutMs`，默认 3s）。
+
+## 5. 写请求的 CSRF 流程
+
+1. 页面先发安全请求（`GET /api/health` / `/api/products` / `/api/auth/me`）→ 服务端下发 `fruitlab_csrf`；
+2. 写请求带 `X-CSRF-Token: <cookie 值>`；
+3. 缺失/不符 → `403 csrf-token-invalid`；前端 `api-client` 自动补 token 并重试一次；
+4. 登录/注册无会话，不要求 token，仅受 Origin/Host 保护。
+
+## 6. 示例（curl）
 
 ```bash
-curl -i -c cookies.txt -H "Content-Type: application/json" \
-  -d '{"username":"userA","password":"demo1234"}' http://127.0.0.1:4174/api/auth/login
-
-curl -b cookies.txt -H "Content-Type: application/json" \
-  -d '{"items":[{"productId":"fuji-apple","quantity":2}],"clientOrderId":"demo-0001"}' \
-  http://127.0.0.1:4174/api/orders
+curl -s http://127.0.0.1:4175/api/health
+curl -s -c cookies.txt -H 'Content-Type: application/json' \
+  -d '{"username":"userA","password":"demo1234"}' http://127.0.0.1:4175/api/auth/login
+CSRF=$(awk '$6=="fruitlab_csrf" {print $7}' cookies.txt)
+curl -s -b cookies.txt -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' \
+  -d '{"items":[{"productId":"banana","quantity":1}],"clientOrderId":"curl-order-0001"}' \
+  http://127.0.0.1:4175/api/orders
 ```

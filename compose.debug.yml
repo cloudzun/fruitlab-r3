@@ -1,0 +1,6 @@
+# 调试覆盖：把 db 暴露到宿主 55432，供 psql/pg_dump 排查。
+# 用法：wsl -e docker compose -f docker-compose.yml -f compose.debug.yml up -d
+services:
+  db:
+    ports:
+      - "55432:5432"

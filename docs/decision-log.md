@@ -166,7 +166,7 @@
 | D-99 | web 加 `/healthz` + compose healthcheck | 只查 api/db | E-05：Caddy 坏也被当 running | compose/AC-86 | accepted |
 | D-100 | restore：停 api→断连→`--single-transaction --exit-on-error`→校验→启 api | 直接 pg_restore | E-06：锁等待/部分删除 | 备份恢复/AC-109 | accepted |
 | D-101 | CLI 增 `db restore --in --yes`（JSON Lines 往返）；compose 挂 `./backups` | 只有 pg_dump | E-07/DX-03：备份无恢复不闭环 | CLI/AC-109 | accepted |
-| D-102 | 测试池 max=2、`--test-concurrency=4`、清理残留、120s 预算；`test-pg.mjs up/status/down` | 默认并发/默认池 | E-08：撞 max_connections/耗时 | 测试基础设施 | accepted |
+| D-102 | 测试池 max=2、`--test-concurrency=4`、清理残留、120s 预算；`pgctl.mjs up/status/down` | 默认并发/默认池 | E-08：撞 max_connections/耗时 | 测试基础设施 | accepted |
 | D-103 | 两桶限流：账号 5/15min + IP 50/15min | 只 username+IP | E-09：同 IP 可喷洒账号 | auth/测试 | accepted |
 | D-104 | CSRF 登录/轮换重发 token；Secure 跟随；登出清两 Cookie；客户端 403 重试一次 | 缺失才补发 | E-10/DES-02：token fixation/无恢复 | auth/前端 | accepted |
 | D-105 | int8 显式安全解析（`Number.isSafeInteger`），ID 不暴露 | 全局 setTypeParser | E-11：精度风险 | db/contracts | accepted |

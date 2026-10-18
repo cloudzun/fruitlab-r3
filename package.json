@@ -1,0 +1,22 @@
+{
+  "name": "fruitlab-r3",
+  "version": "3.0.0",
+  "private": true,
+  "description": "FruitLab R3 - Postgres, layered architecture, deployable classroom demo",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "npm@10.9.3",
+  "scripts": {
+    "dev": "node cli.mjs dev",
+    "start": "node serve.mjs",
+    "test": "node --test --test-concurrency=4",
+    "verify": "node scripts/verify.mjs",
+    "verify:quick": "node scripts/verify.mjs --quick",
+    "preflight": "node scripts/preflight.mjs"
+  },
+  "dependencies": {
+    "pg": "8.23.1"
+  }
+}

@@ -61,7 +61,7 @@ Native result: **5.0/10, FAIL**。核心判断：没有“干净 checkout → �
 | DX-02 | High | 包版本 4 段非法 SemVer | **接受**：`VERSION=3.0.0.0` / 包 `3.0.0`；engines/packageManager；AC-55/101 | OB-R3-DX-02 |
 | DX-03 | High | 备份/恢复不闭环（无 restore、容器 backups 不持久、硬编码身份） | **接受**：CLI `db restore --in --yes`；compose 挂 `./backups`；pg_dump 为生产路径 | OB-R3-DX-03 |
 | DX-04 | High | `HOST/PUBLIC_URL` 未冻结，Caddy/healthcheck 可能不可达 | **接受**：`HOST=0.0.0.0` + Public URL 派生；AC-99 | OB-R3-DX-04 |
-| DX-05 | Medium | 测试 PG 无 readiness/清理/双引擎写法 | **接受**：`scripts/test-pg.mjs up/status/down`；AC-118 | OB-R3-DX-05 |
+| DX-05 | Medium | 测试 PG 无 readiness/清理/双引擎写法 | **接受**：`scripts/pgctl.mjs up/status/down`；AC-118 | OB-R3-DX-05 |
 | DX-06 | Medium | CLI 伪语法、无完整命令矩阵/JSON 信封 | **接受**：`docs/cli.md` 矩阵 + help/文档/解析器一致性测试 | OB-R3-DX-06 |
 | DX-07 | Medium | `verify` 无 preflight/分层模式 | **接受**：`verify --quick/--full` + preflight 输出；AC-113 | OB-R3-DX-07 |
 | DX-08 | Medium | 路径硬编码、无 PowerShell 包装 | **接受**：相对路径 + `wslpath` + `backup.ps1/restore.ps1` | OB-R3-DX-08 |
@@ -122,7 +122,7 @@ Native result: **7.0/10, FAIL**。核心判断：方向可实施，但 reset 事
 | OB-R3-DX-02 | `VERSION`/包版本分离 + engines/packageManager | 版本校验测试 |
 | OB-R3-DX-03 | CLI `db restore` + 容器 backups 卷 + 往返 | CLI 测试 + AC-109 |
 | OB-R3-DX-04 | `HOST=0.0.0.0` + `PUBLIC_URL` 派生 + 三层探活 | compose + 容器测试 |
-| OB-R3-DX-05 | `test-pg.mjs up/status/down` readiness/清理 | 脚本 + README + AC-118 |
+| OB-R3-DX-05 | `pgctl.mjs up/status/down` readiness/清理 | 脚本 + README + AC-118 |
 | OB-R3-DX-06 | `docs/cli.md` 命令矩阵 + help 一致测试 | 文档 + 表驱动测试 |
 | OB-R3-DX-07 | `verify --quick/--full` + preflight | 脚本输出 + AC-113 |
 | OB-R3-DX-08 | 路径可移植 + PowerShell backup/restore 包装 | 脚本 + README |

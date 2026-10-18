@@ -1,43 +1,56 @@
 # 测试计数（唯一权威来源）
 
-- 命令: node --test
-- 时间: 2026-10-18T01:39:10.370Z
-- git: 17a1c0e497fb5b21555816c7f208ff0928c72711
-- 结果: tests=96 pass=96 fail=0 skipped=0 todo=0
+- 命令: node --test --test-concurrency=4
+- 时间: 2026-10-18T03:35:01.677Z
+- git: 3114f6bccec95e989d65da0ff16547a424b992c7
+- git 状态: 71 dirty path(s)
+- tree hash: 1f8dd7ba3a93202338ef754b83eb53e0ce99dbc7
+- 结果: tests=128 pass=128 fail=0 skipped=0 todo=0
 
 ## 原始输出（尾部）
 
 ```text
-  duration_ms: 1.4547
+  ...
+# Subtest: layout uses 4/3/2/1 product columns and respects reduced motion
+ok 124 - layout uses 4/3/2/1 product columns and respects reduced motion
+  ---
+  duration_ms: 0.6478
+  type: 'test'
+  ...
+# Subtest: visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
+ok 125 - visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
+  ---
+  duration_ms: 1.2083
   type: 'test'
   ...
 # Subtest: product cards use local photos, alt text, and stable quantity controls
-ok 94 - product cards use local photos, alt text, and stable quantity controls
+ok 126 - product cards use local photos, alt text, and stable quantity controls
   ---
-  duration_ms: 0.9405
+  duration_ms: 0.8067
   type: 'test'
   ...
 # Subtest: retired frontend modules are gone and no file imports them
-ok 95 - retired frontend modules are gone and no file imports them
+ok 127 - retired frontend modules are gone and no file imports them
   ---
-  duration_ms: 1.5337
+  duration_ms: 1.9277
   type: 'test'
   ...
-# Subtest: project remains dependency-free and has no generated build directory
-ok 96 - project remains dependency-free and has no generated build directory
+# Subtest: runtime dependency set is exactly pg and no generated build directory exists
+ok 128 - runtime dependency set is exactly pg and no generated build directory exists
   ---
-  duration_ms: 0.3393
+  duration_ms: 1.1774
   type: 'test'
   ...
-1..96
-# tests 96
+1..128
+# tests 128
 # suites 0
-# pass 96
+# pass 128
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 2539.3209
+# duration_ms 10432.7674
 ```
 
 > 其它文档出现计数时必须引用本文件；不得手写数字。
+> `git 状态`/`tree hash` 用于复现“计数对应哪棵树”（R2 只记 HEAD 的改进）。

@@ -1,112 +1,259 @@
+// DB 集成测试：真实 Postgres，每个用例独立数据库。
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createTempDb } from "./helpers/db.mjs";
-import { schemaVersion, migrate, isSeeded } from "../server/db.mjs";
-import { findUserByUsername } from "../server/auth.mjs";
-import { createOrder, getOrderByNumber, listOrdersByUser } from "../server/orders.mjs";
+import { createTestDatabase, dropStaleTestDatabases } from "./helpers/pg.mjs";
+import {
+  migrate,
+  withTransaction,
+  schemaVersion,
+  isSeeded,
+  resetDatabase,
+  runMigrations,
+  verifyMigrationChecksums,
+} from "../server/db.mjs";
+import { hashPassword } from "../server/auth.mjs";
+import { seedClassroom } from "../server/seed.mjs";
+import * as users from "../server/repositories/users.mjs";
+import * as products from "../server/repositories/products.mjs";
+import * as orders from "../server/repositories/orders.mjs";
+import { createOrderService, normalizeItems, OrderFailure } from "../server/services/orders.mjs";
+import { createCatalogService } from "../server/services/catalog.mjs";
 
-test("migrate is idempotent and sets schema version 1", () => {
-  const t = createTempDb();
+const repos = { users, products, orders };
+const clock = () => new Date("2026-10-18T04:00:00.000Z");
+const orderService = (pool) => createOrderService({ pool, repos, clock });
+
+test("migrate is idempotent, records version + checksum", async () => {
+  const db = await createTestDatabase({ seed: false });
   try {
-    migrate(t.db);
-    assert.equal(schemaVersion(t.db), 1);
-    assert.equal(isSeeded(t.db), true);
-  } finally { t.close(); }
+    assert.equal(await schemaVersion(db.pool), 1);
+    await withTransaction(db.pool, (client) => migrate(client));
+    assert.equal(await schemaVersion(db.pool), 1);
+    assert.deepEqual(await verifyMigrationChecksums(db.pool), []);
+    assert.equal(await isSeeded(db.pool), false);
+  } finally {
+    await db.close();
+  }
 });
 
-test("seed writes 14 products and 3 demo users", () => {
-  const t = createTempDb();
+test("seed is idempotent: 14 products + 3 classroom users", async () => {
+  const db = await createTestDatabase();
   try {
-    assert.equal(t.db.prepare("SELECT COUNT(*) AS n FROM products").get().n, 14);
-    assert.equal(t.db.prepare("SELECT COUNT(*) AS n FROM users").get().n, 3);
-  } finally { t.close(); }
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM products")).rows[0].n, 14);
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM users")).rows[0].n, 3);
+    await withTransaction(db.pool, (client) => seedClassroom(client, { hashPassword, demoPassword: "demo1234" }));
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM products")).rows[0].n, 14);
+    assert.equal(await isSeeded(db.pool), true);
+  } finally {
+    await db.close();
+  }
 });
 
-test("username is unique", () => {
-  const t = createTempDb();
+test("database constraints reject duplicate username and short clientOrderId", async () => {
+  const db = await createTestDatabase();
   try {
-    const user = findUserByUsername(t.db, "userA");
-    assert.throws(() => {
-      t.db.prepare("INSERT INTO users (user_id, username, password_hash, role, created_at) VALUES (?,?,?,?,?)")
-        .run("Ux", "userA", "h", "user", new Date().toISOString());
-    });
-    assert.equal(user.username, "userA");
-  } finally { t.close(); }
+    await assert.rejects(
+      () => users.create(db.pool, { id: "Udup", username: "userA", passwordHash: "x", role: "user", createdAt: new Date() }),
+      (error) => error.code === "23505",
+    );
+    await assert.rejects(
+      () => db.pool.query(
+        "INSERT INTO orders (order_number, user_id, client_order_id, subtotal_cents, created_at) VALUES ('FL-20261018-000000-AAAA', 'Umissing', 'short', 1, now())",
+      ),
+      (error) => ["23503", "23514"].includes(error.code),
+    );
+  } finally {
+    await db.close();
+  }
 });
 
-test("checkout decrements stock, creates order, and is idempotent by clientOrderId", () => {
-  const t = createTempDb();
+test("checkout creates order, snapshots prices and decrements stock", async () => {
+  const db = await createTestDatabase();
   try {
-    const user = findUserByUsername(t.db, "userA");
-    const before = t.db.prepare("SELECT stock FROM products WHERE product_id = 'fuji-apple'").get().stock;
-    const first = createOrder(t.db, {
+    const before = await products.get(db.pool, "banana");
+    const user = await users.findByUsername(db.pool, "userA");
+    const result = await orderService(db.pool).checkout({
       userId: user.id,
-      items: [{ productId: "fuji-apple", quantity: 2 }],
-      clientOrderId: "client-0001",
+      items: [{ productId: "banana", quantity: 2 }],
+      clientOrderId: "test-order-0001",
     });
-    assert.equal(first.ok, true);
+    assert.equal(result.status, "created");
+    assert.equal(result.order.items[0].unitPriceCents, before.unitPriceCents);
+    assert.equal(result.order.subtotalCents, before.unitPriceCents * 2);
+    assert.equal((await products.get(db.pool, "banana")).stock, before.stock - 2);
+  } finally {
+    await db.close();
+  }
+});
+
+test("insufficient stock rolls back: no order, stock unchanged", async () => {
+  const db = await createTestDatabase();
+  try {
+    await products.update(db.pool, "banana", { stock: 1 });
+    const user = await users.findByUsername(db.pool, "userA");
+    await assert.rejects(
+      () => orderService(db.pool).checkout({ userId: user.id, items: [{ productId: "banana", quantity: 2 }], clientOrderId: "test-order-0002" }),
+      (error) => error instanceof OrderFailure && error.code === "insufficient-stock",
+    );
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM orders")).rows[0].n, 0);
+    assert.equal((await products.get(db.pool, "banana")).stock, 1);
+  } finally {
+    await db.close();
+  }
+});
+
+test("unlisted product cannot be ordered", async () => {
+  const db = await createTestDatabase();
+  try {
+    await products.update(db.pool, "banana", { listed: false });
+    const user = await users.findByUsername(db.pool, "userA");
+    await assert.rejects(
+      () => orderService(db.pool).checkout({ userId: user.id, items: [{ productId: "banana", quantity: 1 }], clientOrderId: "test-order-0003" }),
+      (error) => error.code === "product-unlisted",
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("same clientOrderId returns the existing order without double deduction", async () => {
+  const db = await createTestDatabase();
+  try {
+    const user = await users.findByUsername(db.pool, "userA");
+    const service = orderService(db.pool);
+    const first = await service.checkout({ userId: user.id, items: [{ productId: "banana", quantity: 1 }], clientOrderId: "test-idem-0001" });
+    const second = await service.checkout({ userId: user.id, items: [{ productId: "banana", quantity: 1 }], clientOrderId: "test-idem-0001" });
     assert.equal(first.status, "created");
-    assert.match(first.order.orderNumber, /^FL-\d{8}-\d{6}-[A-Z0-9]{4}$/);
-    assert.equal(first.order.items.length, 1);
-    assert.equal(first.order.subtotalCents, 2598);
-    assert.equal(t.db.prepare("SELECT stock FROM products WHERE product_id = 'fuji-apple'").get().stock, before - 2);
-
-    const second = createOrder(t.db, {
-      userId: user.id,
-      items: [{ productId: "fuji-apple", quantity: 2 }],
-      clientOrderId: "client-0001",
-    });
-    assert.equal(second.ok, true);
     assert.equal(second.status, "existing");
-    assert.equal(second.order.orderNumber, first.order.orderNumber);
-    assert.equal(t.db.prepare("SELECT COUNT(*) AS n FROM orders").get().n, 1);
-    assert.equal(t.db.prepare("SELECT stock FROM products WHERE product_id = 'fuji-apple'").get().stock, before - 2);
-  } finally { t.close(); }
+    assert.equal(first.order.orderNumber, second.order.orderNumber);
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM orders")).rows[0].n, 1);
+  } finally {
+    await db.close();
+  }
 });
 
-test("insufficient stock rolls back and writes no order", () => {
-  const t = createTempDb();
+test("concurrent checkout with stock 1: one success, one insufficient, stock 0", async () => {
+  const db = await createTestDatabase();
   try {
-    const user = findUserByUsername(t.db, "userA");
-    const before = t.db.prepare("SELECT stock FROM products WHERE product_id = 'durian'").get().stock;
-    const result = createOrder(t.db, {
-      userId: user.id,
-      items: [{ productId: "durian", quantity: 99 }, { productId: "fuji-apple", quantity: 1 }],
-      clientOrderId: "client-0002",
+    await products.update(db.pool, "banana", { stock: 1 });
+    const user = await users.findByUsername(db.pool, "userA");
+    const service = orderService(db.pool);
+    const results = await Promise.allSettled([
+      service.checkout({ userId: user.id, items: [{ productId: "banana", quantity: 1 }], clientOrderId: "test-conc-0001" }),
+      service.checkout({ userId: user.id, items: [{ productId: "banana", quantity: 1 }], clientOrderId: "test-conc-0002" }),
+    ]);
+    const fulfilled = results.filter((item) => item.status === "fulfilled");
+    const rejected = results.filter((item) => item.status === "rejected");
+    assert.equal(fulfilled.length, 1);
+    assert.equal(rejected.length, 1);
+    assert.equal(rejected[0].reason.code, "insufficient-stock");
+    assert.equal((await products.get(db.pool, "banana")).stock, 0);
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM orders")).rows[0].n, 1);
+  } finally {
+    await db.close();
+  }
+});
+
+test("concurrent same clientOrderId: one created, one existing, stock deducted once", async () => {
+  const db = await createTestDatabase();
+  try {
+    const user = await users.findByUsername(db.pool, "userA");
+    const service = orderService(db.pool);
+    const results = await Promise.all([
+      service.checkout({ userId: user.id, items: [{ productId: "peach", quantity: 1 }], clientOrderId: "test-same-0001" }),
+      service.checkout({ userId: user.id, items: [{ productId: "peach", quantity: 1 }], clientOrderId: "test-same-0001" }),
+    ]);
+    assert.deepEqual(results.map((item) => item.status).sort(), ["created", "existing"]);
+    assert.equal(results[0].order.orderNumber, results[1].order.orderNumber);
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM orders")).rows[0].n, 1);
+    assert.equal((await products.get(db.pool, "peach")).stock, 69);
+  } finally {
+    await db.close();
+  }
+});
+
+test("reverse-order carts do not deadlock (sorted stock deduction)", async () => {
+  const db = await createTestDatabase();
+  try {
+    const user = await users.findByUsername(db.pool, "userA");
+    const service = orderService(db.pool);
+    const [first, second] = await Promise.all([
+      service.checkout({ userId: user.id, items: [{ productId: "durian", quantity: 1 }, { productId: "banana", quantity: 1 }], clientOrderId: "test-lock-0001" }),
+      service.checkout({ userId: user.id, items: [{ productId: "banana", quantity: 1 }, { productId: "durian", quantity: 1 }], clientOrderId: "test-lock-0002" }),
+    ]);
+    assert.equal(first.status, "created");
+    assert.equal(second.status, "created");
+    assert.equal((await products.get(db.pool, "banana")).stock, 88);
+    assert.equal((await products.get(db.pool, "durian")).stock, 28);
+  } finally {
+    await db.close();
+  }
+});
+
+test("normalizeItems merges duplicates, caps 10 items and sorts productIds", () => {
+  const merged = normalizeItems([{ productId: "b", quantity: 2 }, { productId: "a", quantity: 1 }, { productId: "b", quantity: 1 }]);
+  assert.deepEqual(merged.map((item) => item.productId), ["a", "b"]);
+  assert.equal(merged.find((item) => item.productId === "b").quantity, 3);
+  assert.throws(() => normalizeItems([{ productId: "a", quantity: 100 }]), (error) => error.code === "invalid-quantity");
+  const many = Array.from({ length: 11 }, (_, index) => ({ productId: `p${index}`, quantity: 1 }));
+  assert.throws(() => normalizeItems(many), (error) => error.code === "invalid-request");
+});
+
+test("concurrent db migrate is serialized by advisory lock", async () => {
+  const db = await createTestDatabase({ seed: false });
+  try {
+    const [first, second] = await Promise.all([runMigrations(db.pool), runMigrations(db.pool)]);
+    assert.equal(first, 1);
+    assert.equal(second, 1);
+    assert.deepEqual(await verifyMigrationChecksums(db.pool), []);
+  } finally {
+    await db.close();
+  }
+});
+
+test("resetDatabase rolls back entirely when seed fails (original data preserved)", async () => {
+  const db = await createTestDatabase();
+  try {
+    await assert.rejects(
+      () => resetDatabase(db.pool, { seed: async () => { throw new Error("seed boom"); } }),
+      /seed boom/,
+    );
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM products")).rows[0].n, 14);
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM users")).rows[0].n, 3);
+  } finally {
+    await db.close();
+  }
+});
+
+test("resetDatabase rebuilds schema and seed in one transaction", async () => {
+  const db = await createTestDatabase();
+  try {
+    await products.update(db.pool, "banana", { stock: 1 });
+    await resetDatabase(db.pool, {
+      seed: (client) => seedClassroom(client, { hashPassword, demoPassword: "demo1234" }),
     });
-    assert.equal(result.ok, false);
-    assert.equal(result.code, "insufficient-stock");
-    assert.equal(t.db.prepare("SELECT COUNT(*) AS n FROM orders").get().n, 0);
-    assert.equal(t.db.prepare("SELECT COUNT(*) AS n FROM order_items").get().n, 0);
-    assert.equal(t.db.prepare("SELECT stock FROM products WHERE product_id = 'durian'").get().stock, before);
-  } finally { t.close(); }
+    assert.equal((await products.get(db.pool, "banana")).stock, 90);
+    assert.equal((await db.pool.query("SELECT COUNT(*)::int AS n FROM users")).rows[0].n, 3);
+  } finally {
+    await db.close();
+  }
 });
 
-test("unlisted product cannot be ordered", () => {
-  const t = createTempDb();
+test("catalog service validates price/stock/listed bounds", async () => {
+  const db = await createTestDatabase();
   try {
-    t.db.prepare("UPDATE products SET listed = 0 WHERE product_id = 'banana'").run();
-    const user = findUserByUsername(t.db, "userA");
-    const result = createOrder(t.db, {
-      userId: user.id,
-      items: [{ productId: "banana", quantity: 1 }],
-      clientOrderId: "client-0003",
-    });
-    assert.equal(result.ok, false);
-    assert.equal(result.code, "product-unlisted");
-  } finally { t.close(); }
+    const catalog = createCatalogService({ pool: db.pool, repos });
+    assert.equal((await catalog.listPublic()).length, 14);
+    await assert.rejects(() => catalog.updateProduct("banana", { unitPriceCents: -1 }), (error) => error.code === "invalid-price");
+    await assert.rejects(() => catalog.updateProduct("banana", { stock: 100000 }), (error) => error.code === "invalid-stock");
+    await assert.rejects(() => catalog.updateProduct("banana", { listed: "yes" }), (error) => error.code === "invalid-listed");
+    await assert.rejects(() => catalog.updateProduct("missing", { stock: 1 }), (error) => error.code === "product-not-found");
+  } finally {
+    await db.close();
+  }
 });
 
-test("orders are scoped to their owner", () => {
-  const t = createTempDb();
-  try {
-    const a = findUserByUsername(t.db, "userA");
-    const b = findUserByUsername(t.db, "userB");
-    createOrder(t.db, { userId: a.id, items: [{ productId: "banana", quantity: 1 }], clientOrderId: "client-a1" });
-    createOrder(t.db, { userId: b.id, items: [{ productId: "peach", quantity: 1 }], clientOrderId: "client-b1" });
-    assert.equal(listOrdersByUser(t.db, a.id).length, 1);
-    assert.equal(listOrdersByUser(t.db, b.id).length, 1);
-    const orderA = listOrdersByUser(t.db, a.id)[0];
-    assert.equal(getOrderByNumber(t.db, orderA.orderNumber).userId, a.id);
-  } finally { t.close(); }
+test("stale test databases are removable", async () => {
+  await dropStaleTestDatabases();
+  assert.ok(true);
 });

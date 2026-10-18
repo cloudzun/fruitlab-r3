@@ -1,14 +1,32 @@
-// API 路由：统一信封 {ok:true,...} / {ok:false,code,message}。
-// 静态层错误仍用 problem+json（见 serve.mjs）；两者边界在 docs/contracts.md。
+// HTTP 层：只做协议（Host/Origin、体读取、路由/405、信封、Cookie、状态码）。
+// 依赖规则：不得 import pg / repositories / db（tests/layering.test.mjs 断言）。
 import crypto from "node:crypto";
-import path from "node:path";
-import { createSession, deleteSession, findUserByUsername, getSessionUser, listUsers, createUser, sessionCookie, clearSessionCookie, parseCookies, COOKIE_NAME, verifyPassword, validateCredentials } from "./auth.mjs";
-import { getProduct, listProducts, updateProduct } from "./products.mjs";
-import { createOrder, getOrderByNumber, listAllOrders, listOrdersByUser } from "./orders.mjs";
-import { schemaVersion, isSeeded } from "./db.mjs";
-import { errorBody, statusFor } from "./errors.mjs";
+import { errorBody, statusFor, toAppError, isConnectionError } from "./errors.mjs";
+import {
+  COOKIE_NAME,
+  CSRF_COOKIE_NAME,
+  parseCookies,
+  sessionCookie,
+  clearSessionCookie,
+  csrfCookie,
+  clearCsrfCookie,
+  createCsrfToken,
+} from "./auth.mjs";
 
 const MAX_BODY_BYTES = 64 * 1024;
+
+const EXACT_ROUTES = Object.freeze({
+  "/api/health": ["GET"],
+  "/api/products": ["GET"],
+  "/api/auth/register": ["POST"],
+  "/api/auth/login": ["POST"],
+  "/api/auth/logout": ["POST"],
+  "/api/auth/me": ["GET"],
+  "/api/orders": ["POST"],
+  "/api/orders/mine": ["GET"],
+  "/api/admin/orders": ["GET"],
+  "/api/admin/products": ["GET"],
+});
 
 function sendJson(res, status, body, extraHeaders = {}) {
   const payload = JSON.stringify(body);
@@ -16,9 +34,40 @@ function sendJson(res, status, body, extraHeaders = {}) {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(payload),
     "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
     ...extraHeaders,
   });
   res.end(payload);
+}
+
+function hostAllowedSets(config) {
+  const set = new Set();
+  set.add(config.publicOrigin.host);
+  set.add(`127.0.0.1:${config.port}`);
+  set.add(`localhost:${config.port}`);
+  if (config.port === 80) {
+    set.add("127.0.0.1");
+    set.add("localhost");
+  }
+  set.add(`127.0.0.1:${config.publicOrigin.port || (config.publicOrigin.protocol === "https:" ? 443 : 80)}`);
+  return set;
+}
+
+function originAllowed(config, origin) {
+  if (!origin) return true;
+  const allowed = new Set([config.publicOrigin.origin, `http://${config.publicOrigin.host}`]);
+  if (config.publicOrigin.protocol === "https:") allowed.add(`https://${config.publicOrigin.host}`);
+  return allowed.has(origin);
+}
+
+function checkGuards(req, config) {
+  const host = String(req.headers.host ?? "");
+  if (!hostAllowedSets(config).has(host)) return "host-not-allowed";
+  const origin = req.headers.origin;
+  if (origin !== undefined && !originAllowed(config, origin)) return "cross-origin-blocked";
+  const site = req.headers["sec-fetch-site"];
+  if (site !== undefined && site !== "same-origin" && site !== "none") return "cross-origin-blocked";
+  return null;
 }
 
 function readBody(req) {
@@ -40,205 +89,195 @@ function readBody(req) {
   });
 }
 
-function allowedHosts(config) {
-  const hosts = new Set([`127.0.0.1:${config.port}`, `localhost:${config.port}`]);
-  if (config.port === 80) {
-    hosts.add("127.0.0.1");
-    hosts.add("localhost");
-  }
-  return hosts;
-}
-
-function checkRequestGuards(req, config) {
-  const host = String(req.headers.host ?? "");
-  if (!allowedHosts(config).has(host)) return "host-not-allowed";
-  if (["POST", "PATCH", "DELETE", "PUT"].includes(req.method)) {
-    const origin = req.headers.origin;
-    if (origin !== undefined) {
-      if (origin !== `http://${host}`) return "cross-origin-blocked";
-    }
-    const site = req.headers["sec-fetch-site"];
-    if (site !== undefined && site !== "same-origin" && site !== "none") return "cross-origin-blocked";
-  }
-  return null;
-}
-
 async function readJsonBody(req) {
   const type = String(req.headers["content-type"] ?? "");
   if (!/^application\/json\b/i.test(type)) return { ok: false, code: "unsupported-media-type" };
   const { tooLarge, raw } = await readBody(req);
   if (tooLarge) return { ok: false, code: "payload-too-large" };
+  if (raw.trim() === "") return { ok: true, body: {} };
   try {
-    if (raw.trim() === "") return { ok: true, body: {} };
     return { ok: true, body: JSON.parse(raw) };
   } catch {
     return { ok: false, code: "invalid-json" };
   }
 }
 
-function currentUser(db, req) {
+function routeFor(pathname) {
+  if (Object.hasOwn(EXACT_ROUTES, pathname)) return { allowed: EXACT_ROUTES[pathname], kind: "exact" };
+  const orderMatch = /^\/api\/orders\/([^/]+)$/.exec(pathname);
+  if (orderMatch) return { allowed: ["GET"], kind: "order", param: orderMatch[1] };
+  const productMatch = /^\/api\/admin\/products\/([^/]+)$/.exec(pathname);
+  if (productMatch) return { allowed: ["PATCH"], kind: "admin-product", param: productMatch[1] };
+  return null;
+}
+
+function normalizePath(rawPath) {
+  if (/%2f|%5c|%00/i.test(rawPath)) return { code: "not-found", detail: "encoded path separators are not allowed" };
+  let decoded;
+  try {
+    decoded = decodeURIComponent(rawPath);
+  } catch {
+    return { code: "invalid-path" };
+  }
+  if (decoded.length > 1 && decoded.endsWith("/")) return { code: "not-found" };
+  if (decoded.includes("\\") || decoded.includes("\0") || decoded.includes("//")) return { code: "not-found" };
+  return { pathname: decoded };
+}
+
+function clientIp(req, config) {
+  if (config.trustProxy) {
+    const forwarded = req.headers["x-forwarded-for"];
+    if (typeof forwarded === "string" && forwarded.trim() !== "") return forwarded.split(",")[0].trim().slice(0, 128);
+  }
+  return String(req.socket?.remoteAddress ?? "").slice(0, 128);
+}
+
+function csrfValid(req, services) {
   const cookies = parseCookies(req.headers.cookie ?? "");
-  return getSessionUser(db, cookies[COOKIE_NAME]);
+  const cookieToken = cookies[CSRF_COOKIE_NAME] ?? "";
+  const headerToken = String(req.headers["x-csrf-token"] ?? "");
+  return services.auth.verifyCsrf(cookieToken, headerToken);
 }
 
-// 健康检查只暴露相对路径，避免把绝对文件系统路径发给客户端（review 环修复）。
-function publicDbPath(dbPath) {
-  if (!dbPath || dbPath === ":memory:") return dbPath;
-  const relative = path.relative(process.cwd(), dbPath);
-  if (relative && !relative.startsWith("..") && !path.isAbsolute(relative)) return relative.split(path.sep).join("/");
-  return path.basename(dbPath);
-}
-
-export function createApiHandler({ db, version = "2.0.0.0", dbPath = "", port = 0, startedAt = Date.now() }) {
-  const portValue = () => (typeof port === "function" ? port() : port);
+export function createApiHandler({ services, config, version }) {
+  const cookieOptions = { secure: config.cookieSecure };
   return async function handleApi(req, res) {
-    const url = new URL(req.url, `http://${req.headers.host ?? `127.0.0.1:${portValue()}`}`);
-    const path = url.pathname;
-    if (!path.startsWith("/api")) return false;
-
-    const requestId = crypto.randomUUID();
-    res.setHeader("X-Request-Id", requestId);
+    const url = new URL(req.url, `http://${req.headers.host ?? `127.0.0.1:${config.port}`}`);
+    const requireId = crypto.randomUUID();
+    res.setHeader("X-Request-Id", requireId);
+    res.setHeader("Cache-Control", "no-store");
+    if (!url.pathname.startsWith("/api")) return false;
 
     try {
-      const guard = checkRequestGuards(req, { port: portValue() });
+      const guard = checkGuards(req, config);
       if (guard) return sendJson(res, statusFor(guard), errorBody(guard)), true;
 
-      const user = currentUser(db, req);
-      const route = `${req.method} ${path}`;
-
-      if (route === "GET /api/health") {
-        const body = {
-          ok: true,
-          version,
-          schemaVersion: schemaVersion(db),
-          dbPath: publicDbPath(dbPath),
-          port: portValue(),
-          seeded: isSeeded(db),
-          uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
-        };
-        return sendJson(res, 200, body), true;
+      const normalized = normalizePath(url.pathname);
+      if (normalized.code) {
+        return sendJson(res, statusFor(normalized.code), errorBody(normalized.code, normalized.detail)), true;
       }
+      const pathname = normalized.pathname;
+      const route = routeFor(pathname);
+      const method = req.method;
 
-      if (route === "GET /api/products") {
-        return sendJson(res, 200, { ok: true, products: listProducts(db) }), true;
-      }
-
-      if (route === "POST /api/auth/register") {
+      // 1) 体协议（只对需要请求体的端点；logout 等无体端点不受 Content-Type 约束）
+      let body = null;
+      const needsBody =
+        (method === "POST" && ["/api/auth/login", "/api/auth/register", "/api/orders"].includes(pathname)) ||
+        (method === "PATCH" && /^\/api\/admin\/products\/[^/]+$/.test(pathname));
+      if (needsBody) {
         const parsed = await readJsonBody(req);
         if (!parsed.ok) return sendJson(res, statusFor(parsed.code), errorBody(parsed.code)), true;
-        const { username, password } = parsed.body ?? {};
-        const problem = validateCredentials({ username, password });
-        if (problem) return sendJson(res, statusFor(problem), errorBody(problem)), true;
-        const created = createUser(db, { username, password, role: "user" });
-        if (!created.ok) return sendJson(res, statusFor(created.code), errorBody(created.code)), true;
-        return sendJson(res, 201, { ok: true, user: created.user }), true;
+        body = parsed.body;
       }
 
-      if (route === "POST /api/auth/login") {
-        const parsed = await readJsonBody(req);
-        if (!parsed.ok) return sendJson(res, statusFor(parsed.code), errorBody(parsed.code)), true;
-        const { username, password } = parsed.body ?? {};
-        if (typeof username !== "string" || typeof password !== "string") {
-          return sendJson(res, 400, errorBody("invalid-request")), true;
-        }
-        const found = findUserByUsername(db, username);
-        if (!found || !verifyPassword(password, found.passwordHash)) {
-          return sendJson(res, 401, errorBody("auth-invalid-credentials")), true;
-        }
-        // 登录时作废旧会话，避免会话行堆积（review 环修复）。
-        const previousToken = parseCookies(req.headers.cookie ?? "")[COOKIE_NAME];
-        if (previousToken) deleteSession(db, previousToken);
-        const token = createSession(db, found.id);
-        return sendJson(res, 200, { ok: true, user: { id: found.id, username: found.username, role: found.role } }, {
-          "Set-Cookie": sessionCookie(token),
-        }), true;
+      // 2) 405（已知路由方法不匹配）；未知 /api 路径 → 404
+      if (!route) return sendJson(res, 404, errorBody("not-found")), true;
+      if (!route.allowed.includes(method)) {
+        return sendJson(res, 405, errorBody("allow"), { Allow: route.allowed.join(", ") }), true;
       }
 
-      if (route === "POST /api/auth/logout") {
-        const cookies = parseCookies(req.headers.cookie ?? "");
-        deleteSession(db, cookies[COOKIE_NAME]);
-        return sendJson(res, 204, {}, { "Set-Cookie": clearSessionCookie() }), true;
+      const cookies = parseCookies(req.headers.cookie ?? "");
+      let user = null;
+      try {
+        user = await services.auth.me(cookies[COOKIE_NAME]);
+      } catch {
+        user = null;
       }
 
-      if (route === "GET /api/auth/me") {
-        if (!user) return sendJson(res, 401, errorBody("auth-required")), true;
+      const needsAuth = !["/api/auth/login", "/api/auth/register", "/api/products", "/api/health"].includes(pathname);
+      if (needsAuth && !user) return sendJson(res, 401, errorBody("auth-required")), true;
+
+      // 3) CSRF：带会话的写请求（login/register 豁免）
+      const stateChanging = method === "POST" || method === "PATCH";
+      const csrfExempt = pathname === "/api/auth/login" || pathname === "/api/auth/register";
+      if (stateChanging && user && !csrfExempt && !csrfValid(req, services)) {
+        return sendJson(res, 403, errorBody("csrf-token-invalid")), true;
+      }
+      const needsRole = pathname.startsWith("/api/admin/");
+      if (needsRole && user?.role !== "admin") return sendJson(res, 403, errorBody("auth-forbidden")), true;
+
+      // 4) 业务分派
+      if (pathname === "/api/health") {
+        const health = await services.health.health({ version });
+        const status = health.ok ? 200 : 503;
+        const payload = health.ok
+          ? health
+          : { ...errorBody("db-unavailable"), db: "down", version: health.version, uptimeSeconds: health.uptimeSeconds };
+        return sendJson(res, status, payload), true;
+      }
+      if (pathname === "/api/products") {
+        return sendJson(res, 200, { ok: true, products: await services.catalog.listPublic() }), true;
+      }
+      if (pathname === "/api/auth/register") {
+        const user = await services.auth.register({ username: body?.username, password: body?.password });
+        return sendJson(res, 201, { ok: true, user }), true;
+      }
+      if (pathname === "/api/auth/login") {
+        const result = await services.auth.login({
+          username: body?.username,
+          password: body?.password,
+          ip: clientIp(req, config),
+          previousToken: cookies[COOKIE_NAME] ?? "",
+        });
+        const csrfToken = createCsrfToken();
+        return sendJson(
+          res,
+          200,
+          { ok: true, user: result.user },
+          {
+            "Set-Cookie": [
+              sessionCookie(result.token, { maxAge: result.maxAgeSeconds, ...cookieOptions }),
+              csrfCookie(csrfToken, cookieOptions),
+            ],
+          },
+        ), true;
+      }
+      if (pathname === "/api/auth/logout") {
+        await services.auth.logout(cookies[COOKIE_NAME]);
+        return sendJson(res, 204, {}, { "Set-Cookie": [clearSessionCookie(cookieOptions), clearCsrfCookie(cookieOptions)] }), true;
+      }
+      if (pathname === "/api/auth/me") {
         return sendJson(res, 200, { ok: true, user }), true;
       }
-
-      if (route === "POST /api/orders") {
-        if (!user) return sendJson(res, 401, errorBody("auth-required")), true;
-        const parsed = await readJsonBody(req);
-        if (!parsed.ok) return sendJson(res, statusFor(parsed.code), errorBody(parsed.code)), true;
-        const { items, clientOrderId } = parsed.body ?? {};
-        const result = createOrder(db, { userId: user.userId, items, clientOrderId });
-        if (!result.ok) return sendJson(res, statusFor(result.code), errorBody(result.code, result.details)), true;
+      if (pathname === "/api/orders") {
+        const result = await services.orders.checkout({ userId: user.id, items: body?.items, clientOrderId: body?.clientOrderId });
         return sendJson(res, result.status === "created" ? 201 : 200, { ok: true, order: result.order }), true;
       }
-
-      if (route === "GET /api/orders/mine") {
-        if (!user) return sendJson(res, 401, errorBody("auth-required")), true;
-        return sendJson(res, 200, { ok: true, orders: listOrdersByUser(db, user.userId) }), true;
+      if (pathname === "/api/orders/mine") {
+        return sendJson(res, 200, { ok: true, orders: await services.orders.listMine(user.id) }), true;
       }
-
-      if (req.method === "GET" && path.startsWith("/api/orders/")) {
-        if (!user) return sendJson(res, 401, errorBody("auth-required")), true;
-        const orderNumber = decodeURIComponent(path.slice("/api/orders/".length));
-        const order = getOrderByNumber(db, orderNumber);
-        if (!order) return sendJson(res, 404, errorBody("order-not-found")), true;
-        if (order.userId !== user.userId && user.role !== "admin") {
-          return sendJson(res, 403, errorBody("order-not-owned")), true;
-        }
+      if (route.kind === "order") {
+        const order = await services.orders.getForViewer(route.param, user);
         return sendJson(res, 200, { ok: true, order }), true;
       }
-
-      if (route === "GET /api/admin/orders") {
-        if (!user) return sendJson(res, 401, errorBody("auth-required")), true;
-        if (user.role !== "admin") return sendJson(res, 403, errorBody("auth-forbidden")), true;
-        return sendJson(res, 200, { ok: true, orders: listAllOrders(db) }), true;
+      if (pathname === "/api/admin/orders") {
+        return sendJson(res, 200, { ok: true, orders: await services.orders.listAll() }), true;
       }
-
-      if (route === "GET /api/admin/products") {
-        if (!user) return sendJson(res, 401, errorBody("auth-required")), true;
-        if (user.role !== "admin") return sendJson(res, 403, errorBody("auth-forbidden")), true;
-        return sendJson(res, 200, { ok: true, products: listProducts(db, { includeUnlisted: true }) }), true;
+      if (pathname === "/api/admin/products") {
+        return sendJson(res, 200, { ok: true, products: await services.catalog.listAdmin() }), true;
       }
-
-      if (req.method === "PATCH" && path.startsWith("/api/admin/products/")) {
-        if (!user) return sendJson(res, 401, errorBody("auth-required")), true;
-        if (user.role !== "admin") return sendJson(res, 403, errorBody("auth-forbidden")), true;
-        const productId = decodeURIComponent(path.slice("/api/admin/products/".length));
-        const parsed = await readJsonBody(req);
-        if (!parsed.ok) return sendJson(res, statusFor(parsed.code), errorBody(parsed.code)), true;
-        const result = updateProduct(db, productId, parsed.body ?? {});
-        if (!result.ok) return sendJson(res, statusFor(result.code), errorBody(result.code, result.details)), true;
-        return sendJson(res, 200, { ok: true, product: result.product }), true;
+      if (route.kind === "admin-product") {
+        const product = await services.catalog.updateProduct(route.param, body ?? {});
+        return sendJson(res, 200, { ok: true, product }), true;
       }
-
-      // 已知路径但方法不对 → 405 + Allow
-      const allowed = {
-        "/api/health": ["GET"],
-        "/api/products": ["GET"],
-        "/api/auth/register": ["POST"],
-        "/api/auth/login": ["POST"],
-        "/api/auth/logout": ["POST"],
-        "/api/auth/me": ["GET"],
-        "/api/orders": ["POST"],
-        "/api/orders/mine": ["GET"],
-        "/api/admin/orders": ["GET"],
-        "/api/admin/products": ["GET"],
-      }[path];
-      if (allowed) {
-        return sendJson(res, 405, errorBody("allow"), { Allow: allowed.join(", ") }), true;
-      }
-
-      // /api/orders/:num 与 /api/admin/products/:id 的方法错误
-      if ((path.startsWith("/api/orders/") || path.startsWith("/api/admin/products/")) && req.method !== "GET" && req.method !== "PATCH") {
-        return sendJson(res, 405, errorBody("allow"), { Allow: path.startsWith("/api/orders/") ? "GET" : "PATCH" }), true;
-      }
-
       return sendJson(res, 404, errorBody("not-found")), true;
     } catch (error) {
-      process.stderr.write(`[api-error] requestId=${requestId} ${req.method} ${path} ${error?.message ?? error}\n`);
+      if (error?.code && typeof error.code === "string" && error.code !== "internal-error") {
+        const headers = {};
+        if (error.code === "auth-rate-limited" && Number.isInteger(error.details?.retryAfter)) {
+          headers["Retry-After"] = String(error.details.retryAfter);
+        }
+        if (error.code === "unsupported-media-type" || error.code === "payload-too-large") {
+          return sendJson(res, statusFor(error.code), errorBody(error.code)), true;
+        }
+        return sendJson(res, statusFor(error.code), errorBody(error.code, error.details), headers), true;
+      }
+      const mapped = toAppError(error);
+      if (mapped !== "internal-error" || isConnectionError(error)) {
+        return sendJson(res, statusFor(mapped), errorBody(mapped)), true;
+      }
+      process.stderr.write(`[api-error] requestId=${requireId} ${req.method} ${url.pathname} ${error?.message ?? error}\n`);
       return sendJson(res, 500, errorBody("internal-error")), true;
     }
   };

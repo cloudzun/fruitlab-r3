@@ -1,143 +1,178 @@
-# BUILD.md（R2 build 环验收）
+# BUILD.md（R3 build 环验收）
 
-> 输入：`SPEC.md` v1.1 + `DECISIONS.md` 42 条义务。验收表同时引用 AC 编号与 OB 编号，并给出判定与证据位置。
-> 测试计数唯一权威来源：evidence/test-count.txt（脚本生成）；本文件不手写计数。
+> 输入：`SPEC.md` v1.2（SHA-256 `81761E4E15E4C3622E657F6FD994F2C9C49F1EE5E10CEFFD63419E60E99C4462`）+ `DECISIONS.md` 42 条 `OB-R3-*`。
+> 测试计数唯一来源：`evidence/test-count.txt`；本文件不手写计数。
+> 判定口径：`implemented`（build 完成）≠ `verified`（review/qa 复核）；最终判定在 ship 环。
 
 ## 1. 里程碑
 
 | 里程碑 | 内容 | 状态 | 证据 |
 |---|---|---|---|
-| M1 | DB/迁移/种子/会话/口令 | 完成 | tests/db.test.mjs、tests/auth.test.mjs |
-| M2 | 订单事务/幂等/API/CLI | 完成 | tests/api.test.mjs、tests/cli.test.mjs |
-| M3 | 前端接入 | 完成 | assets/api-client.mjs、assets/app.mjs、tests/app.test.mjs |
-| M4 | 管理端两面板 | 完成 | assets/app.mjs（管理面板）、tests/app.test.mjs |
-| M5 | 视觉/图片/治理/文档 | 完成（视觉人工验收待 qa） | assets/images/products/、docs/、scripts/ |
+| M1 | Postgres 迁移 + L1 分层 + 测试基础设施 | 完成 | `tests/db.test.mjs`、`tests/auth.test.mjs`、`tests/api.test.mjs` |
+| M2 | 安全补漏（11 缺陷 + 会话/限流/CSRF/时序/404） | 完成 | `tests/api.test.mjs`、`tests/client.test.mjs`、`tests/auth.test.mjs` |
+| M3 | Dockerfile ×2 + compose 三容器 + Caddy + 备份恢复 | 完成 | `evidence/container/`、`docs/deploy.md` |
+| M4 | review/qa/ship/retro | 进行中 | `evidence/ring-*.md` |
 
-## 2. 验收表（AC × OB）
+## 2. 验收（AC × OB）
 
-| AC | 验收摘要 | 相关 OB | 判定 | 证据 |
+| AC 范围 | 相关 OB |
+|---|---|
+| AC-49～AC-58 | OB-R3-CEO-01/02/03、OB-R3-SPEC-01/02/03/06 |
+| AC-59～AC-61 | OB-R3-CEO-05、OB-R3-ENG-01、OB-R3-SPEC-04 |
+| AC-62～AC-69 | OB-R3-ENG-02/03/05/06/12、OB-R3-DES-01 |
+| AC-70～AC-83 | OB-R3-ENG-07/08/09、OB-R3-SPEC-05、OB-R3-DES-02/03 |
+| AC-84～AC-89 | OB-R3-ENG-04、OB-R3-DX-03/04、OB-R3-CEO-06 |
+| AC-90～AC-96 | OB-R3-DX-01/05/06/07/09、OB-R3-CEO-07 |
+| AC-97～AC-105 | OB-R3-ENG-01/02/08/09/10/11/12、OB-R3-SPEC-01/03 |
+| AC-106～AC-118 | OB-R3-CEO-02/03/04、OB-R3-DES-01/04/05/06、OB-R3-DX-01/05/07、OB-R3-ENG-05/07/11 |
+
+> 逐条 AC 摘要与证据形态见下表；`docs/obligations.md` 给出 OB 台账。
+
+| AC | 判定（摘要） | 对应 | 证据 | build 判定 |
 |---|---|---|---|---|
-| AC-01 | `userA`、`userB`、`admin` 三个种子账号可登录，登录后 Cookie 为 `HttpOnly` 且同源请求生效 | OB-CEO-09 | implemented（待复核） | 见对应测试/文档 |
-| AC-02 | `userA` 查询 `userB` 的订单号返回 403 `order-not-owned`；`userA` 的「我的订单」不含 `userB` 数据 | OB-CEO-09 | implemented（待复核） | 见对应测试/文档 |
-| AC-03 | 未登录访问受保护接口返回 401 `auth-required` | OB-CEO-09 | implemented（待复核） | 见对应测试/文档 |
-| AC-04 | `admin` 改价格后商品列表价格立即变化，且历史订单金额不变 | OB-ENG-02 | implemented（待复核） | 见对应测试/文档 |
-| AC-05 | `admin` 改库存后列表显示变化；库存 0 显示「已售罄」且不可加购 | OB-ENG-02 | implemented（待复核） | 见对应测试/文档 |
-| AC-06 | `admin` 下架后商品从列表消失；上架后重新出现 | OB-ENG-02 | implemented（待复核） | 见对应测试/文档 |
-| AC-07 | 下单 → 停服 → 重启 → 订单与库存扣减仍在（数据库文件持久） | OB-ENG-01 | implemented（待复核） | 见对应测试/文档 |
-| AC-08 | `cli.mjs` 的 `db init/seed`、`user`、`product`、`orders` 子命令可运行；退出码 0/1/2 正确；`serve.mjs --help/--version/--port` 沿用 R1 契约 | OB-DX-01 | implemented（待复核） | 见对应测试/文档 |
-| AC-09 | G1–G7 处置结果逐项列出（关闭/降级 + 理由 + 证据位置） | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-10 | 义务追溯表存在；每条 OB 在 `BUILD.md` 出现且有证据路径；`check-traceability.mjs` 通过 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-11 | 契约变更前后对照表存在（旧签名/新签名/原因/兼容性） | OB-CEO-03 | implemented（待复核） | 见对应测试/文档 |
-| AC-12 | 测试计数只有一个权威来源；文档中不出现互相矛盾的数字 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-13 | 白名单、页脚、文档链接全部可解析；`check-links.mjs` 通过 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-14 | 14 张商品照片均为仓库内本地文件；每张在台账中有 `license` 与 `source_url`；`verify-evidence.mjs` 通过 | OB-CEO-05 | implemented（待复核） | 见对应测试/文档 |
-| AC-15 | 商品列表呈现 Apple 式版式：最大宽 1280、4/3/2/1 列断点、卡片结构符合 5.7 | OB-DES-01 | implemented（待复核） | 见对应测试/文档 |
-| AC-16 | 商品卡包含照片、名称、规格、价格、CTA；不再有纯文字卡 | OB-DES-01 | implemented（待复核） | 见对应测试/文档 |
-| AC-17 | 售罄态与下架态视觉符合 5.7（售罄在列表、下架不出现） | OB-DES-02 | implemented（待复核） | 见对应测试/文档 |
-| AC-18 | 每张商品图有非空 `alt`；页面无外部字体/远程图片请求 | OB-DES-07 | implemented（待复核） | 见对应测试/文档 |
-| AC-19 | G1：4 个失效引用全部有真实目标，`check-links.mjs` 通过 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-20 | G2：`evidence/manifest.json` 与校验脚本存在，重算哈希一致 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-21 | G3：`docs/contracts.md` + `docs/branch-matrix.md` 存在，`contracts.test.mjs` 通过 | OB-DX-11 | implemented（待复核） | 见对应测试/文档 |
-| AC-22 | G4：查单格式错误时输入框有 `aria-invalid="true"`，错误文案被 `aria-describedby` 关联 | OB-DES-05 | implemented（待复核） | 见对应测试/文档 |
-| AC-23 | G5：`check-numbering.mjs` 通过，无悬空编号引用 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-24 | G6：`evidence/test-count.txt` 为唯一计数，文档无冲突数字 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-25 | G7：合并证据文件存在，`main` 包含 release 分支 | OB-CEO-03 | implemented（待复核） | 见对应测试/文档 |
-| AC-26 | 所有 SQL 使用参数化（`prepare` + 绑定），无字符串拼接 SQL；静态扫描断言 | OB-DX-11 | implemented（待复核） | 见对应测试/文档 |
-| AC-27 | 水平越权与垂直越权各有测试并返回 403 | OB-ENG-04 | implemented（待复核） | 见对应测试/文档 |
-| AC-28 | 数据库内无明文口令；口令哈希带盐；日志与 CLI 输出不含口令 | OB-DX-11 | implemented（待复核） | 见对应测试/文档 |
-| AC-29 | 会话令牌不可预测（32 字节随机）；退出登录后旧令牌失效 | OB-CEO-09 | implemented（待复核） | 见对应测试/文档 |
-| AC-30 | 仓库中无密钥/口令明文（种子口令只出现在 README 演示口令表，且标注非生产） | OB-ENG-07 | implemented（待复核） | 见对应测试/文档 |
-| AC-31 | R1 的 8 条交互契约全部成立（5.6 逐条验证）；**访客查单按 U2=A 移除**：查单需登录、只能查自己的订单，breaking 变更写入 README/CHANGELOG | OB-CEO-03 | implemented（待复核） | 见对应测试/文档 |
-| AC-32 | `tests/domain.test.mjs` 原样通过（领域层未被破坏） | OB-CEO-03 | implemented（待复核） | 见对应测试/文档 |
-| AC-33 | `docs/decision-log.md` 存在且为追加式，覆盖本规格 D-01～D-32 与后续各环决策 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-34 | 每个环节有 `evidence/ring-*.md`，含真实命令、原始输出、门禁行为、决策记录、环境坑 | OB-CEO-06 | implemented（待复核） | 见对应测试/文档 |
-| AC-35 | `README.md` 更新为 R2 运行说明（4174、建库、种子、演示口令、测试命令） | OB-DX-10 | implemented（待复核） | 见对应测试/文档 |
-| AC-36 | `docs/error-catalog.md` 覆盖新增 API 错误码，逐码给 surface/文案/补救 | OB-DX-11 | implemented（待复核） | 见对应测试/文档 |
-| AC-37 | 页面加载无失败请求；`GET /api/products` 返回 14 条且下架项不出现 | OB-ENG-02 | implemented（待复核） | 见对应测试/文档 |
-| AC-38 | 10 种 R1 商品的 `id/name/unit/price` 与 R1 一致（迁入数据库不丢数据） | OB-ENG-03 | implemented（待复核） | 见对应测试/文档 |
-| AC-39 | 下单事务原子性：库存不足时订单与明细均不落库；并发两次下单只有一次成功、库存不为负 | OB-ENG-01 | implemented（待复核） | 见对应测试/文档 |
-| AC-40 | 请求体超过 64 KiB 返回 413 `payload-too-large`；非法 JSON 返回 400 `invalid-json` | OB-ENG-03 | implemented（待复核） | 见对应测试/文档 |
-| AC-41 | **端到端用户旅程**：新用户注册→登录→浏览 14 商品→加购→下单→「我的订单」看到该单，全程不超过 3 分钟（真实 Chromium 记录） | OB-CEO-02 | implemented（待复核） | 见对应测试/文档 |
-| AC-42 | `evidence/demo-script.md` 存在，可照做的 5 分钟演示脚本（含预期截图位） | OB-CEO-02 | implemented（待复核） | 见对应测试/文档 |
-| AC-43 | `node cli.mjs dev` 一键启动（自动 init+seed+serve）；`GET /api/health` 返回 200 且含 `version/schemaVersion/dbPath/seeded`；README 有 60 秒快速开始 | OB-DX-01 | implemented（待复核） | 见对应测试/文档 |
-| AC-44 | 同一 `clientOrderId` 并发两次下单只产生一单、库存只扣一次 | OB-DX-07 | implemented（待复核） | 见对应测试/文档 |
-| AC-45 | `GET /api/admin/products` 返回含下架商品的全量列表，admin 可据此重新上架 | OB-ENG-02 | implemented（待复核） | 见对应测试/文档 |
-| AC-46 | 登出后旧 Cookie 访问 `/api/auth/me` 返回 401（服务端会话行已删除） | OB-CEO-09 | implemented（待复核） | 见对应测试/文档 |
-| AC-47 | `docs/error-catalog.md` 为唯一真源；`tests/contracts.test.mjs` 断言实现错误码集合与其一致 | OB-DX-11 | implemented（待复核） | 见对应测试/文档 |
-| AC-48 | CLI `--json` 输出稳定形状；退出码 0/1/2/3/4 正确；`--help` 与文档命令集合一致 | OB-DX-03 | implemented（待复核） | 见对应测试/文档 |
+| AC-49 | R1 可独立启动（4173），`r1-fruitlab` 工作树空、HEAD `3087a05` | A1 | qa 3 版本实跑 + git status | implemented（待 review/qa） |
+| AC-50 | R2 可独立启动（4174），`r2-fruitlab` 工作树空、仍零依赖、HEAD `5f4dd87` | A2 | qa 实跑 + git status | implemented（待 review/qa） |
+| AC-51 | R3 `docker compose up --build` 后 `http://127.0.0.1:4175` 200，`/api/health` `db:"up"` | A3 | 容器日志 + curl | implemented（待 review/qa） |
+| AC-52 | R1/R2/R3 同时启动，各自可访问、互不影响、端口/数据/容器无碰撞 | A4 | qa 三版本并排截图 | implemented（待 review/qa） |
+| AC-53 | `scripts/start-all.mjs` 存在，能按序启动三版本且不写 R1/R2 | A4 | 脚本 + qa 记录 | implemented（待 review/qa） |
+| AC-54 | `package.json` 运行时依赖恰好 `{pg}`，lockfile 已提交；无其它第三方依赖 | A6 | static-scan + `npm ls --omit=dev` | implemented（待 review/qa） |
+| AC-55 | ship 后 `VERSION` = `3.0.0.0`；`package.json` 版本用合法 SemVer `3.0.0`（4 段→3 段映射写入版本校验脚本与 README）；CHANGELOG 记录 breaking（依赖口径/端口/数据库/404 变更） | A16 | 文件 + 版本校验测试 | implemented（待 review/qa） |
+| AC-56 | 迁移幂等：重复执行不改变 schema，`schema_migrations` 记录版本 | A7 | db 测试 | implemented（待 review/qa） |
+| AC-57 | seed 幂等且分模式：classroom = 14 商品 + 3 账号；production = 14 商品 + admin（无演示用户）；重复执行不重复数据 | A7 | db/CLI 测试 | implemented（待 review/qa） |
+| AC-58 | 不依赖 R2 的 SQLite 文件；R3 空库可启动并 seed | A7 | 代码扫描 + 容器 | implemented（待 review/qa） |
+| AC-59 | L1 分层成立：router 不含 SQL/pg/repositories；services 不含 HTTP；repositories 不含业务分支 | A9 | `tests/layering.test.mjs` | implemented（待 review/qa） |
+| AC-60 | 依赖规则由测试机械断言（import 图 + SQL 关键字扫描） | A9 | 同上 | implemented（待 review/qa） |
+| AC-61 | 各层导出签名与 `docs/contracts.md` 一致 | A9 | contracts 测试 | implemented（待 review/qa） |
+| AC-62 | 下单事务原子性：库存不足不落单、库存不为负 | 正确性 | db 测试 | implemented（待 review/qa） |
+| AC-63 | 并发两次下单不超卖（真实并发连接，库存 1 只有 1 单成功） | 正确性 | 并发测试 | implemented（待 review/qa） |
+| AC-64 | 同 `clientOrderId` 并发：一个 201、一个 200 `existing`、同一订单号、库存只扣一次；库存为 0 后重放仍返回 200 existing | 正确性 | 并发测试 | implemented（待 review/qa） |
+| AC-65 | `40001/40P01` 有界重试；耗尽返回 `server-busy` 503 | 正确性 | 单元 + 注入测试 | implemented（待 review/qa） |
+| AC-66 | 订单号唯一冲突重试 ≤10；耗尽 409 `order-number-exhausted` | 正确性 | 注入测试 | implemented（待 review/qa） |
+| AC-67 | 订单列表/详情无 N+1（批量/JOIN），按用户隔离 | 正确性 | db 测试 + SQL 断言 | implemented（待 review/qa） |
+| AC-68 | 他人订单返回 404 `order-not-found`；admin 可查任意（D-32 superseded） | A12 | API 测试 | implemented（待 review/qa） |
+| AC-69 | 管理端可查/改/重新上架下架商品 | 功能 | API 测试 | implemented（待 review/qa） |
+| AC-70 | C-1：`db reset` 备份失败即中止、数据保留；成功重置后校验 schema/种子；无"假成功" | A7 | CLI 测试（失败/成功两路） | implemented（待 review/qa） |
+| AC-71 | C-2：SQLSTATE 映射齐全（23505/40001/40P01/53300）；真实并发/持锁测试；`enqueueWrite` 退役留痕 | A11 | 测试 + decision-log | implemented（待 review/qa） |
+| AC-72 | C-3：全部已知路由（含动态）405 表驱动，`Allow` 正确 | A11 | 表驱动测试 | implemented（待 review/qa） |
+| AC-73 | C-4：未登录 + 非法 JSON/415/413 先返回体协议错误（非 401） | A11 | 优先级组合测试 | implemented（待 review/qa） |
+| AC-74 | C-5：api-client 超时覆盖响应体卡住；headers-then-hang/abort/非 JSON 测试 | A11 | 客户端单测 | implemented（待 review/qa） |
+| AC-75 | C-6：畸形百分号路径 → 400 稳定码，不再 500 | A11 | API 测试 | implemented（待 review/qa） |
+| AC-76 | C-7：login/register/me 统一 `{id,username,role}`，形状断言 | A11 | API 测试 | implemented（待 review/qa） |
+| AC-77 | S-1：缺失用户执行 dummy scrypt；两条登录路径各一次 verify（分支断言） | A12 | auth 测试 | implemented（待 review/qa） |
+| AC-78 | S-2：15 分钟窗口失败 5 次 → 429 + `Retry-After`；成功清零 | A12 | auth 测试（注入时钟） | implemented（待 review/qa） |
+| AC-79 | S-3：过期会话 401；过期清理；登录轮换；Cookie `Max-Age` | A12 | auth/API 测试 | implemented（待 review/qa） |
+| AC-80 | S-4：已由 AC-68 覆盖（404），decision-log 记录 D-32 superseded | A12 | 文档 + 测试 | implemented（待 review/qa） |
+| AC-81 | CSRF：带会话写请求缺/错 token → 403 `csrf-token-invalid`；正确 token 通过；跨源 403 | A12 | API 测试 | implemented（待 review/qa） |
+| AC-82 | 生产口令：`APP_ENV=production` 时缺 `ADMIN_PASSWORD`、`ADMIN_PASSWORD=demo1234`、长度 <12、或 `COOKIE_SECURE≠1` → seed/启动失败；生产模式不创建 userA/userB；`.env` 不入 git | A13 | CLI/配置测试 + 扫描 | implemented（待 review/qa） |
+| AC-83 | 库内无明文口令/令牌；日志与 CLI 不打印口令/哈希 | A13 | 测试 + 扫描 | implemented（待 review/qa） |
+| AC-84 | compose 三容器健康（web/api/db），`4175` 同源 `/api` 经 Caddy 反代可达 | A10 | 容器实跑 + curl | implemented（待 review/qa） |
+| AC-85 | volume 持久化：重启后订单/库存仍在 | A5 | 容器重启证据 | implemented（待 review/qa） |
+| AC-86 | api/web 非 root；healthcheck 有效；`SIGTERM` 优雅停机 | A13 | `id -u` + 日志 | implemented（待 review/qa） |
+| AC-87 | 备份/恢复：`pg_dump`/`pg_restore` 真实命令，恢复后数据一致 | A14 | 备份文件 + 恢复后查询 | implemented（待 review/qa） |
+| AC-88 | 镜像/项目/卷/端口命名 `fruitlab-r3*`、`4175`/`55432`，不与 R1/R2 冲突 | A4/A16 | compose 静态检查 | implemented（待 review/qa） |
+| AC-89 | `compose.simple.yml` 两容器模式可启动（api+db，无 web） | A10 | qa 记录 | implemented（待 review/qa） |
+| AC-90 | 测试跑真实 Postgres；README 写明 Docker 前置；测试计数唯一来源 | A8 | 测试输出 + test-count | implemented（待 review/qa） |
+| AC-91 | BUILD.md 给出 96 项逐测试处置表（原样保留/等价迁移/预期契约变更/删除理由）；预期变更限于 D-32/D-53/D-55/D-57/D-58/D-64 明确项，且由 contracts 测试固定新契约 | A8 | BUILD.md + contracts 测试 | implemented（待 review/qa） |
+| AC-92 | codex 独立子代理 `/review` 报告落盘（同族标注，不冒充跨模型） | A15 | `evidence/codex/` | implemented（待 review/qa） |
+| AC-93 | 官方 `/cso` run 完成（start/submit/finish），findings 与 `partial` 边界如实记录 | A15 | `evidence/cso/` | implemented（待 review/qa） |
+| AC-94 | 11 个缺陷点（10 条 findings）台账逐条 `closed/downgraded/not-covered`，`F→OB→AC` 双向引用 | A11 | `docs/obligations.md` + 脚本 | implemented（待 review/qa） |
+| AC-95 | `BUILD.md` 同时引 AC 与 OB；`check-traceability.mjs` 通过 | A11 | 脚本输出 | implemented（待 review/qa） |
+| AC-96 | `verify.mjs` 全链 PASS（测试+链接+编号+追溯+证据+compose 配置）；证据索引无死链 | A15/A16 | verify 输出 | implemented（待 review/qa） |
+| AC-97 | 事务边界：`23505`/`23514`/`23503` 后必须先 ROLLBACK 再回查/重试；幂等键冲突不重复扣库存；订单号冲突重试 ≤10 且不留下空单（F-01） | 正确性 | 并发 + 注入测试 | implemented（待 review/qa） |
+| AC-98 | 组合根/工厂：`createApp`/`createServices` 注入 pool/clock/rateLimiter/config；contracts 测试断言工厂与实例方法签名（F-02） | A9 | contracts + layering 测试 | implemented（待 review/qa） |
+| AC-99 | 容器 Host：api 监听 `0.0.0.0`；Caddy 保留外部 Host；healthcheck 与外部 Public URL 均通过 Host 校验（F-03） | A10 | 容器实跑 + 测试 | implemented（待 review/qa） |
+| AC-100 | DB 身份：`POSTGRES_USER/DB` 与 `DATABASE_URL`、`pg_isready`、备份脚本同源；空卷首次启动成功（F-04） | A3/A14 | 容器实跑 | implemented（待 review/qa） |
+| AC-101 | npm 版本映射：`VERSION=3.0.0.0` 与 `package.json=3.0.0` 的映射由脚本机械校验（F-05） | A16 | 版本校验测试 | implemented（待 review/qa） |
+| AC-102 | 生产加固：production 缺/弱/默认 admin 口令或 `COOKIE_SECURE=0` 拒绝启动；不建演示用户（F-06） | A13 | CLI/配置测试 | implemented（待 review/qa） |
+| AC-103 | 连接池：`connectionTimeoutMillis`/pool error 处理；PG 不可达时 health ≤5s 返回 503 不挂起；DB 重启后自动恢复（F-07） | A13 | 故障注入测试 + 容器 | implemented（待 review/qa） |
+| AC-104 | 反代 IP：Caddy 覆盖 XFF；`TRUST_PROXY=0/1` 行为测试；伪造 XFF 不能绕过限流；限流 Map 有容量上限（F-08） | A12 | 测试 + compose 静态检查 | implemented（待 review/qa） |
+| AC-105 | 输入约束：clientOrderId 8–128、maxItems 10、重复 productId 合并、username/password/价格/库存边界继承并测试；DB CHECK 同步（F-10） | 契约 | 测试 + schema 断言 | implemented（待 review/qa） |
+| AC-106 | 真实 Chromium 从 `http://127.0.0.1:4175` 完成注册→登录→浏览→加购→下单→我的订单；断言 CSRF Cookie/头、订单唯一、库存只扣一次 | OB-R3-DES-01 |  | implemented（待 review/qa） |
+| AC-107 | admin 改价/下架后用户端刷新可见，历史订单金额不变；下架项不出现 | OB-R3-CEO-02 |  | implemented（待 review/qa） |
+| AC-108 | 停 DB（或指向关闭端口）时：`/api/health` 3s 内 503，页面显示可理解降级文案而非白屏 | OB-R3-CEO-02、OB-R3-SPEC-03 |  | implemented（待 review/qa） |
+| AC-109 | 备份→毁库→恢复后：商品/账号/订单/库存一致；CLI JSON 往返与 `pg_dump/pg_restore` 至少各一条真实证据 | OB-R3-CEO-02、OB-R3-ENG-05/06 |  | implemented（待 review/qa） |
+| AC-110 | `evidence/demo-script.md` 为 5–8 分钟三幕脚本（R1 localStorage / R2 文件库 / R3 PG+三层+容器），含预期输出与回退动作；SPEC §4 有课程目标矩阵 | OB-R3-CEO-04、OB-R3-DES-04 |  | implemented（待 review/qa） |
+| AC-111 | `start-all.mjs` 用仓库外临时 SQLite 启动 R2；重启后 R2 订单仍在；不写 R1/R2 工作树 | OB-R3-CEO-03 |  | implemented（待 review/qa） |
+| AC-112 | R2 UI 回归：390/834/1440 无横向滚动；键盘可完成浏览→加购→结账；查单焦点、`aria-invalid`、`aria-live`、错误文案保持 | OB-R3-DES-06 |  | implemented（待 review/qa） |
+| AC-113 | clean-room quickstart 可复制执行：preflight 输出缺项与补救；`verify --quick` 与 `--full` 有明确前置与退出码 | OB-R3-DX-01、OB-R3-DX-07 |  | implemented（待 review/qa） |
+| AC-114 | `scripts/check-docs-stale.mjs` 通过：R3 学员文档无未标注的 4174/`--db`/SQLite/“零依赖”旧口径 | OB-R3-CEO-07 |  | implemented（待 review/qa） |
+| AC-115 | 启动失败输出 stage/尝试次数/SQLSTATE/requestId/脱敏目标/下一步命令；README 覆盖四类排障 | OB-R3-DES-05 |  | implemented（待 review/qa） |
+| AC-116 | CSRF 客户端恢复：缺 token/403 各重试一次（同 clientOrderId），再失败给“刷新并允许 Cookie”文案；有测试 | OB-R3-DES-02、OB-R3-ENG-09 |  | implemented（待 review/qa） |
+| AC-117 | 并发两次 `db migrate`：advisory lock 保证一次执行、另一次安全通过；checksum 被记录；改动已发布迁移会被发现 | OB-R3-ENG-11 |  | implemented（待 review/qa） |
+| AC-118 | 测试基础设施：`pgctl.mjs up/status/down` 可复现；测试池 `max=2`；`--test-concurrency=4`；残留库清理；总时长 ≤120s | OB-R3-ENG-07、OB-R3-DX-05 |  | implemented（待 review/qa） |
 
-## 3. 义务落实表（OB × 证据）
+## 3. 义务落实（OB × 证据）
 
-| 编号 | 义务 | 完成判据 | 实现位置/证据 | build 判定 |
+| 编号 | 义务 | 完成判据 | 实现/证据 | build 判定 |
 |---|---|---|---|---|
-| OB-CEO-01 | 工时重估 15–25 agent 工时；按 M1–M5 里程碑交付，每步可独立验收 | SPEC §10 修订记录 + BUILD.md 里程碑表 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-02 | 新增 AC-41 端到端用户旅程、AC-42 五分钟 demo 脚本 | SPEC 增补 + qa 实机记录 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-03 | R1 行为对照表（保留/变更/移除）；AC-31 拆分交互与权限 | `docs/contracts.md` 行为表 + AC-31 修订 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-04 | Admin 信息架构（订单/商品两面板、含下架商品、空/错/加载态） | §5.6 修订 + qa 截图 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-05 | 图片 fallback：Openverse → Wikimedia → 停止上报；禁止 AI 图 | `docs/assets-credits.md` + 风险条目 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-06 | `scripts/verify.mjs` 串联测试与全部机械检查，单一入口 | 脚本运行输出 PASS/FAIL | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-07 | `node:sqlite` spike（建库/WAL/busy_timeout/回滚/并发/输出污染）先行 | `evidence/spike-sqlite.md` | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-08 | 并发不超卖测试：两个并发 POST 只一单成功、库存为 0 | `tests/api.test.mjs` 用例 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-09 | 登出删除服务端会话行；旧 Cookie 再访问 `/api/auth/me` 返回 401 | `tests/auth.test.mjs` | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-10 | username 3–32 `[A-Za-z0-9_-]`、password 8–128，稳定错误码 | `docs/contracts.md` + 测试 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-11 | 结算前重校验 UX：价格变更/已下架/库存不足三种提示 | §5.6 + fake DOM/qa | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-12 | 视觉证据可复现：`evidence/visual/<viewport>-<page>.png` + commit + 时间 + 复核人 | 证据文件 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-13 | `db reset --yes` + 自动备份 + 服务持锁检测 + 无库指引 | `tests/cli.test.mjs` + 输出 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-CEO-14 | 无障碍：skip link、键盘全流程、焦点环、错误汇总 | qa 手工记录 + 检查表 | BUILD-LOG.md、docs/*、evidence/* | implemented（待复核） |
-| OB-DES-01 | 设计词元落 CSS 变量 + `docs/design-tokens.md`，脚本断言 token 存在 | 脚本 + 文件 | assets/styles.css、docs/design-tokens.md、tests/static-scan.test.mjs | implemented（待复核） |
-| OB-DES-02 | 商品卡六态：正常/加载/空/错误/售罄/下架 | fake DOM + 截图 | assets/styles.css、docs/design-tokens.md、tests/static-scan.test.mjs | implemented（待复核） |
-| OB-DES-03 | 登录/注册/管理面板的提交中、失败、已登录状态 | fake DOM + 截图 | assets/styles.css、docs/design-tokens.md、tests/static-scan.test.mjs | implemented（待复核） |
-| OB-DES-04 | <720px 紧凑购物袋条 + 导航横向滚动 | 390 截图 | assets/styles.css、docs/design-tokens.md、tests/static-scan.test.mjs | implemented（待复核） |
-| OB-DES-05 | 对比度 ≥ 4.5:1、焦点可见、键盘可达 | 手工检查表 | assets/styles.css、docs/design-tokens.md、tests/static-scan.test.mjs | implemented（待复核） |
-| OB-DES-06 | 文案语气：无感叹号、无促销语；错误文案按错误码 | 文案清单 + 静态扫描 | assets/styles.css、docs/design-tokens.md、tests/static-scan.test.mjs | implemented（待复核） |
-| OB-DES-07 | 14 张图 alt 由种子数据生成且非空 | `scripts/check-links.mjs` 或专用断言 | assets/styles.css、docs/design-tokens.md、tests/static-scan.test.mjs | implemented（待复核） |
-| OB-DES-08 | CC BY 署名在页脚可见并链接台账 | 页面 + 台账 | assets/styles.css、docs/design-tokens.md、tests/static-scan.test.mjs | implemented（待复核） |
-| OB-DX-01 | `node cli.mjs dev` 一键启动 + `GET /api/health` + README 60 秒 AC | 命令 + 测试 | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-02 | CLI 命令树冻结（list/unlist/relist 拆分）；help 与文档命令集合一致 | `tests/cli.test.mjs` | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-03 | 全局 `--json`：`{ok:true,data}` / `{ok:false,code,...}`；非交互 | CLI 测试 | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-04 | 退出码 0/1/2/3/4 + stdout 数据 / stderr 诊断 | CLI 测试 | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-05 | `--password-stdin`；`--password` 仅演示并告警 | CLI 测试 + docs | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-06 | CLI 补 `orders show`、`db check`（integrity/foreign_key/user_version） | CLI 测试 | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-07 | `clientOrderId` 幂等：`(user_id, client_order_id)` 唯一；重复返回原订单 | 并发测试 | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-09 | 启动结构化摘要；全响应 `X-Request-Id`；`--log` 访问日志 | 测试/输出 | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-10 | DB/HTTP/CLI 三层命名映射表；CLI flag 对齐 API | `docs/contracts.md` | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-11 | 错误目录唯一真源；API `{ok:false}`、静态层 `problem+json`；测试断言集合一致 | `tests/contracts.test.mjs` | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-12 | `tests/helpers/{db,auth,server}.mjs` 夹具 | 文件 + 测试通过 | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-DX-13 | Windows 细节：`--no-warnings=ExperimentalWarning`、先 close 再删、`pathToFileURL` | README + 测试 | cli.mjs、docs/cli.md、tests/cli.test.mjs | implemented（待复核） |
-| OB-ENG-01 | 单写者队列 + `busy_timeout` 250–500ms + 异步退避；文档化单进程假设 | 设计文档 + 持锁测试 | server/*.mjs、tests/api.test.mjs、tests/db.test.mjs | implemented（待复核） |
-| OB-ENG-02 | `GET /api/admin/products`（含下架） | API + 测试 | server/*.mjs、tests/api.test.mjs、tests/db.test.mjs | implemented（待复核） |
-| OB-ENG-03 | 校验契约：maxItems 10、重复 productId 合并、Content-Type 415、边界 | `docs/contracts.md` + 测试 | server/*.mjs、tests/api.test.mjs、tests/db.test.mjs | implemented（待复核） |
-| OB-ENG-04 | Host ∈ {127.0.0.1:4174, localhost:4174}；Origin 精确匹配；Sec-Fetch-Site ∈ {same-origin, none}；缺失矩阵 | 测试 | server/*.mjs、tests/api.test.mjs、tests/db.test.mjs | implemented（待复核） |
-| OB-ENG-06 | CSP 以 HTTP 头为唯一来源（meta 仅兼容） | 测试 | server/*.mjs、tests/api.test.mjs、tests/db.test.mjs | implemented（待复核） |
-| OB-ENG-07 | scrypt 参数说明与升级路径 | README | server/*.mjs、tests/api.test.mjs、tests/db.test.mjs | implemented（待复核） |
-| OB-ENG-08 | 列表默认上限 100 | 测试 | server/*.mjs、tests/api.test.mjs、tests/db.test.mjs | implemented（待复核） |
-| OB-ENG-09 | 购物车仅内存、刷新清空，与 R1 一致 | README + 测试 | server/*.mjs、tests/api.test.mjs、tests/db.test.mjs | implemented（待复核） |
+| OB-R3-CEO-01 | 工时重估 35–45h；M1/M2/M3 各有上限与停止线 | SPEC §10/§16 + BUILD.md 里程碑表 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-CEO-02 | 结果型 AC-106..109（旅程/管理变更/DB down/备份恢复） | AC 表 + qa 证据 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-CEO-03 | R2 用仓库外临时 SQLite 文件启动，重启仍在 | `start-all.mjs` + AC-111 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-CEO-04 | 课程目标矩阵 + 5–8 分钟三幕 demo 脚本 | SPEC §4.1 + `evidence/demo-script.md` | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-CEO-05 | 范围裁剪建议的拒绝/降级留痕 | SPEC §16.3 + DECISIONS | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-CEO-06 | `start-all` 探测原生 Docker/WSL；README 双预检 | 脚本 + README + qa | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-CEO-07 | `check-docs-stale.mjs`：R3 学员文档无旧口径 | 脚本 + AC-114 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DES-01 | 4175 经 Caddy 的真实 Chromium 购买闭环 | AC-106 + 截图/日志 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DES-02 | CSRF 客户端 `ensureCsrfToken` + 403 重试一次 + 文案 | 客户端测试 + AC-116 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DES-03 | 三个新错误码文案/恢复；health 503 统一信封 | error-catalog + 前端映射测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DES-04 | README 重写 + demo 三幕脚本 | README + AC-110 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DES-05 | 启动错误模板 + 四类排障 + web healthcheck | README + AC-115 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DES-06 | R2 UI 回归矩阵（三档/键盘/焦点/aria） | qa 记录 + AC-112 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-01 | clean-room quickstart + `preflight.mjs` | README + AC-113 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-02 | `VERSION`/包版本分离 + engines/packageManager | 版本校验测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-03 | CLI `db restore` + 容器 backups 卷 + 往返 | CLI 测试 + AC-109 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-04 | `HOST=0.0.0.0` + `PUBLIC_URL` 派生 + 三层探活 | compose + 容器测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-05 | `pgctl.mjs up/status/down` readiness/清理 | 脚本 + README + AC-118 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-06 | `docs/cli.md` 命令矩阵 + help 一致测试 | 文档 + 表驱动测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-07 | `verify --quick/--full` + preflight | 脚本输出 + AC-113 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-08 | 路径可移植 + PowerShell backup/restore 包装 | 脚本 + README | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-DX-09 | 镜像 digest 记录 + lockfile/registry 说明 | `docs/deploy.md` + evidence | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-01 | client 级 migrate/seed/reset + 同事务 + 三路失败测试 | db/CLI 测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-02 | 商品排序后扣库存 + 反向购物车测试 | 并发测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-03 | 异步 scrypt + 信号量/队列 + 限流前置 | auth 测试 + 延迟证据 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-04 | Caddy `/healthz` + web healthcheck | compose + 容器证据 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-05 | restore 停写/断连/单事务/校验/重启 | restore 脚本 + AC-109 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-06 | CLI JSON 备份/恢复契约与 pg_dump 双轨 | CLI 测试 + deploy 文档 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-07 | 测试池/并发/清理/预算 | helper + AC-118 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-08 | 两桶限流 + 喷洒测试 | auth 测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-09 | CSRF 轮换/Secure/登出清理 | auth/API 测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-10 | int8 安全解析/ID 不暴露 | contracts + 测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-11 | 迁移 advisory lock + checksum + 并发测试 | db 测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-12 | 路径规范化 + `400 invalid-path` + 405 表 | API 表驱动测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-ENG-13 | v1.2 快照重冻；build 只认 v1.2 哈希 | 快照 + DECISIONS 哈希 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-SPEC-01 | compose/DSN/health/备份全变量化 | compose + 非默认值实测 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-SPEC-02 | `seedClassroom`/`seedProductionAdmin` 拆分 | CLI/seed 测试 + AC-57/82 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-SPEC-03 | health 3s 时限 + 池参数映射 | 故障注入测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-SPEC-04 | AC-91 白名单补 D-47/62/79/82 | BUILD 逐测试处置表 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-SPEC-05 | D-82 唯一 XFF 决策；compose TRUST_PROXY | SPEC/DECISIONS + 测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-SPEC-06 | username/价格/库存上限 CHECK；password 只 service | schema 断言 + API 测试 | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
+| OB-R3-SPEC-07 | 状态 v1.2、D 范围、F-09→AC-91 | SPEC/decision-log | 见 `docs/obligations.md` 与各环证据 | implemented（待 review/qa） |
 
-## 4. G1–G7 处置
+## 4. R2 96 项测试处置（AC-91 / OB-R3-SPEC-04）
 
-| 缺口 | 处置 | 机械形态 | 状态 |
-|---|---|---|---|
-| G1 死链 | 生成 evidence/index.md、clean-run.md、manual-checks/browser.md；证据索引指向真实文件 | scripts/check-links.mjs | closed |
-| G2 证据包 | evidence/manifest.json（逐文件 SHA-256）+ 校验脚本（PRD 允许以一次校验替代） | scripts/verify-evidence.mjs | closed |
-| G3 契约冻结 | docs/contracts.md + docs/branch-matrix.md + tests/contracts.test.mjs | 文档 + 测试 | closed |
-| G4 aria-invalid | 查单输入框加 aria-invalid 与 aria-describedby，前端测试覆盖 | tests/app.test.mjs | closed（待前端测试复核） |
-| G5 编号 | 删除悬空 M 引用；scripts/check-numbering.mjs 校验 AC/OB | 脚本通过 | closed |
-| G6 测试计数 | evidence/test-count.txt 唯一来源 | scripts/record-test-count.mjs | closed |
-| G7 发布分支 | 合并证据 evidence/g7-release-merge.txt | 文件存在 | closed |
+| R2 文件 | 原项数 | 处置 | 说明 |
+|---|---:|---|---|
+| `domain.test.mjs` | 17 | 原样保留 | 仅新增 `PRODUCT_SEED` 别名导入，断言不变 |
+| `controller.test.mjs` | 11 | 原样保留 | 无 DOM reducer，未改 |
+| `app.test.mjs` | 19 | 等价迁移 | fake DOM 保留；越权文案从 403 `order-not-owned` 改为 404 `order-not-found`（D-57） |
+| `assets.test.mjs` | 3 | 原样保留 | 图片/台账断言不变 |
+| `static-scan.test.mjs` | 13 | 预期契约变更 | “无 package.json”改为“运行时依赖恰好 {pg}”（D-48/D-64）；CSP/视觉断言保留 |
+| `contracts.test.mjs` | 4 | 预期契约变更 | AC 续号（AC-49..118）、OB 改为 `OB-R3-*`、错误码集合更新 |
+| `auth.test.mjs` | 5 | 等价迁移 + 扩充 | 改为真实 PG；新增会话过期/轮换/限流/dummy scrypt 分支 |
+| `db.test.mjs` | 7 | 等价迁移 + 扩充 | 改为真实 PG；新增迁移 checksum、advisory lock、并发、锁顺序、reset 回滚 |
+| `cli.test.mjs` | 7 | 等价迁移 + 扩充 | 改为 `DATABASE_URL`；新增 backup/restore、reset 失败、生产口令、checksum |
+| `api.test.mjs` | 10 | 等价迁移 + 扩充 | 改为真实服务器+PG；新增 405 表、优先级、CSRF、限流、404、health down |
 
-## 5. 契约变更（摘要）
+**预期变更白名单**：D-32（403→404）、D-47（换库）、D-53（会话过期）、D-55（CSRF）、D-57（404）、D-58（优先级）、D-62（health 形状）、D-64（依赖口径）、D-79（输入约束）、D-82（XFF）。除这些之外，其余 R2 断言应保持等价。
 
-见 docs/contracts.md：R1 的 readOrders/appendOrder 首参 storage 改为 db、加用户归属；assets/order-store.mjs 与 assets/catalog.mjs 退役；CSP connect-src 由 none 改为 self；端口 4173 改为 4174；订单来源由 localStorage 改为数据库。
+## 5. 未完成 / 降级
 
-## 6. 未完成与降级
+- 跨模型复核：`unavailable`（同族 codex；不冒充）。
+- cso 官方 run：`partial`（离线无 scanner profiles/history-inputs），见 review 环。
+- 读屏器/对比度仪器人工审查：`UNVERIFIED`，qa 环记录。
+- 云平台部署：`requires-remote`（M5 选修）。
 
-- 前端（M3/M4）联调与测试：完成；
-ode --test 全绿，计数见 evidence/test-count.txt。
-- 真实浏览器视觉/人工检查：UNVERIFIED，交 qa 环（evidence/manual-checks/browser.md）。
-- 会话过期/CSRF/限流/订单取消：按 PRD 边界或 TODOS，未实现，不做已具备声明。
-- 图片尺寸：12 张短边低于 SPEC §5.8 建议的 800px（最低 mango 500x405），已在 docs/assets-credits.md「尺寸说明」逐张记录，作为降级项，不写成达标。
+## 6. 结论
 
-## 7. 结论
-
-build 环产出：服务端（DB/认证/订单/API/CLI）、前端接入、14 张授权图片、文档与机械校验脚本。
-本文件的 implemented 不等于 verified；review 与 qa 环逐项复核后，最终判定在 ship 环汇总。
+build 环产出：Postgres schema/迁移、repositories/services/router、CLI（含 backup/restore）、真实 PG 测试、Dockerfile ×2、compose 三容器、Caddy、备份恢复脚本、docs/ 与证据。
+本文件的 implemented 不等于 verified；review/qa 环逐项复核后，最终判定在 ship 环汇总。

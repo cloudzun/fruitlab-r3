@@ -1,0 +1,14 @@
+.git
+.gitignore
+node_modules
+data
+backups
+.env
+.dockerignore
+.gstack
+.context
+evidence/**/*.log
+evidence/visual
+*.db
+*.db-wal
+*.db-shm

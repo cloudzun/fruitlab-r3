@@ -1,23 +1,25 @@
-// FruitLab R2 运维与管理员 CLI。
+// FruitLab R3 运维与管理员 CLI。
 // 退出码：0 成功 / 1 业务失败 / 2 用法错误 / 3 暂时性失败（可重试）/ 4 内部错误。
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { fileURLToPath } from "node:url";
-import { openDb, migrate, seed, isSeeded, schemaVersion, defaultDbPath, inTransaction } from "./server/db.mjs";
-import { hashPassword, listUsers, createUser, validateCredentials } from "./server/auth.mjs";
-import { listProducts, updateProduct } from "./server/products.mjs";
-import { listAllOrders, getOrderByNumber, listOrdersByUser } from "./server/orders.mjs";
-import { findUserByUsername } from "./server/auth.mjs";
-import { startStaticServer } from "./serve.mjs";
+import { createPool, waitForDatabase, closePool, runMigrations, checkDatabase, verifyMigrationChecksums, withTransaction, resetDatabase, schemaVersion } from "./server/db.mjs";
+import { hashPassword, validateCredentials } from "./server/auth.mjs";
+import { seedClassroom, seedProductionAdmin } from "./server/seed.mjs";
+import { createCatalogService } from "./server/services/catalog.mjs";
+import * as usersRepo from "./server/repositories/users.mjs";
+import * as productsRepo from "./server/repositories/products.mjs";
+import * as ordersRepo from "./server/repositories/orders.mjs";
+import { createApp, formatStartupError } from "./server/app.mjs";
+import { createStaticServer } from "./serve.mjs";
+import { loadConfig, ConfigError, readVersion } from "./config.mjs";
 
-const VERSION = "2.0.0.0";
 const args = process.argv.slice(2);
 
-function out(payload, json) {
+function out(payload, json, human) {
   if (json) process.stdout.write(JSON.stringify(payload) + "\n");
-  else if (typeof payload === "string") process.stdout.write(payload + "\n");
-  else process.stdout.write(JSON.stringify(payload, null, 2) + "\n");
+  else if (human !== undefined) process.stdout.write(`${human}\n`);
+  else process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 }
 
 function fail(code, message, json, exitCode = 1) {
@@ -28,17 +30,19 @@ function fail(code, message, json, exitCode = 1) {
 
 function parseGlobal(argv) {
   const rest = [...argv];
-  const options = { dbPath: process.env.FRUITLAB_DB || defaultDbPath(), json: false };
+  const options = { url: undefined, json: false };
   while (rest.length && rest[0].startsWith("--")) {
     const flag = rest.shift();
     if (flag === "--json") options.json = true;
+    else if (flag === "--url" || flag.startsWith("--url=")) {
+      const value = flag === "--url" ? rest.shift() : flag.slice("--url=".length);
+      if (!value) return { error: "--url requires a DATABASE_URL" };
+      options.url = value;
+    } else if (flag === "--help") options.help = true;
+    else if (flag === "--version") options.version = true;
     else if (flag === "--db" || flag.startsWith("--db=")) {
-      const value = flag === "--db" ? rest.shift() : flag.slice("--db=".length);
-      if (!value) return { error: "--db requires a path" };
-      options.dbPath = value;
-    } else if (flag === "--help") { options.help = true; }
-    else if (flag === "--version") { options.version = true; }
-    else return { error: `unknown argument: ${flag}` };
+      return { error: "--db 已移除；请用 --url <DATABASE_URL> 或 DATABASE_URL" };
+    } else return { error: `unknown argument: ${flag}` };
   }
   return { options, rest };
 }
@@ -53,32 +57,31 @@ function takeFlag(argv, name) {
 }
 
 function printHelp(json) {
-  const text = `FruitLab R2 CLI ${VERSION}
+  const text = `FruitLab R3 CLI ${readVersion()}
 
-用法: node cli.mjs [--db <path>] [--json] <command> ...
+用法: node cli.mjs [--url <DATABASE_URL>] [--json] <command> ...
 
 命令:
-  dev                       初始化（如需要）+ 种子（如需要）+ 启动服务
-  db init                   建库与迁移（幂等）
-  db seed                   写入 14 商品与 3 个演示账号（幂等）
-  db reset --yes            删除数据库重建（自动备份到 data/backups/）
-  db check                  完整性检查（integrity_check / foreign_key_check / user_version）
-  user list                 列出用户
+  dev [--port <0-65535>]          迁移 + 按需 seed + 启动（含静态托管）
+  db migrate                      迁移（幂等；advisory lock）
+  db seed                         按模式写入种子（classroom=14+3 / production=14+admin）
+  db check                        连接/迁移版本/约束/种子计数/checksum
+  db backup [--out <dir>]         SQL 逻辑导出（JSON Lines，reset 的保险）
+  db restore --in <file> --yes    从 JSON Lines 备份恢复（先停写）
+  db reset --yes [--out <dir>]    先备份，再事务重建 + seed + 校验
+  user list                       列出用户
   user add --username <u> --password-stdin [--role user|admin]
-  product list [--all]      列出商品（--all 含下架）
+  product list [--all]            列出商品（--all 含下架）
   product set-price --id <id> --unit-price-cents <n>
   product set-stock --id <id> --stock <n>
-  product unlist --id <id>  下架
-  product relist --id <id>  上架
+  product unlist|relist --id <id>
   orders list [--user <username>]
   orders show <orderNumber>
+  --help | --version
 
-全局:
-  --db <path>               数据库路径（默认 data/fruitlab.db，或环境变量 FRUITLAB_DB）
-  --json                    机器可读输出 {"ok":true,"data":...} / {"ok":false,"code":"...","message":"..."}
-
+环境: DATABASE_URL（必需）、APP_ENV、DEMO_PASSWORD、ADMIN_PASSWORD、COOKIE_SECURE 等，见 README。
 退出码: 0 成功 / 1 业务失败 / 2 用法错误 / 3 暂时性失败 / 4 内部错误`;
-  out(json ? { ok: true, data: { help: text } } : text, json);
+  out({ ok: true, data: { help: text } }, json, text);
 }
 
 function readStdinPassword() {
@@ -92,6 +95,74 @@ function readStdinPassword() {
   });
 }
 
+function timestamp() {
+  return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+const BACKUP_TABLES = ["users", "products", "orders", "order_items", "sessions"];
+const RESTORE_ORDER = ["users", "products", "orders", "order_items", "sessions"];
+
+async function exportBackup(pool, outDir) {
+  const dir = path.resolve(outDir);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `${timestamp()}.jsonl`);
+  const lines = [];
+  lines.push(JSON.stringify({
+    type: "meta",
+    app: "fruitlab-r3",
+    version: readVersion(),
+    schemaVersion: await schemaVersion(pool),
+    createdAt: new Date().toISOString(),
+  }));
+  for (const table of BACKUP_TABLES) {
+    const result = await pool.query(`SELECT * FROM ${table}`);
+    lines.push(JSON.stringify({ type: "table", name: table, rows: result.rows }));
+  }
+  fs.writeFileSync(file, `${lines.join("\n")}\n`, "utf8");
+  return file;
+}
+
+async function importBackup(pool, file) {
+  const raw = fs.readFileSync(file, "utf8");
+  const lines = raw.split(/\r?\n/).filter((line) => line.trim() !== "");
+  const meta = JSON.parse(lines[0]);
+  if (meta.type !== "meta" || meta.app !== "fruitlab-r3") throw new Error("backup meta invalid");
+  const tables = new Map();
+  for (const line of lines.slice(1)) {
+    const record = JSON.parse(line);
+    if (record.type !== "table") throw new Error("backup table record invalid");
+    tables.set(record.name, record.rows);
+  }
+  await resetDatabase(pool, {
+    seed: async (client) => {
+      await runMigrationsOnClient(client);
+      for (const table of RESTORE_ORDER) {
+        const rows = tables.get(table) ?? [];
+        for (const row of rows) {
+          const columns = Object.keys(row);
+          const placeholders = columns.map((_, index) => `$${index + 1}`);
+          const overriding = table === "orders" || table === "order_items" ? " OVERRIDING SYSTEM VALUE" : "";
+          await client.query(
+            `INSERT INTO ${table} (${columns.join(", ")})${overriding} VALUES (${placeholders.join(", ")})`,
+            columns.map((column) => row[column]),
+          );
+        }
+        if (table === "orders" || table === "order_items") {
+          const idColumn = table === "orders" ? "order_id" : "item_id";
+          await client.query(
+            `SELECT setval(pg_get_serial_sequence('${table}', '${idColumn}'),
+               COALESCE((SELECT MAX(${idColumn}) FROM ${table}), 1), true)`,
+          );
+        }
+      }
+    },
+  });
+  return meta;
+}
+
+// restore 里的 seed 回调需要先跑迁移；resetDatabase 已经先 migrate，这里不再重复。
+async function runMigrationsOnClient() {}
+
 async function main() {
   const parsed = parseGlobal(args);
   if (parsed.error) return fail("invalid-argument", parsed.error, false, 2);
@@ -99,83 +170,126 @@ async function main() {
   const rest = parsed.rest;
   const command = rest.shift();
   if (options.help || command === undefined) return printHelp(options.json);
-  if (options.version) return out(options.json ? { ok: true, data: { version: VERSION } } : VERSION, options.json);
+  if (options.version) return out({ ok: true, data: { version: readVersion() } }, options.json, readVersion());
+  const jsonIndex = rest.indexOf("--json");
+  if (jsonIndex !== -1) {
+    rest.splice(jsonIndex, 1);
+    options.json = true;
+  }
+  if (!["dev", "db", "user", "product", "orders"].includes(command)) {
+    return fail("invalid-argument", `unknown command: ${command}`, options.json, 2);
+  }
 
-  const dbPath = options.dbPath;
+  let config;
+  try {
+    config = loadConfig({ databaseUrl: options.url });
+  } catch (error) {
+    return fail("config-invalid", error instanceof ConfigError ? error.message : String(error), options.json, 1);
+  }
+
   const json = options.json;
 
   if (command === "dev") {
     const portFlag = takeFlag(rest, "--port");
-    const port = portFlag.found ? Number(portFlag.value) : 4174;
-    if (!Number.isInteger(port) || port < 0 || port > 65535) return fail("invalid-argument", "--port must be 0-65535", json, 2);
-    const db = openDb(dbPath);
-    migrate(db);
-    if (!isSeeded(db)) seed(db, { hashPassword, demoPassword: process.env.FRUITLAB_DEMO_PASSWORD || "demo1234" });
-    const { url } = await startStaticServer({ port, db, dbPath });
-    out(`FruitLab 已启动: ${url}  (Ctrl+C 停止)`, false);
+    if (portFlag.found) {
+      const port = Number(portFlag.value);
+      if (!Number.isInteger(port) || port < 0 || port > 65535) return fail("invalid-argument", "--port must be 0-65535", options.json, 2);
+      config.port = port;
+    }
+    config.serveStatic = true;
+    const app = await createApp({ config }).catch((error) => {
+      process.stderr.write(`${formatStartupError(error, config)}\n`);
+      process.exitCode = 1;
+      return null;
+    });
+    if (!app) return;
+    const { server, port } = await createStaticServer(app, config);
+    out(
+      { ok: true, data: { url: `http://${config.host}:${port}`, port, version: app.version, schemaVersion: app.schemaVersion } },
+      options.json,
+      `FruitLab 已启动: http://${config.host}:${port}  (Ctrl+C 停止)`,
+    );
+    const shutdown = async () => {
+      await new Promise((resolve) => server.close(resolve));
+      await app.close();
+      process.exit(0);
+    };
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
     return;
   }
 
-  if (dbPath !== ":memory:" && !fs.existsSync(dbPath) && !["db"].includes(command)) {
-    return fail("db-missing", "数据库不存在；请先运行 node cli.mjs db init && node cli.mjs db seed", json, 1);
-  }
-  const db = fs.existsSync(dbPath) || dbPath === ":memory:" ? openDb(dbPath) : null;
-
+  const pool = createPool({ connectionString: config.databaseUrl, ...config.db });
   try {
+    await waitForDatabase(pool);
+    const catalog = createCatalogService({ pool, repos: { products: productsRepo } });
+
     if (command === "db") {
       const sub = rest.shift();
-      if (sub === "init") {
-        const d = openDb(dbPath);
-        migrate(d);
-        out(json ? { ok: true, data: { dbPath, schemaVersion: schemaVersion(d) } } : `建库完成: ${dbPath} (schema ${schemaVersion(d)})`, json);
-        d.close();
-        return;
+      if (sub === "migrate") {
+        const version = await runMigrations(pool);
+        return out({ ok: true, data: { schemaVersion: version } }, json, `迁移完成: schema ${version}`);
       }
       if (sub === "seed") {
-        const d = openDb(dbPath);
-        migrate(d);
-        seed(d, { hashPassword, demoPassword: process.env.FRUITLAB_DEMO_PASSWORD || "demo1234" });
-        out(json ? { ok: true, data: { seeded: true, products: listProducts(d, { includeUnlisted: true }).length, users: listUsers(d).length } } : "种子写入完成", json);
-        d.close();
-        return;
+        const mode = config.seedMode;
+        await withTransaction(pool, async (client) => {
+          if (mode === "production") {
+            await seedProductionAdmin(client, { hashPassword, adminPassword: config.adminPassword });
+          } else {
+            await seedClassroom(client, { hashPassword, demoPassword: config.demoPassword });
+          }
+        });
+        return out({ ok: true, data: { mode } }, json, `种子写入完成（${mode}）`);
+      }
+      if (sub === "check") {
+        const report = await checkDatabase(pool);
+        const problems = await verifyMigrationChecksums(pool);
+        const ok = report.connected && problems.length === 0;
+        return out(
+          { ok, data: { ...report, problems } },
+          json,
+          JSON.stringify({ ...report, problems }, null, 2),
+        ), (process.exitCode = ok ? 0 : 1);
+      }
+      if (sub === "backup") {
+        const outFlag = takeFlag(rest, "--out");
+        const dir = outFlag.found ? outFlag.value : "backups";
+        const file = await exportBackup(pool, dir);
+        return out({ ok: true, data: { file } }, json, `备份完成: ${file}`);
+      }
+      if (sub === "restore") {
+        const inFlag = takeFlag(rest, "--in");
+        const yes = takeFlag(rest, "--yes");
+        if (!inFlag.found) return fail("invalid-argument", "db restore 需要 --in <file>", json, 2);
+        if (!yes.found) return fail("confirmation-required", "db restore 需要 --yes（会覆盖现有数据）", json, 1);
+        const meta = await importBackup(pool, inFlag.value);
+        return out({ ok: true, data: { restored: inFlag.value, backupVersion: meta.version } }, json, `恢复完成: ${inFlag.value}`);
       }
       if (sub === "reset") {
         const yes = takeFlag(rest, "--yes");
-        if (!yes.found) return fail("confirmation-required", "db reset 需要 --yes（会删除现有数据库）", json, 1);
-        if (fs.existsSync(dbPath)) {
-          const backupDir = path.join(path.dirname(dbPath), "backups");
-          fs.mkdirSync(backupDir, { recursive: true });
-          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-          const backup = path.join(backupDir, `${stamp}.db`);
-          fs.copyFileSync(dbPath, backup);
-          out(`已备份: ${backup}`, false);
-          for (const suffix of ["", "-wal", "-shm"]) {
-            try { fs.unlinkSync(dbPath + suffix); } catch { /* 不存在 */ }
-          }
+        if (!yes.found) return fail("confirmation-required", "db reset 需要 --yes（会删除现有数据）", json, 1);
+        const outFlag = takeFlag(rest, "--out");
+        const dir = outFlag.found ? outFlag.value : "backups";
+        let backupFile;
+        try {
+          backupFile = await exportBackup(pool, dir);
+        } catch (error) {
+          return fail("backup-failed", `备份失败，已中止 reset：${error.message}`, json, 1);
         }
-        const d = openDb(dbPath);
-        migrate(d);
-        seed(d, { hashPassword, demoPassword: process.env.FRUITLAB_DEMO_PASSWORD || "demo1234" });
-        out(json ? { ok: true, data: { reset: true } } : "数据库已重建并写入种子", json);
-        d.close();
-        return;
-      }
-      if (sub === "check") {
-        const d = openDb(dbPath);
-        const integrity = d.prepare("PRAGMA integrity_check").all();
-        const fk = d.prepare("PRAGMA foreign_key_check").all();
-        const version = schemaVersion(d);
-        const counts = {
-          products: d.prepare("SELECT COUNT(*) AS n FROM products").get().n,
-          users: d.prepare("SELECT COUNT(*) AS n FROM users").get().n,
-          orders: d.prepare("SELECT COUNT(*) AS n FROM orders").get().n,
-          sessions: d.prepare("SELECT COUNT(*) AS n FROM sessions").get().n,
-        };
-        const ok = integrity.length === 1 && integrity[0].integrity_check === "ok" && fk.length === 0;
-        out(json ? { ok, data: { integrity: integrity.map((r) => r.integrity_check), foreignKeyViolations: fk.length, schemaVersion: version, counts } } : { integrity: integrity.map((r) => r.integrity_check), foreignKeyViolations: fk.length, schemaVersion: version, counts }, json);
-        d.close();
-        process.exitCode = ok ? 0 : 1;
-        return;
+        await resetDatabase(pool, {
+          seed: async (client) => {
+            if (config.seedMode === "production") {
+              await seedProductionAdmin(client, { hashPassword, adminPassword: config.adminPassword });
+            } else {
+              await seedClassroom(client, { hashPassword, demoPassword: config.demoPassword });
+            }
+          },
+        });
+        const report = await checkDatabase(pool);
+        if (!(report.counts.products > 0 && report.counts.users > 0)) {
+          return fail("reset-verify-failed", "reset 后校验失败", json, 4);
+        }
+        return out({ ok: true, data: { backupFile, schemaVersion: report.schemaVersion, counts: report.counts } }, json, `数据库已重建并写入种子（备份: ${backupFile}）`);
       }
       return fail("invalid-argument", `unknown db subcommand: ${sub ?? ""}`, json, 2);
     }
@@ -183,9 +297,8 @@ async function main() {
     if (command === "user") {
       const sub = rest.shift();
       if (sub === "list") {
-        const users = listUsers(db);
-        out(json ? { ok: true, data: users } : users.map((u) => `${u.username}\t${u.role}`).join("\n"), json);
-        return;
+        const rows = await usersRepo.list(pool);
+        return out({ ok: true, data: rows }, json, rows.map((row) => `${row.username}\t${row.role}`).join("\n"));
       }
       if (sub === "add") {
         let argv = [...rest];
@@ -194,19 +307,21 @@ async function main() {
         const roleFlag = takeFlag(argv, "--role");
         argv = roleFlag.rest;
         const passwordStdin = takeFlag(argv, "--password-stdin");
-        argv = passwordStdin.rest;
-        const inlinePassword = takeFlag(argv, "--password");
         if (!username.found) return fail("invalid-argument", "--username 必填", json, 2);
-        let password;
-        if (passwordStdin.found) password = await readStdinPassword();
-        else if (inlinePassword.found) password = inlinePassword.value;
-        else return fail("invalid-argument", "需要 --password-stdin（推荐）或 --password", json, 2);
+        if (!passwordStdin.found) return fail("invalid-argument", "需要 --password-stdin（推荐）", json, 2);
+        const password = await readStdinPassword();
         const problem = validateCredentials({ username: username.value, password });
         if (problem) return fail(problem, "用户名或口令不符合规则", json, 1);
-        const created = createUser(db, { username: username.value, password, role: roleFlag.found ? roleFlag.value : "user" });
-        if (!created.ok) return fail(created.code, "创建用户失败", json, 1);
-        out(json ? { ok: true, data: created.user } : `已创建用户: ${created.user.username} (${created.user.role})`, json);
-        return;
+        const role = roleFlag.found ? roleFlag.value : "user";
+        if (!["user", "admin"].includes(role)) return fail("invalid-request", "role 只能是 user/admin", json, 1);
+        const created = await usersRepo.create(pool, {
+          id: `U${crypto.randomBytes(8).toString("hex")}`,
+          username: username.value,
+          passwordHash: await hashPassword(password),
+          role,
+          createdAt: new Date().toISOString(),
+        });
+        return out({ ok: true, data: created }, json, `已创建用户: ${created.username} (${created.role})`);
       }
       return fail("invalid-argument", `unknown user subcommand: ${sub ?? ""}`, json, 2);
     }
@@ -215,34 +330,29 @@ async function main() {
       const sub = rest.shift();
       if (sub === "list") {
         const all = takeFlag(rest, "--all");
-        const rows = listProducts(db, { includeUnlisted: all.found });
-        out(json ? { ok: true, data: rows } : rows.map((p) => `${p.id}\t${p.name}\t${p.unitPriceCents}\t${p.stock}\t${p.listed ? "on" : "off"}`).join("\n"), json);
-        return;
+        const rows = await productsRepo.list(pool, { includeUnlisted: all.found });
+        return out(
+          { ok: true, data: rows },
+          json,
+          rows.map((row) => `${row.id}\t${row.name}\t${row.unitPriceCents}\t${row.stock}\t${row.listed ? "on" : "off"}`).join("\n"),
+        );
       }
-      const kind = sub;
       const idFlag = takeFlag(rest, "--id");
       if (!idFlag.found) return fail("invalid-argument", "--id 必填", json, 2);
-      if (kind === "unlist" || kind === "relist") {
-        const result = updateProduct(db, idFlag.value, { listed: kind === "relist" ? 1 : 0 });
-        if (!result.ok) return fail(result.code, "更新失败", json, 1);
-        out(json ? { ok: true, data: result.product } : `${result.product.id} -> ${kind === "relist" ? "已上架" : "已下架"}`, json);
-        return;
-      }
-      if (kind === "set-price") {
-        const cents = takeFlag(rest, "--unit-price-cents").found ? takeFlag(rest, "--unit-price-cents").value : takeFlag(rest, "--cents").value;
-        const result = updateProduct(db, idFlag.value, { unitPriceCents: Number(cents) });
-        if (!result.ok) return fail(result.code, "更新失败", json, 1);
-        out(json ? { ok: true, data: result.product } : `${result.product.id} 价格 -> ${result.product.unitPriceCents}`, json);
-        return;
-      }
-      if (kind === "set-stock") {
-        const value = takeFlag(rest, "--stock").found ? takeFlag(rest, "--stock").value : takeFlag(rest, "--units").value;
-        const result = updateProduct(db, idFlag.value, { stock: Number(value) });
-        if (!result.ok) return fail(result.code, "更新失败", json, 1);
-        out(json ? { ok: true, data: result.product } : `${result.product.id} 库存 -> ${result.product.stock}`, json);
-        return;
-      }
-      return fail("invalid-argument", `unknown product subcommand: ${kind ?? ""}`, json, 2);
+      let patch;
+      if (sub === "unlist") patch = { listed: false };
+      else if (sub === "relist") patch = { listed: true };
+      else if (sub === "set-price") {
+        const flag = takeFlag(rest, "--unit-price-cents");
+        if (!flag.found) return fail("invalid-argument", "--unit-price-cents 必填", json, 2);
+        patch = { unitPriceCents: Number(flag.value) };
+      } else if (sub === "set-stock") {
+        const flag = takeFlag(rest, "--stock");
+        if (!flag.found) return fail("invalid-argument", "--stock 必填", json, 2);
+        patch = { stock: Number(flag.value) };
+      } else return fail("invalid-argument", `unknown product subcommand: ${sub ?? ""}`, json, 2);
+      const product = await catalog.updateProduct(idFlag.value, patch);
+      return out({ ok: true, data: product }, json, `${product.id} 已更新`);
     }
 
     if (command === "orders") {
@@ -251,32 +361,39 @@ async function main() {
         const userFlag = takeFlag(rest, "--user");
         let rows;
         if (userFlag.found) {
-          const user = findUserByUsername(db, userFlag.value);
+          const user = await usersRepo.findByUsername(pool, userFlag.value);
           if (!user) return fail("order-not-found", "用户不存在", json, 1);
-          rows = listOrdersByUser(db, user.id);
+          rows = await ordersRepo.listByUser(pool, user.id);
         } else {
-          rows = listAllOrders(db);
+          rows = await ordersRepo.listAll(pool);
         }
-        out(json ? { ok: true, data: rows } : rows.map((o) => `${o.orderNumber}\t${o.subtotalCents}\t${o.createdAt}`).join("\n"), json);
-        return;
+        return out(
+          { ok: true, data: rows },
+          json,
+          rows.map((row) => `${row.orderNumber}\t${row.subtotalCents}\t${row.createdAt}`).join("\n"),
+        );
       }
       if (sub === "show") {
-        const orderNumber = rest[0];
-        if (!orderNumber) return fail("invalid-argument", "orders show <orderNumber>", json, 2);
-        const order = getOrderByNumber(db, orderNumber);
+        const number = rest[0];
+        if (!number) return fail("invalid-argument", "orders show <orderNumber>", json, 2);
+        const order = await ordersRepo.findByNumber(pool, number);
         if (!order) return fail("order-not-found", "订单不存在", json, 1);
-        out(json ? { ok: true, data: order } : order, json);
-        return;
+        return out({ ok: true, data: order }, json, JSON.stringify(order, null, 2));
       }
       return fail("invalid-argument", `unknown orders subcommand: ${sub ?? ""}`, json, 2);
     }
 
     return fail("invalid-argument", `unknown command: ${command}`, json, 2);
   } catch (error) {
-    if (String(error?.message ?? "").includes("BUSY")) return fail("db-locked", "数据库被占用，请先停止服务或稍后重试", json, 3);
+    if (error?.stage) return fail("startup-failed", formatStartupError(error, config), json, 3);
+    if (typeof error?.code === "string" && error.code === "23505") return fail("auth-username-taken", "用户名已被占用", json, 1);
+    if (typeof error?.code === "string" && /^(080|57P01|53300)/.test(error.code)) return fail("db-unavailable", String(error.message), json, 3);
+    if (["ECONNREFUSED", "ETIMEDOUT", "ECONNRESET"].includes(error?.code) || /timeout exceeded/.test(String(error?.message))) {
+      return fail("db-unavailable", String(error?.message ?? error), json, 3);
+    }
     return fail("internal-error", String(error?.message ?? error), json, 4);
   } finally {
-    try { db?.close(); } catch { /* 已关闭 */ }
+    await closePool(pool);
   }
 }
 

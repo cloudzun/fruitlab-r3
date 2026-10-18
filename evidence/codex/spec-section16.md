@@ -29,7 +29,7 @@
 | 18 | ENG-04/web health | web 无 healthcheck | Caddy `/healthz` 返回 200；compose web healthcheck（wget，interval 5s/timeout 3s/retries 20） | OB-R3-ENG-04 |
 | 19 | ENG-05 恢复流程 | 未停写、未 single-transaction | `restore.sh`：停 api → 断残留连接 → `pg_restore --single-transaction --exit-on-error` → 校验 schema/种子/行数 → 启 api；失败保留可诊断状态 | OB-R3-ENG-05 |
 | 20 | ENG-06/DX-03 备份契约 | CLI 备份无 restore；容器 backups 不持久 | CLI 增 `db restore --in <file> --yes`（JSON Lines 往返：schema 版本 + 每表数据）；compose 挂 `./backups:/app/backups`；`pg_dump/pg_restore` 为生产路径，两者不互相冒充 | OB-R3-ENG-06、OB-R3-DX-03 |
-| 21 | ENG-07 测试基础设施 | 每用例建库 + 默认并发 | 测试池 `max=2`；`node --test --test-concurrency=4`；启动清理残留 `fruitlab_test_*`；总时长预算 120s；`scripts/test-pg.mjs up\|status\|down`（readiness 轮询） | OB-R3-ENG-07、OB-R3-DX-05 |
+| 21 | ENG-07 测试基础设施 | 每用例建库 + 默认并发 | 测试池 `max=2`；`node --test --test-concurrency=4`；启动清理残留 `fruitlab_test_*`；总时长预算 120s；`scripts/pgctl.mjs up\|status\|down`（readiness 轮询） | OB-R3-ENG-07、OB-R3-DX-05 |
 | 22 | ENG-08 限流 | 仅 username+IP | **两桶**：账号 5 次/15 分钟 + IP 50 次/15 分钟；锁定 15 分钟；测试“同 IP 遍历 username”“单账号多 IP” | OB-R3-ENG-08 |
 | 23 | ENG-09 CSRF | token 只在缺失时补发 | 登录成功与会话轮换**重新生成** CSRF token；`Secure` 跟随 `COOKIE_SECURE`；登出清两个 Cookie；客户端 `ensureCsrfToken()` + 403 重试一次（沿用同一 `clientOrderId`） | OB-R3-ENG-09、OB-R3-DES-02 |
 | 24 | ENG-10 int8 | 全局 `setTypeParser(20, Number)` | 改为**显式安全解析**（`Number.isSafeInteger` 不满足则报错）；ID 不暴露给 JSON；contracts 注明可安全转换列 | OB-R3-ENG-10 |
@@ -62,7 +62,7 @@
 | AC-115 | 启动失败输出 stage/尝试次数/SQLSTATE/requestId/脱敏目标/下一步命令；README 覆盖四类排障 | OB-R3-DES-05 |
 | AC-116 | CSRF 客户端恢复：缺 token/403 各重试一次（同 clientOrderId），再失败给“刷新并允许 Cookie”文案；有测试 | OB-R3-DES-02、OB-R3-ENG-09 |
 | AC-117 | 并发两次 `db migrate`：advisory lock 保证一次执行、另一次安全通过；checksum 被记录；改动已发布迁移会被发现 | OB-R3-ENG-11 |
-| AC-118 | 测试基础设施：`test-pg.mjs up/status/down` 可复现；测试池 `max=2`；`--test-concurrency=4`；残留库清理；总时长 ≤120s | OB-R3-ENG-07、OB-R3-DX-05 |
+| AC-118 | 测试基础设施：`pgctl.mjs up/status/down` 可复现；测试池 `max=2`；`--test-concurrency=4`；残留库清理；总时长 ≤120s | OB-R3-ENG-07、OB-R3-DX-05 |
 
 ### 16.3 被拒绝/降级的建议（留痕）
 

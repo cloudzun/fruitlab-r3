@@ -1,61 +1,55 @@
-# CLI 使用说明（R2）
+# CLI 契约（R3）
 
-> 契约真源：`SPEC.md` §5.5 / §15；退出码与错误码见 `docs/error-catalog.md`。
-> 全局选项：`--db <path>`（或环境变量 `FRUITLAB_DB`，默认 `data/fruitlab.db`）、`--json`。
+> 用法：`node cli.mjs [--url <DATABASE_URL>] [--json] <command> ...`
+> 退出码：0 成功 / 1 业务失败 / 2 用法错误 / 3 暂时性失败 / 4 内部错误。
+> `--json` 输出 `{ok:true,data}` / `{ok:false,code,message}`；stdout 数据、stderr 诊断。
 
-## 快速开始
+## 1. 命令矩阵
 
-```bash
-node cli.mjs dev
-```
+| 命令 | 必需 | 说明 | 退出码 |
+|---|---|---|---|
+| `dev [--port <n>]` | `DATABASE_URL` | 迁移 + 按需 seed + 启动（含静态） | 0/1/3 |
+| `db migrate` | `DATABASE_URL` | 幂等迁移（advisory lock + checksum） | 0/3/4 |
+| `db seed` | `DATABASE_URL` + 模式口令 | classroom=14+3；production=14+admin | 0/1/3 |
+| `db check` | `DATABASE_URL` | 连接/版本/约束/计数/checksum | 0/1 |
+| `db backup [--out <dir>]` | `DATABASE_URL` | JSON Lines 逻辑导出（默认 `backups/`） | 0/1 |
+| `db restore --in <file> --yes` | `DATABASE_URL` + 文件 | 单事务恢复（先停写） | 0/1/3 |
+| `db reset --yes [--out <dir>]` | `DATABASE_URL` | 先备份→事务重建→校验 | 0/1/4 |
+| `user list` | `DATABASE_URL` | 用户名 + 角色 | 0 |
+| `user add --username <u> --password-stdin [--role user\|admin]` | stdin | 口令走 stdin，不进进程列表 | 0/1/2 |
+| `product list [--all]` | `DATABASE_URL` | `--all` 含下架 | 0 |
+| `product set-price --id <id> --unit-price-cents <n>` | | 0–9,999,999 整数 | 0/1 |
+| `product set-stock --id <id> --stock <n>` | | 0–99,999 整数 | 0/1 |
+| `product unlist\|relist --id <id>` | | 上下架 | 0/1 |
+| `orders list [--user <username>]` | | 全部/按用户 | 0/1 |
+| `orders show <orderNumber>` | | 订单详情 | 0/1 |
+| `--help` / `--version` | | 不连接数据库 | 0 |
 
-`dev` = 建库（如缺）+ 种子（如空）+ 启动服务，默认 `http://127.0.0.1:4174`。按 `Ctrl+C` 停止。
+## 2. 环境变量
 
-## 命令
-
-| 命令 | 说明 |
+| 变量 | 说明 |
 |---|---|
-| `db init` | 建库与迁移（幂等） |
-| `db seed` | 写入 14 商品与 3 个演示账号（幂等） |
-| `db reset --yes` | 删除并重建数据库；执行前自动备份到 `data/backups/` |
-| `db check` | `integrity_check` / `foreign_key_check` / `user_version` / 行数 |
-| `user list` | 列出用户 |
-| `user add --username <u> --password-stdin [--role user\|admin]` | 新建用户（口令从管道读，避免进 shell history） |
-| `product list [--all]` | 列出商品；`--all` 含下架 |
-| `product set-price --id <id> --unit-price-cents <n>` | 改价格（整数分） |
-| `product set-stock --id <id> --stock <n>` | 改库存 |
-| `product unlist --id <id>` | 下架 |
-| `product relist --id <id>` | 上架 |
-| `orders list [--user <username>]` | 列出订单（默认全部） |
-| `orders show <orderNumber>` | 查看单张订单 |
+| `DATABASE_URL` | 必需（或 `--url`） |
+| `APP_ENV` | `development`（classroom，默认）/ `production` |
+| `DEMO_PASSWORD` | classroom 演示口令 |
+| `ADMIN_PASSWORD` | production 必填（≥12、非默认） |
+| `COOKIE_SECURE` | production 必须 1 |
+| `--url` | 覆盖 `DATABASE_URL` |
 
-## 退出码
+## 3. 示例
 
-| 码 | 含义 |
-|---:|---|
-| 0 | 成功 |
-| 1 | 业务失败（如 `order-not-found`、`confirmation-required`） |
-| 2 | 用法/参数错误 |
-| 3 | 暂时性失败（如 `db-locked`） |
-| 4 | 内部错误 |
-
-## `--json`
-
-成功：`{"ok":true,"data":...}`；失败：`{"ok":false,"code":"...","message":"..."}`；诊断信息走 stderr。
-
-## 示例
-
-```bash
-node cli.mjs db init
+```powershell
+$env:DATABASE_URL = "postgres://postgres:postgres@127.0.0.1:55432/fruitlab"
+node cli.mjs db migrate
 node cli.mjs db seed
-node cli.mjs --json product list
-node cli.mjs product set-stock --id fuji-apple --stock 0
-echo "password123" | node cli.mjs user add --username staff --password-stdin
-node cli.mjs --json db check
+node cli.mjs db check --json
+node cli.mjs user add --username ops --password-stdin --role admin
+node cli.mjs db backup --out backups
+node cli.mjs db reset --yes --out backups
 ```
 
-## 注意
+## 4. 不做
 
-- `db reset` 会删除当前数据库（先自动备份）；无 `--yes` 时拒绝执行；
-- CLI 与 HTTP 共用 `server/*` 业务模块，不提供第二套逻辑；
-- CLI 不打印口令或哈希。
+- 不打印口令、哈希、完整 DSN；
+- `--db` 已移除，出现即用法错误（提示改用 `--url`）；
+- `db reset`/`db restore` 必须 `--yes`；备份失败即中止，不"假成功"。
