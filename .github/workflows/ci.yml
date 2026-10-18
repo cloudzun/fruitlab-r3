@@ -39,6 +39,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: use public npm registry
+        run: npm config set registry https://registry.npmjs.org
       - run: npm ci
       - name: 138 tests on real Postgres
         run: node --test --test-concurrency=4
