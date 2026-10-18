@@ -2,6 +2,44 @@
 
 FruitLab 的用户可见变更记录。
 
+## [3.0.0.0] - 2026-10-18
+
+> R3：从单机 SQLite 应用升级为 **PostgreSQL 16 + L1 逻辑三层 + L2 三容器 + 可备份恢复** 的可部署形态；关闭 R2 补测的 11 个缺陷；三版本并排。
+
+### Added
+
+- **数据库**：PostgreSQL 16（`pg` 8.23.1），连接池、迁移（advisory lock + checksum）、事务、SQLSTATE 映射、`db reset` 备份保护。
+- **分层**：`repositories/` + `services/` + `app.mjs` 组合根；router 只做协议；依赖规则由测试强制。
+- **安全**：会话 `expires_at`/轮换、登录限流（账号+IP 两桶）、CSRF 双提交、缺失用户 dummy scrypt、他人订单 404、生产口令校验。
+- **部署**：`Dockerfile`/`Dockerfile.web`、`docker-compose.yml`（web/api/db）、Caddy 反代、非 root、healthcheck、volume、`compose.simple.yml`（api+db）。
+- **备份/恢复**：`scripts/backup.sh`/`restore.sh`（`pg_dump`/`pg_restore`，停写+单事务+校验）、CLI `db backup/restore`（JSON Lines）、`db reset` 先备份。
+- **CLI/运维**：`--url`（替代 `--db`）、`db migrate`（替代 `db init`）、`preflight`、`pgctl`、`verify --quick/--full`、`start-all`。
+- **文档/证据**：`docs/architecture.md`、`deploy.md`、`backup-restore.md`、`contracts.md`、`api.md`、`cli.md`、`error-catalog.md`、`obligations.md`；`evidence/container/`、`evidence/cso-r3/`、`evidence/codex/`、`evidence/visual/r3-*`。
+
+### Changed
+
+- 默认端口 `4174` → **`4175`**（compose web）；Postgres 宿主调试端口 `55432`。
+- 运行时依赖：零依赖 → **恰好 `{pg}`**（R2 仍为零依赖，口径不混用）。
+- `/api/health` 形状：`db`、`schemaVersion`、`uptimeSeconds`；DB down → 503。
+- 登录/注册/me 统一 `{id, username, role}`。
+- CLI 数据库参数与命令树按 Postgres 重定义。
+
+### Removed（breaking）
+
+- `node:sqlite`/`data/fruitlab.db`（R3 使用 Postgres；R2 原目录不动）。
+- `--db <path>`、`db init`、`order-not-owned` 403（改为 404 `order-not-found`，D-32 superseded）。
+
+### Fixed
+
+- R2 补测 11 个缺陷点（C-1..C-7、S-1..S-4）逐条关闭；review 环新修 13 条 codex findings（错误映射、seed 隔离、restore 校验、CSRF bootstrap、限流桶、行锁、health 超时等）。
+
+### Known Issues（如实记录）
+
+- 跨模型复核 `unavailable`（同族 codex；不冒充）；官方 cso 离线 `partial`（scanner profiles/history-inputs 不可用）。
+- 读屏器人工审查/对比度仪器测量 `UNVERIFIED`；simple 模式首页 HTML 未验证。
+- 限流为单实例内存实现（重启清零）；本地 compose 不做 TLS（生产需外部反代 + `COOKIE_SECURE=1`）。
+- 云平台部署为 M5 选修（需账号）；本仓库无 remote。
+
 ## [2.0.0.0] - 2026-10-18
 
 > R2：从单机演示升级为带服务端数据库、账号、权限、管理员与命令行的系统；视觉重塑为 Apple 式高冷克制版式；新增义务追溯与机械校验。

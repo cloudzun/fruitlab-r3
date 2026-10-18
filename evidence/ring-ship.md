@@ -1,62 +1,68 @@
-# 证据 · ship 环（R2 第 6/7 环）
+# 证据 · ship 环（R3，6/7 环）
 
-> 发布工程师流程：覆盖率审计、文档同步、版本与 CHANGELOG、发布分支门禁、远端可用性核查。
-> **不伪造推送/PR/部署**；无远端就写 `requires-remote`。
+> 结果：`3.0.0.0` 发布；文档同步；覆盖率审计 12/12 路由；`verify.mjs --full` 9/9 PASS；R1/R2 工作树为空。
 
-## 1. 环境与分支
+## 1. 版本与发布
 
 | 项 | 值 |
 |---|---|
-| 日期 | 2026-10-18 |
-| 起始分支 | `main` @ `2eb7f27`（qa 环提交） |
-| 发布分支 | `release/r2-fruitlab-ring6`（**不直接在 main 发版**） |
-| 版本 | `VERSION` = `2.0.0.0` |
-| 远端 | `git remote -v` 为空 → **`requires-remote`** |
+| `VERSION` | `3.0.0.0` |
+| `package.json` version | `3.0.0`（合法 SemVer；映射见 AC-101） |
+| api 镜像 | `fruitlab-r3:3.0.0.0`（`289a009e5d3a`，245 MB） |
+| web 镜像 | `fruitlab-r3-web:3.0.0.0`（`8e2f3a21db7e`，102 MB） |
+| 发布 tag | `v3.0.0.0`（本地；无 remote，推送 `requires-remote`） |
 
-## 2. 覆盖率审计
+## 2. 文档同步
 
-- 产出：[`docs/coverage-audit.md`](../docs/coverage-audit.md)
-- 结果：**27 条变更/新增路径；★★★ 19、★★ 7、★ 1、未覆盖 0**；核心链路（db/auth/orders/router）全部 ★★★。
-- 已知缺口：`serve.mjs parseCliArgs/main` 无直接单测（★），如实列出。
+- `README.md`：R3 快速开始、三版本、测试/验证、安全边界；
+- `CHANGELOG.md`：`[3.0.0.0]` Added/Changed/Removed/Fixed/Known Issues；
+- `docs/`：architecture、deploy、backup-restore、contracts、api、cli、error-catalog、obligations、coverage-audit；
+- `BUILD.md`：AC×OB 全表（70 AC / 42 OB），最终判定 `verified`；
+- `review.md`、`qa-report.md`、`retro.md`、逐环 `evidence/ring-*.md`；
+- `docs/decision-log.md`：D-47..D-108 全程留痕。
 
-## 3. 文档同步
-
-| 文档 | 动作 |
-|---|---|
-| `README.md` | R2 运行说明（4174、`node cli.mjs dev`、演示口令、breaking、安全边界、图片授权） |
-| `SPEC.md` | v1.1（并入 autoplan 修订，§15 优先） |
-| `DECISIONS.md` | 四阶段评审、42 条义务、终门 `APPROVED`、U1=A/U2=A |
-| `CHANGELOG.md` | 新增 `[2.0.0.0]` 段（Added/Changed/Removed/Fixed/Known Issues） |
-| `VERSION` | `1.0.0.0` → `2.0.0.0` |
-| `docs/*` | API、契约、错误目录、设计词元、分支矩阵、义务台账、CLI、决策流水、覆盖率审计 |
-| `evidence/*` | 逐环证据、测试计数、证据哈希清单、截图、图片授权清单 |
-
-## 4. 发布前验证（真实输出）
+## 3. 门禁
 
 ```text
-node --test                 # 96 项，96 通过，0 失败
-node scripts/verify.mjs     # PASS 5/5（测试/链接/编号/追溯/证据清单）
+node scripts/verify.mjs
+PASS preflight --full
+PASS node --test --test-concurrency=4        # 137/137，真实 Postgres
+PASS check-links / check-numbering / check-traceability
+PASS check-redaction / check-docs-stale
+PASS verify-evidence（90 个证据文件）
+PASS check-compose
+PASS: 9/9 项通过（full）
 ```
 
-（测试计数唯一权威：`evidence/test-count.txt`。）
+## 4. 版本隔离
 
-## 5. 发布分支门禁
+```text
+git -C ..\r1-fruitlab status --short   # 空
+git -C ..\r2-fruitlab status --short   # 空
+```
 
-- 技能要求：**不得从基线 `main` 直接发版**。本轮从 `main` 创建 `release/r2-fruitlab-ring6`，在发布分支上提交版本与 CHANGELOG。
-- 发布提交完成后合并回 `main`（`--no-ff`），使 main 包含发布产物；分支保留，可回退。
-- `r1-fruitlab` 目录**未被触碰**（`git -C r1 status` 干净）。
+R1 `3087a05` / `1.0.0.0`、R2 `5f4dd87` / `2.0.0.0` 未改动；R3 独立目录、端口 4175、Postgres volume `fruitlab-r3-pgdata`、compose 项目 `fruitlab-r3`、镜像 `fruitlab-r3*`。
 
-## 6. 不可用项（requires-remote）
+## 5. 量化
 
-| 项 | 状态 | 原因 |
-|---|---|---|
-| 推送分支 | `requires-remote` | `git remote -v` 为空 |
-| 创建 PR | `requires-remote` | 无远端/无托管平台 |
-| 远端部署 / 金丝雀 / 性能基线 | `requires-remote` | 无部署目标 |
-| 回归证明（红先失败） | `not-run` | 无独立基线环境；本地测试为绿，不声称做过 red-first |
+| 指标 | R2 | R3 |
+|---|---:|---:|
+| 测试 | 96 | **137** |
+| 路由覆盖 | 10 | **12/12** |
+| 运行时依赖 | 0 | 1（`pg`） |
+| 容器 | 0 | 3（web/api/db） |
+| R2 遗留缺陷 | 11 open | **11 closed** |
+| review findings | — | 13 修 + cso 4 处置 |
+| 提交（自 `r2-baseline`） | — | 8（spec/autoplan/build/review/qa/ship/retro 修复） |
+| 变更规模 | — | 135 files，+14702/−2707 |
+
+## 6. 未完成/降级
+
+- 云平台部署：`requires-remote`（M5 选修）；
+- 跨模型复核：`unavailable`；cso 离线 `partial`；
+- 读屏器/对比度仪器/实体手机：`UNVERIFIED`；
+- simple 模式首页 HTML：`UNVERIFIED`。
 
 ## 7. 诚实边界
 
-- 本环只做「本地发布准备与门禁」，**没有**对外发布、没有远程制品。
-- 覆盖率是「路径 × 测试质量」的人工映射，不是代码行覆盖率。
-- QA 的 Medium（390px 导航可发现性）与图片授权/尺寸降级仍在 `CHANGELOG.md` 的 Known Issues 中，不隐藏。
+本环只汇总真实执行结果；`verified` 指 review/qa 有测试或容器/浏览器证据，不等于生产级质量。发布 tag 为本地 tag，未推送远端。

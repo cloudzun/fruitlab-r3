@@ -1,40 +1,34 @@
-# 证据索引（R2）
+# 证据索引（R3）
 
-> 本目录只放可核对的东西：真实命令、原始输出、哈希、截图。**没有发生的门禁不写成发生过。**
-> 本文件由 `scripts/check-links.mjs` 校验链接；证据文件哈希见 [`manifest.json`](manifest.json)。
+> 本目录只放可核对的东西：真实命令、原始输出、哈希、截图、容器日志。**没有发生的门禁不写成发生过。**
+> 唯一测试计数：`evidence/test-count.txt`（脚本生成；含 git tree hash）。
 
-## 逐环证据
+## 1. 逐环
 
-| 环节 | 文件 | 说明 |
-|---|---|---|
-| spec | [`ring-spec.md`](ring-spec.md) | 基线取证、门禁结果、环境踩坑 |
-| autoplan | [`ring-autoplan.md`](ring-autoplan.md) | 四阶段评审、原始输出、偏差与残余风险 |
-| autoplan 原始声音 | [`autoplan-voices/`](autoplan-voices/) | CEO / Design / DX / Eng 的原始输出 |
-| build | [`ring-build.md`](ring-build.md) | 里程碑、测试、集成、未完成项 |
-| review | [`ring-review.md`](ring-review.md) | 结构排雷、安全审计、6 项自动修复 |
-| review 补测 | [`ring-review-codex.md`](ring-review-codex.md) | codex 第二智能体复核（同族） |
-| cso 补测 | [`ring-review-cso.md`](ring-review-cso.md) | WSL 重建 launcher、官方 run、4 findings |
-| qa | [`ring-qa.md`](ring-qa.md) | 真实 Chromium 五断点、健康分 94、截图 |
-| ship | [`ring-ship.md`](ring-ship.md) | 覆盖率审计、文档同步、版本 2.0.0.0、`requires-remote` |
-| retro | [`ring-retro.md`](ring-retro.md) | Git 量化复盘、返工记录、学到的 |
-
-## 资产与计数
-
-| 文件 | 说明 |
+| 环 | 证据 |
 |---|---|
-| [`test-count.txt`](test-count.txt) | **测试计数唯一权威来源**（脚本生成） |
-| [`assets-manifest.json`](assets-manifest.json) | 14 张商品照片的 SHA-256、作者、授权、来源 |
-| [`manifest.json`](manifest.json) | 本目录逐文件 SHA-256（`scripts/verify-evidence.mjs` 生成/校验） |
-| [`clean-run.md`](clean-run.md) | 干净拷贝运行与哈希校验记录 |
-| [`manual-checks/browser.md`](manual-checks/browser.md) | 人工浏览器检查清单（未做即 `UNVERIFIED`） |
-| [`demo-script.md`](demo-script.md) | 五分钟课堂演示脚本（AC-42） |
-| [`g7-release-merge.txt`](g7-release-merge.txt) | R1 发布分支合并证据（G7） |
-| [`learner-checks/pre-spec.md`](learner-checks/pre-spec.md) | R1 遗留：无真实学员观察 `UNVERIFIED` |
-| [`spec-quality-gate.md`](spec-quality-gate.md) | R1 遗留：跨模型门禁 `unavailable` 原始记录 |
+| spec（1/7） | `ring-spec.md`、`spec-forensics.md`、`spec-quality-gate.md`、`codex/spec-review-codex.md`、`codex/spec-review-round2-codex.md`、`codex/spec-review-disposition.md` |
+| autoplan（2/7） | `ring-autoplan.md`、`autoplan-voices/r3-ceo.md`、`r3-des.md`、`r3-dx.md`、`r3-eng.md` |
+| build（3/7） | `ring-build.md`、`container/`、`baseline-tests.txt` |
+| review（4/7） | `ring-review.md`、`codex/review-codex.md`、`cso-r3/` |
+| qa（5/7） | `ring-qa.md`、`visual/r3-*.jpg`、`visual/r3-cart-390.png`、`container/` |
+| ship（6/7） | `ring-ship.md`、`test-count.txt`、`manifest.json`、`coverage-audit.md` |
+| retro（7/7） | `ring-retro.md` |
 
-## 使用
+## 2. 关键证据
 
-```powershell
-node scripts/verify-evidence.mjs        # 校验清单与磁盘一致
-node scripts/verify.mjs                 # 全量机械校验
-```
+| 内容 | 文件 |
+|---|---|
+| 测试计数（137 项，真实 PG） | `test-count.txt` |
+| 证据哈希清单 | `manifest.json`（`node scripts/verify-evidence.mjs`） |
+| 三容器健康/非 root | `container/`（health、after-restart-order、backup-restore.log、simple-mode.log） |
+| 备份/恢复 | `container/backup-restore.log`、`container/after-restore-order.json` |
+| 浏览器（1440/834/390/收据） | `visual/r3-home-1440.jpg`、`r3-home-834.jpg`、`r3-home-390.jpg`、`r3-cart-390.png`、`r3-receipt-1440.jpg` |
+| codex 同族复核（spec/review） | `codex/spec-review-codex.md`、`codex/review-codex.md` |
+| 官方 cso | `cso-r3/report.md`、`report.json`、`submission.json`、`start.json`、`inspect.json` |
+
+## 3. 诚实边界
+
+- 跨模型复核 `unavailable`；cso `partial`；人工无障碍项 `UNVERIFIED`。
+- `evidence/*.log` 为原始过程日志（未删改），可能包含中间推理/工具输出；报告以结论文件为准。
+- 大文件（日志/截图）已入 `manifest.json` 哈希清单；不存在的证据不列。
