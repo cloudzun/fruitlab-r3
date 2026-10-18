@@ -2,6 +2,49 @@
 
 FruitLab 的用户可见变更记录。
 
+## [2.0.0.0] - 2026-10-18
+
+> R2：从单机演示升级为带服务端数据库、账号、权限、管理员与命令行的系统；视觉重塑为 Apple 式高冷克制版式；新增义务追溯与机械校验。
+
+### Added
+
+- **持久化**：服务端 SQLite（Node 内置 `node:sqlite`）单文件数据库；商品、订单、用户、会话落库；停服重启后数据仍在。
+- **用户与身份**：注册/登录、服务端会话 + `HttpOnly; SameSite=Lax` Cookie、`scrypt` + 随机盐口令哈希、令牌库中只存 `sha256`；预置 `userA` / `userB` / `admin`。
+- **权限**：用户只能查自己的订单；管理员可查全部；水平与垂直越权均返回 403 并有测试。
+- **管理员**：改价格、改库存、上架/下架；新增 `GET /api/admin/products`（含下架商品）。
+- **命令行**：`node cli.mjs dev` 一键启动；`db init/seed/reset/check`、`user`、`product`、`orders`；`--json`、`--password-stdin`、退出码 0/1/2/3/4。
+- **商品**：从 10 种扩到 14 种（新增车厘子、贵妃芒、猕猴桃、草莓），14 张本地真实照片 + 授权台账。
+- **视觉**：Apple 式高冷克制版式（白底大留白、4/3/2/1 断点、胶囊 CTA、系统字体），废弃 R1 手写果摊招牌。
+- **下单改进**：`clientOrderId` 幂等、库存原子扣减、事务回滚；`GET /api/health` 与启动结构化摘要。
+- **流程机制**：`OB-B*` 义务台账、`AC×OB` 双向追溯、唯一测试计数、`scripts/verify.mjs` 单一验证入口、证据哈希清单。
+
+### Changed
+
+- 默认端口 `4173` → `4174`（与冻结的 R1 并存）。
+- 订单权威来源从浏览器 `localStorage` 改为服务端数据库；`assets/order-store.mjs` 与 `assets/catalog.mjs` 退役。
+- `CSP connect-src` 从 `'none'` 改为 `'self'`（前端需调用同源 API）；CSP 以 HTTP 头为唯一来源。
+- 页面标题与文案从「果子摊」改为「FruitLab · 按份买水果」。
+
+### Removed（breaking）
+
+- **访客凭订单号查单**：R2 需登录且只能查自己的订单（PRD FR-3）；R1 的历史 `localStorage` 订单**不迁移**。
+
+### Fixed
+
+- 订单列表 N+1 查询 → 批量明细查询。
+- 幂等唯一冲突竞态不再 500，返回已有订单。
+- 非法百分号 Cookie 不再触发 500。
+- `/api/health` 不再泄露绝对文件系统路径。
+- 重新登录会作废旧会话，避免会话行堆积。
+
+### Known Issues（如实记录）
+
+- 390px 导航为横向滚动，初始看不到「购物袋」入口（规范允许滚动，可发现性偏弱）。
+- 图片授权为 CC0 / CC BY / CC BY-SA / Public Domain（SPEC §5.8 原写仅 CC0/BY），已逐张署名并记录为降级项；12 张短边低于建议的 800px。
+- 会话过期、CSRF Token、登录限流按 PRD 边界**未实现**；他人订单返回 403 会泄露订单号存在性（D-32 取舍）。
+- 读屏器人工审查、完整键盘 Tab 全流程、对比度仪器测量为 `UNVERIFIED`。
+- 本仓库无 Git 远端：推送、PR、远端部署与金丝雀不可用（`requires-remote`）。
+
 ## [1.0.0.0] - 2026-10-17
 
 ### Added
