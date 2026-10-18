@@ -55,6 +55,7 @@
 
 - 读屏器人工审查、完整键盘 Tab 全流程、对比度仪器测量：`UNVERIFIED`（环境无人工受试条件）。
 - simple 两容器模式的首页 HTML：`UNVERIFIED`（只验证了 `/api/health` 与容器健康）。
+- DB down 的 live 浏览器白屏/降级未实测：由 `/api/health` 503（`tests/review-fixes.test.mjs`）与商品加载错误态（`tests/app.test.mjs`）分别覆盖，不写成“已实机验证”。
 - 未在 Docker Desktop 原生引擎复测；容器证据来自 WSL Docker。
 - 未做性能指标采集（performance 分为 provisional）。
 

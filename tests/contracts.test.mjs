@@ -61,3 +61,11 @@ test("decision log records R3 decisions D-47..D-108 without duplicates", () => {
   assert.equal(r3.length >= 60, true);
   assert.equal(new Set(r3).size, r3.length);
 });
+
+test("VERSION and package version follow the 4-to-3 segment mapping", () => {
+  const version = fs.readFileSync(path.join(ROOT, "VERSION"), "utf8").trim();
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  assert.equal(version, "3.0.0.0");
+  assert.equal(pkg.version, "3.0.0");
+  assert.equal(`${pkg.version}.0`, version);
+});

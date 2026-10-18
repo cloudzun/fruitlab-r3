@@ -1,55 +1,55 @@
 # 测试计数（唯一权威来源）
 
 - 命令: node --test --test-concurrency=4
-- 时间: 2026-10-18T04:10:23.685Z
-- git: 4458c96a8f578155ebfedf687da473f9a0b2825f
+- 时间: 2026-10-18T04:12:50.935Z
+- git: c414de6da315e6ceea76d2de107405cd2531d014
 - git 状态: 2 dirty path(s)
-- tree hash: 4c406bff12870cd119117e4ca63d6e3a7858c531
-- 结果: tests=137 pass=137 fail=0 skipped=0 todo=0
+- tree hash: b94cc856ba876e9e89281099db210b38db15ccfd
+- 结果: tests=138 pass=138 fail=0 skipped=0 todo=0
 
 ## 原始输出（尾部）
 
 ```text
   ...
 # Subtest: layout uses 4/3/2/1 product columns and respects reduced motion
-ok 133 - layout uses 4/3/2/1 product columns and respects reduced motion
+ok 134 - layout uses 4/3/2/1 product columns and respects reduced motion
   ---
-  duration_ms: 0.7748
+  duration_ms: 0.9372
   type: 'test'
   ...
 # Subtest: visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
-ok 134 - visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
+ok 135 - visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
   ---
-  duration_ms: 1.1853
+  duration_ms: 1.336
   type: 'test'
   ...
 # Subtest: product cards use local photos, alt text, and stable quantity controls
-ok 135 - product cards use local photos, alt text, and stable quantity controls
+ok 136 - product cards use local photos, alt text, and stable quantity controls
   ---
-  duration_ms: 0.7588
+  duration_ms: 0.7165
   type: 'test'
   ...
 # Subtest: retired frontend modules are gone and no file imports them
-ok 136 - retired frontend modules are gone and no file imports them
+ok 137 - retired frontend modules are gone and no file imports them
   ---
-  duration_ms: 1.3447
+  duration_ms: 1.3138
   type: 'test'
   ...
 # Subtest: runtime dependency set is exactly pg and no generated build directory exists
-ok 137 - runtime dependency set is exactly pg and no generated build directory exists
+ok 138 - runtime dependency set is exactly pg and no generated build directory exists
   ---
-  duration_ms: 1.0598
+  duration_ms: 1.1125
   type: 'test'
   ...
-1..137
-# tests 137
+1..138
+# tests 138
 # suites 0
-# pass 137
+# pass 138
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 64569.727
+# duration_ms 64220.0345
 ```
 
 > 其它文档出现计数时必须引用本文件；不得手写数字。
