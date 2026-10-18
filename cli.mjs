@@ -11,6 +11,7 @@ import * as usersRepo from "./server/repositories/users.mjs";
 import * as productsRepo from "./server/repositories/products.mjs";
 import * as ordersRepo from "./server/repositories/orders.mjs";
 import { createApp, formatStartupError } from "./server/app.mjs";
+import { toAppError, isKnownAppCode, sqlStateOf } from "./server/errors.mjs";
 import { createStaticServer } from "./serve.mjs";
 import { loadConfig, ConfigError, readVersion } from "./config.mjs";
 
@@ -101,10 +102,17 @@ function timestamp() {
 
 const BACKUP_TABLES = ["users", "products", "orders", "order_items", "sessions"];
 const RESTORE_ORDER = ["users", "products", "orders", "order_items", "sessions"];
+const TABLE_COLUMNS = Object.freeze({
+  users: ["user_id", "username", "password_hash", "role", "created_at"],
+  products: ["product_id", "name", "unit", "unit_price_cents", "stock", "listed", "image_path", "image_alt", "description", "sort_order"],
+  orders: ["order_id", "order_number", "user_id", "client_order_id", "subtotal_cents", "created_at"],
+  order_items: ["item_id", "order_id", "product_id", "quantity", "unit_price_cents", "subtotal_cents"],
+  sessions: ["token_hash", "user_id", "created_at", "expires_at"],
+});
 
 async function exportBackup(pool, outDir) {
   const dir = path.resolve(outDir);
-  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const file = path.join(dir, `${timestamp()}.jsonl`);
   const lines = [];
   lines.push(JSON.stringify({
@@ -118,36 +126,58 @@ async function exportBackup(pool, outDir) {
     const result = await pool.query(`SELECT * FROM ${table}`);
     lines.push(JSON.stringify({ type: "table", name: table, rows: result.rows }));
   }
-  fs.writeFileSync(file, `${lines.join("\n")}\n`, "utf8");
+  fs.writeFileSync(file, `${lines.join("\n")}\n`, { encoding: "utf8", mode: 0o600 });
+  fs.chmodSync(file, 0o600);
   return file;
+}
+
+function backupError(message) {
+  return Object.assign(new Error(message), { code: "invalid-backup" });
 }
 
 async function importBackup(pool, file) {
   const raw = fs.readFileSync(file, "utf8");
   const lines = raw.split(/\r?\n/).filter((line) => line.trim() !== "");
+  if (lines.length === 0) throw backupError("backup is empty");
   const meta = JSON.parse(lines[0]);
-  if (meta.type !== "meta" || meta.app !== "fruitlab-r3") throw new Error("backup meta invalid");
+  if (meta.type !== "meta" || meta.app !== "fruitlab-r3") throw backupError("backup meta invalid");
+  const currentVersion = await schemaVersion(pool);
+  if (Number(meta.schemaVersion) !== currentVersion) {
+    throw backupError(`backup schemaVersion ${meta.schemaVersion} != current ${currentVersion}`);
+  }
   const tables = new Map();
   for (const line of lines.slice(1)) {
     const record = JSON.parse(line);
-    if (record.type !== "table") throw new Error("backup table record invalid");
+    if (record.type !== "table" || !RESTORE_ORDER.includes(record.name) || !Array.isArray(record.rows)) {
+      throw backupError(`invalid table record: ${record.name ?? "unknown"}`);
+    }
+    if (tables.has(record.name)) throw backupError(`duplicate table record: ${record.name}`);
     tables.set(record.name, record.rows);
+  }
+  for (const table of RESTORE_ORDER) {
+    if (!tables.has(table)) throw backupError(`backup is missing table: ${table}`);
+    const expected = [...TABLE_COLUMNS[table]].sort();
+    for (const row of tables.get(table)) {
+      const actual = Object.keys(row).sort();
+      if (actual.length !== expected.length || actual.some((column, index) => column !== expected[index])) {
+        throw backupError(`backup columns mismatch for ${table}`);
+      }
+    }
   }
   await resetDatabase(pool, {
     seed: async (client) => {
-      await runMigrationsOnClient(client);
       for (const table of RESTORE_ORDER) {
-        const rows = tables.get(table) ?? [];
+        const rows = tables.get(table);
+        const columns = TABLE_COLUMNS[table];
+        const placeholders = columns.map((_, index) => `$${index + 1}`);
+        const overriding = table === "orders" || table === "order_items" ? " OVERRIDING SYSTEM VALUE" : "";
         for (const row of rows) {
-          const columns = Object.keys(row);
-          const placeholders = columns.map((_, index) => `$${index + 1}`);
-          const overriding = table === "orders" || table === "order_items" ? " OVERRIDING SYSTEM VALUE" : "";
           await client.query(
             `INSERT INTO ${table} (${columns.join(", ")})${overriding} VALUES (${placeholders.join(", ")})`,
             columns.map((column) => row[column]),
           );
         }
-        if (table === "orders" || table === "order_items") {
+        if ((table === "orders" || table === "order_items") && rows.length > 0) {
           const idColumn = table === "orders" ? "order_id" : "item_id";
           await client.query(
             `SELECT setval(pg_get_serial_sequence('${table}', '${idColumn}'),
@@ -157,11 +187,13 @@ async function importBackup(pool, file) {
       }
     },
   });
+  for (const table of RESTORE_ORDER) {
+    const expected = tables.get(table).length;
+    const actual = (await pool.query(`SELECT COUNT(*)::int AS n FROM ${table}`)).rows[0].n;
+    if (actual !== expected) throw backupError(`restore row count mismatch for ${table}: ${actual} != ${expected}`);
+  }
   return meta;
 }
-
-// restore 里的 seed 回调需要先跑迁移；resetDatabase 已经先 migrate，这里不再重复。
-async function runMigrationsOnClient() {}
 
 async function main() {
   const parsed = parseGlobal(args);
@@ -197,6 +229,10 @@ async function main() {
       config.port = port;
     }
     config.serveStatic = true;
+    if (!process.env.PUBLIC_URL) {
+      config.publicUrl = `http://${config.host}:${config.port}`;
+      config.publicOrigin = new URL(config.publicUrl);
+    }
     const app = await createApp({ config }).catch((error) => {
       process.stderr.write(`${formatStartupError(error, config)}\n`);
       process.exitCode = 1;
@@ -386,10 +422,14 @@ async function main() {
     return fail("invalid-argument", `unknown command: ${command}`, json, 2);
   } catch (error) {
     if (error?.stage) return fail("startup-failed", formatStartupError(error, config), json, 3);
-    if (typeof error?.code === "string" && error.code === "23505") return fail("auth-username-taken", "用户名已被占用", json, 1);
-    if (typeof error?.code === "string" && /^(080|57P01|53300)/.test(error.code)) return fail("db-unavailable", String(error.message), json, 3);
-    if (["ECONNREFUSED", "ETIMEDOUT", "ECONNRESET"].includes(error?.code) || /timeout exceeded/.test(String(error?.message))) {
-      return fail("db-unavailable", String(error?.message ?? error), json, 3);
+    if (sqlStateOf(error) === "23505") return fail("auth-username-taken", "用户名已被占用", json, 1);
+    if (error?.code === "classroom-data-present" || error?.code === "invalid-backup") {
+      return fail(error.code, String(error.message), json, 1);
+    }
+    if (isKnownAppCode(error?.code)) return fail(error.code, String(error.message), json, 1);
+    const mapped = toAppError(error);
+    if (mapped === "db-unavailable" || mapped === "server-busy") {
+      return fail(mapped, String(error?.message ?? error).slice(0, 300), json, 3);
     }
     return fail("internal-error", String(error?.message ?? error), json, 4);
   } finally {

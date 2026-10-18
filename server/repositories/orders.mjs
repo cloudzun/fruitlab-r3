@@ -106,7 +106,7 @@ export async function create(client, { orderNumber, userId, clientOrderId, subto
 export async function deductStock(client, { productId, quantity }) {
   const result = await client.query(
     `UPDATE products SET stock = stock - $1
-      WHERE product_id = $2 AND stock >= $1
+      WHERE product_id = $2 AND stock >= $1 AND listed = true
       RETURNING stock`,
     [quantity, productId],
   );

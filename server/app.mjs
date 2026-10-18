@@ -40,7 +40,16 @@ export async function createApp({ config, clock = () => new Date() }) {
   try {
     await stage("connect", () => waitForDatabase(pool));
     await stage("migrate", () => runMigrations(pool));
-    if (!(await isSeeded(pool))) {
+    const seeded = await isSeeded(pool);
+    const metaResult = await pool.query("SELECT value FROM app_meta WHERE key = 'seed_mode'");
+    const seededMode = metaResult.rowCount > 0 ? metaResult.rows[0].value : seeded ? "classroom" : "none";
+    if (seeded && config.seedMode === "production" && seededMode !== "production") {
+      throw Object.assign(
+        new Error("production database was seeded as classroom (demo users present); run `node cli.mjs db reset --yes`"),
+        { code: "classroom-data-present" },
+      );
+    }
+    if (!seeded || (config.seedMode === "classroom" && seededMode !== "classroom")) {
       await stage("seed", () =>
         withTransaction(pool, async (client) => {
           if (config.seedMode === "production") {
@@ -58,6 +67,15 @@ export async function createApp({ config, clock = () => new Date() }) {
           }
         }),
       );
+    } else if (config.seedMode === "production") {
+      const admin = await pool.query("SELECT role FROM users WHERE username = 'admin'");
+      if (admin.rowCount === 0 || admin.rows[0].role !== "admin") {
+        await stage("seed", () =>
+          withTransaction(pool, (client) =>
+            seedProductionAdmin(client, { hashPassword, adminPassword: config.adminPassword, now: clock().toISOString() }),
+          ),
+        );
+      }
     }
     await stage("purge-sessions", () => sessions.purgeExpired(pool, clock()));
     const repos = { users, sessions, products, orders };

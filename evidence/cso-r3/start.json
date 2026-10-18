@@ -1,0 +1,512 @@
+{
+  "schemaVersion": 3,
+  "runId": "1792294626627-4aa9fb56ea93339d",
+  "repoId": "d341b0fd8683ea40337788ea",
+  "createdAt": "2026-10-18T03:37:06.601Z",
+  "deadline": "2026-10-18T03:47:06.601Z",
+  "status": "running",
+  "completeness": "partial",
+  "policy": {
+    "mode": "daily",
+    "scope": "code",
+    "diff": false,
+    "base": "origin/main",
+    "offline": true,
+    "budgetSeconds": 600,
+    "maxWorkers": 3,
+    "maxRepairs": 3
+  },
+  "source": {
+    "root": "<REDACTED-internal.user_path>",
+    "snapshotHash": "09ecaf05a1daf0c791bac8923ffa7662a3f9585dd051742ef3e04e9274d64bc3",
+    "originalHash": "b91f42e48a408c26971f9cccc13404c7ba82441d7e375fbcf71e4b1e9a4727f8",
+    "transformations": [
+      {
+        "path": ".env.example",
+        "handling": "excluded: credential or execution configuration"
+      },
+      {
+        "path": "BUILD.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "CLAUDE.md",
+        "handling": "excluded: credential or execution configuration"
+      },
+      {
+        "path": "DECISIONS.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "Dockerfile",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "Dockerfile.web",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "NEXT-SESSION-PROMPT.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "PRD-R2.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "PRD-R3.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "R1-八环讲解记录.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "README.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "SPEC.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "VERSION",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/api-client.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/app.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/images/products/banana.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/blueberry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/cherry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/durian.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/fuji-apple.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/golden-pineapple.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/hami-melon.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/kiwi.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/mango.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/navel-orange.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/peach.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/red-dragon-fruit.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/shine-muscat.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/strawberry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "compose.simple.yml",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "config.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docker-compose.yml",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/api.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/assets-credits.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/contracts.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/decision-log.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/deploy.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/assets-manifest.json",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/ceo.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/design.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/dx.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/eng.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-ceo-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-ceo.log",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-des-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-des.log",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-dx-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-dx.log",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-dx.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-eng-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-eng.log",
+        "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+      },
+      {
+        "path": "evidence/baseline-tests.txt",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/codex/SPEC-snapshot-v1.0.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/SPEC-snapshot-v1.1.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/apply-spec-v1.1.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/review-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-codex.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-disposition.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-prompt2.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-run.log",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/codex/spec-review-run2.log",
+        "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+      },
+      {
+        "path": "evidence/codex/spec-review-run3.log",
+        "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+      },
+      {
+        "path": "evidence/codex/spec-review2-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/cso/cso-report.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/cso/report.json",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/debug415.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/handle-probe.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/index.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-build.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-review-codex.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-review-cso.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-ship.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/smoke-m1.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/spec-forensics.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/toolchain-recon.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/visual/home-1440.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-390-cart.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-390-top.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-834.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "retro.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "review.md",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "server/app.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "server/router.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "tests/app.test.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "tests/controller.test.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "tests/helpers/pg.mjs",
+        "handling": "secret spans redacted"
+      }
+    ]
+  },
+  "application": {
+    "actors": [],
+    "assets": [],
+    "entrypoints": [],
+    "tenantBoundaries": [],
+    "sensitiveOperations": [],
+    "invariants": []
+  },
+  "coverage": [
+    {
+      "domain": "snapshot-inputs",
+      "scope": "code",
+      "status": "partial",
+      "method": "fail-closed captured source inventory",
+      "gaps": [
+        "assets/images/products/banana.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/blueberry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/cherry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/durian.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/fuji-apple.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/golden-pineapple.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/hami-melon.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/kiwi.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/mango.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/navel-orange.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/peach.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/red-dragon-fruit.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/shine-muscat.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/strawberry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/autoplan-voices/r3-ceo.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/autoplan-voices/r3-des.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/autoplan-voices/r3-dx.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/autoplan-voices/r3-eng.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/baseline-tests.txt: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/codex/spec-review-run.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/codex/spec-review-run2.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/codex/spec-review-run3.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-1440.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-390-cart.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-390-top.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-834.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "review.md: in-scope source payload was unread and withheld from static and runtime assessment"
+      ],
+      "exclusions": [
+        ".env.example: excluded: credential or execution configuration",
+        "CLAUDE.md: excluded: credential or execution configuration"
+      ],
+      "evidence": [
+        "172 sanitized execution inputs captured; 2 explicit non-executable exclusions; 27 unread in-scope inputs; 0 tracked deletions"
+      ]
+    },
+    {
+      "domain": "history-inputs",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "bounded helper-retained Git history",
+      "gaps": [
+        "Could not read bounded Git metadata: log exceeded the output limit (request rejected); source may not be a Git repository"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "application-model",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "attack-surface",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "llm-agentic-mcp",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "owasp-2025",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "stride",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "data-classification",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    }
+  ],
+  "findings": [],
+  "gaps": [],
+  "events": [
+    {
+      "at": "2026-10-18T03:37:16.327Z",
+      "kind": "snapshot",
+      "message": "Captured 201 source entries; 87 transformations disclosed"
+    }
+  ]
+}

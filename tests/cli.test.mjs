@@ -85,7 +85,7 @@ test("db backup produces a restorable JSON Lines file", async () => {
     const lines = fs.readFileSync(file, "utf8").trim().split(/\r?\n/);
     const meta = JSON.parse(lines[0]);
     assert.equal(meta.type, "meta");
-    assert.equal(meta.schemaVersion, 1);
+    assert.equal(meta.schemaVersion, 2);
     assert.ok(lines.some((line) => JSON.parse(line).name === "users"));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -163,8 +163,24 @@ test("production mode rejects missing/weak admin password and insecure cookie", 
     const insecure = run(["db", "seed"], { ...base, ADMIN_PASSWORD: "strong-admin-password", COOKIE_SECURE: "0" });
     assert.equal(insecure.status, 1);
     assert.match(insecure.stderr, /COOKIE_SECURE/);
-    const ok = run(["db", "seed"], { ...base, ADMIN_PASSWORD: "strong-admin-password", COOKIE_SECURE: "1" });
-    assert.equal(ok.status, 0, ok.stderr);
+    const contaminated = run(["db", "seed"], { ...base, ADMIN_PASSWORD: "strong-admin-password", COOKIE_SECURE: "1" });
+    assert.equal(contaminated.status, 1);
+    assert.match(contaminated.stderr, /classroom/);
+
+    const fresh = await createTestDatabase({ seed: false });
+    try {
+      const ok = run(["db", "seed"], {
+        DATABASE_URL: fresh.url,
+        APP_ENV: "production",
+        ADMIN_PASSWORD: "strong-admin-password",
+        COOKIE_SECURE: "1",
+      });
+      assert.equal(ok.status, 0, ok.stderr);
+      const names = (await fresh.pool.query("SELECT username FROM users ORDER BY username")).rows.map((row) => row.username);
+      assert.deepEqual(names, ["admin"]);
+    } finally {
+      await fresh.close();
+    }
   } finally {
     await db.close();
   }

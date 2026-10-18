@@ -1,0 +1,258 @@
+{
+  "application": {
+    "actors": [
+      "anonymous visitor",
+      "authenticated user (userA/userB)",
+      "admin",
+      "operator with database/backup access"
+    ],
+    "assets": [
+      "products database",
+      "orders database",
+      "sessions",
+      "user credentials (scrypt hashes)",
+      "database backups"
+    ],
+    "entrypoints": [
+      "GET /api/health",
+      "GET /api/products",
+      "POST /api/auth/register",
+      "POST /api/auth/login",
+      "POST /api/auth/logout",
+      "GET /api/auth/me",
+      "POST /api/orders",
+      "GET /api/orders/mine",
+      "GET /api/orders/{orderNumber}",
+      "GET /api/admin/orders",
+      "GET /api/admin/products",
+      "PATCH /api/admin/products/{id}",
+      "web static files via Caddy (4175)"
+    ],
+    "tenantBoundaries": [
+      "order.user_id ownership (other users' orders return 404)",
+      "role admin vs user",
+      "compose network boundary: api/db not published"
+    ],
+    "sensitiveOperations": [
+      "session issuance and expiry",
+      "password verification (scrypt)",
+      "read order by number",
+      "admin price/stock/listing update",
+      "database backup and restore"
+    ],
+    "invariants": [
+      "users can only read own orders; other users' orders are indistinguishable from missing (404)",
+      "admin mutations require admin role",
+      "passwords stored as salted scrypt hash; dummy scrypt runs for missing users",
+      "stock never negative (conditional UPDATE)",
+      "state-changing requests with a session require CSRF token",
+      "sessions expire server-side"
+    ]
+  },
+  "findings": [
+    {
+      "title": "Database backup artifacts contain password hashes and inherit default file permissions",
+      "rootCause": "The SQL/JSON-Lines backup export (CLI db backup) and pg_dump output store complete rows, including users.password_hash, and are written with the process umask. No explicit 0600 permission or encryption is applied.",
+      "location": {
+        "path": "cli.mjs",
+        "line": 1,
+        "symbol": "exportBackup"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "high",
+      "confidenceRationale": "Direct source reading of exportBackup and scripts/backup.sh; no runtime inspection of resulting file modes.",
+      "evidence": "supported",
+      "attackerControl": "Local user or process with read access to the backups directory",
+      "impact": "Offline password-hash disclosure enables offline guessing; order/user data disclosure.",
+      "scenario": "A backup file created during class or operations is readable by another local account and copied off the machine.",
+      "trace": [
+        "node cli.mjs db backup --out backups",
+        "exportBackup writes rows incl. password_hash",
+        "scripts/backup.sh writes pg_dump output"
+      ],
+      "references": [
+        "cli.mjs exportBackup",
+        "scripts/backup.sh",
+        "docs/backup-restore.md"
+      ],
+      "recommendation": "Create backups with mode 0600 (or a dedicated directory 0700), document encryption-at-rest for production, and avoid shipping backups with the repo.",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked CLI backup and scripts/backup.sh",
+        "controls": "backups/ is gitignored and documented as operator-only",
+        "counterevidence": "local classroom demo has no multi-user host threat model",
+        "conclusion": "survives as a low-severity operational hygiene issue"
+      }
+    },
+    {
+      "title": "Rate limiting state is process-local; restart or a second instance resets counters",
+      "rootCause": "createRateLimiter keeps failures in an in-memory Map keyed by account+IP and IP. The application is documented as single-instance; a restart clears lockouts and a second replica would not share counters.",
+      "location": {
+        "path": "server/auth.mjs",
+        "line": 1,
+        "symbol": "createRateLimiter"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "high",
+      "confidenceRationale": "Direct source reading; R3 explicitly designs a single-instance demo and documents the boundary.",
+      "evidence": "supported",
+      "attackerControl": "Ability to wait for a restart or to target a deployment with multiple replicas",
+      "impact": "Online password guessing budget resets; brute-force protection is weaker than a shared store.",
+      "scenario": "Attacker waits for a service restart or deployment scale-out and retries the password list.",
+      "trace": [
+        "POST /api/auth/login",
+        "auth service rateLimiter.check",
+        "createRateLimiter Map"
+      ],
+      "references": [
+        "server/auth.mjs",
+        "docs/deploy.md",
+        "README.md security boundaries"
+      ],
+      "recommendation": "Keep for R3 and document the single-instance boundary; for production, move counters to a shared store (or edge/WAF rate limiting).",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked login service and compose deployment",
+        "controls": "two buckets (account+IP, IP) and 15-minute lock",
+        "counterevidence": "R3 declares no horizontal scaling and a single replica in compose",
+        "conclusion": "survives as a scoped limitation, not a functional bug"
+      }
+    },
+    {
+      "title": "Local compose does not terminate TLS; cookie Secure flag depends on deployer configuration",
+      "rootCause": "The default docker-compose.yml exposes HTTP on 4175 and defaults COOKIE_SECURE=0 for classroom. Production requires APP_ENV=production plus COOKIE_SECURE=1, but TLS/HTTPS itself is delegated to an external reverse proxy and is not part of the delivered compose file.",
+      "location": {
+        "path": "docker-compose.yml",
+        "line": 1,
+        "symbol": "web service port mapping"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "high",
+      "confidenceRationale": "Direct reading of compose env defaults and config.mjs production checks; no external TLS terminator is shipped.",
+      "evidence": "supported",
+      "attackerControl": "Network attacker on the path between browser and host",
+      "impact": "Session cookie could travel over plaintext if the deployer exposes 4175 directly.",
+      "scenario": "Operator publishes the compose port to a LAN/WAN without a TLS proxy; login credentials and session cookie are sent in clear text.",
+      "trace": [
+        "browser -> web:4175 (HTTP)",
+        "Caddy :8080",
+        "api sets fruitlab_session"
+      ],
+      "references": [
+        "docker-compose.yml",
+        "config.mjs production checks",
+        "docs/deploy.md"
+      ],
+      "recommendation": "Document that the delivered stack is localhost/demo only; for deployment terminate TLS at an external proxy and keep COOKIE_SECURE=1 enforced in production (already checked).",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked compose ports and production config validation",
+        "controls": "APP_ENV=production refuses COOKIE_SECURE=0",
+        "counterevidence": "PRD explicitly excludes HTTPS certificates for local compose",
+        "conclusion": "survives as a documented deployment boundary"
+      }
+    },
+    {
+      "title": "CLI db restore trusts operator-supplied JSON Lines without schema-version compatibility check",
+      "rootCause": "importBackup validates the meta.type/app marker but not that meta.schemaVersion matches the running binary; a backup from a different schema version could be partially applied before failing, though it runs in one transaction.",
+      "location": {
+        "path": "cli.mjs",
+        "line": 1,
+        "symbol": "importBackup"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "medium",
+      "confidenceRationale": "Direct source reading; transactional rollback limits impact to restore failure rather than corruption.",
+      "evidence": "supported",
+      "attackerControl": "Operator/supply-chain control over the backup file",
+      "impact": "Restore fails or produces schema/data mismatch that is detected only by later checks.",
+      "scenario": "An old backup file is restored after a future schema change; insert order/columns no longer match.",
+      "trace": [
+        "node cli.mjs db restore --in <file> --yes",
+        "importBackup parses meta",
+        "resetDatabase + inserts"
+      ],
+      "references": [
+        "cli.mjs importBackup",
+        "server/migrations/0001_init.sql"
+      ],
+      "recommendation": "Compare meta.schemaVersion with the current migration version and refuse mismatches with a clear error; add a backup format version test.",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked CLI restore path",
+        "controls": "single transaction and --yes confirmation",
+        "counterevidence": "R3 ships a single schema version, so mismatch is not reachable in classroom",
+        "conclusion": "survives as a low-severity forward-compatibility gap"
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "domain": "application-model",
+      "scope": "code",
+      "status": "assessed",
+      "method": "manual static review of routes, auth/session, rate limiting, CSRF, schema and backup paths",
+      "evidence": [
+        "server/router.mjs",
+        "server/services/auth.mjs",
+        "server/auth.mjs",
+        "server/repositories/sessions.mjs",
+        "server/migrations/0001_init.sql"
+      ],
+      "exclusions": [],
+      "gaps": []
+    },
+    {
+      "domain": "attack-surface",
+      "scope": "code",
+      "status": "assessed",
+      "method": "route census over /api, static allowlist and compose-exposed ports",
+      "evidence": [
+        "server/router.mjs",
+        "server/allowlist.mjs",
+        "docker-compose.yml",
+        "Caddyfile"
+      ],
+      "exclusions": [],
+      "gaps": []
+    },
+    {
+      "domain": "owasp-2025",
+      "scope": "code",
+      "status": "partial",
+      "method": "manual review of A01/A02/A03/A05/A07",
+      "evidence": [
+        "server/router.mjs",
+        "server/services/auth.mjs",
+        "server/services/orders.mjs"
+      ],
+      "exclusions": [],
+      "gaps": [
+        "offline run: gitleaks/osv/semgrep/trivy scanner profiles unavailable"
+      ]
+    },
+    {
+      "domain": "llm-agentic-mcp",
+      "scope": "code",
+      "status": "not_applicable",
+      "method": "repository has no LLM/MCP surface",
+      "evidence": [
+        "no agent tooling in repo"
+      ],
+      "exclusions": [],
+      "gaps": []
+    }
+  ]
+}

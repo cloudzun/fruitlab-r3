@@ -1,72 +1,62 @@
-# 证据 · review 环（R2 第 4/7 环）
+# 证据 · review 环（R3，4/7 环）
 
-> 结构排雷 + 安全审计的真实执行记录。官方 `gstack-review` / `cso` 运行件不可用，手动执行并如实记录。
+> 对象：build 提交 `1a56eb0`；修复提交见 git log（review 环收尾提交）。
+> 执行：codex 独立子代理只读复核 + 官方 `/cso` launcher（WSL）+ 人工处置与回归测试。
 
-## 1. 环境
-
-| 项 | 值 |
-|---|---|
-| 日期 | 2026-10-18 |
-| 审查对象 | build 环提交 `66b4a93` |
-| 运行时 | Node.js `v22.20.0` |
-| 工具 | `node --test`、`scripts/verify.mjs`、人工 grep 扫描、本地安全探针 |
-
-## 2. 扫描记录
-
-### 2.1 危险模式扫描
+## 1. 真实命令与产物
 
 ```powershell
-Select-String -Path server\*.mjs,cli.mjs,serve.mjs,assets\*.mjs `
-  -Pattern 'innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(|new Function|child_process|execSync|spawnSync'
+# codex 同族复核（stdin 提示，避免 PowerShell 多行参数问题）
+Get-Content evidence/codex/review-prompt.txt -Raw |
+  & "C:\Users\cheng\AppData\Local\OpenAI\Codex\bin\9614f1d9b40d9c4f\codex.exe" exec `
+    -c model="opencode-go/deepseek-v4.1-flash" -c model_reasoning_effort="medium" `
+    --sandbox danger-full-access -C "D:\vibecoding\easyvibe\r3-fruitlab" -
+# 报告：evidence/codex/review-codex.md（同族，非跨模型）；13 findings
+
+# 官方 cso（WSL）
+wsl -e bash -lc 'cd /mnt/c/Users/cheng/gstack/bin && ./gstack-cso-launcher start --repo /mnt/d/vibecoding/easyvibe/r3-fruitlab --code --offline --budget 600'
+# run 1792294626627-4aa9fb56ea93339d；submit 4 findings；finish → finished / partial
 ```
 
-结果：**无命中**（`tests/` 之外的运行时代码没有注入 sink 与 shell 调用）。
+- cso 产物：`evidence/cso-r3/`（report.md、report.json、submission.json、start.json、inspect.json、snapshot.json、history-status.json）。
+- 第一次 `start` 生成的 run 未提交、未 finish，作为“启动尝试”保留在 launcher 状态中；正式 run 为上述 id，报告如实写 `partial`。
 
-### 2.2 SQL 拼接扫描
+## 2. codex findings（13 条）与修复
 
-```powershell
-Select-String -Path server\*.mjs -Pattern '`[^`]*\$\{[^}]*\}[^`]*`' | Where-Object { $_.Line -match 'SELECT|INSERT|UPDATE|DELETE|CREATE' }
-```
+| 编号 | 级别 | 摘要 | 状态 |
+|---|---|---|---|
+| F-R3-01 | High | router 把 SQLSTATE 字符串当应用错误码 → 500 且泄露 | 已修 + 测试 |
+| F-R3-02 | High | classroom/production seed 未隔离，演示库可当生产 | 已修（app_meta + 拒绝污染）+ 测试 |
+| F-R3-03 | High | restore 缺表/缺列被当空表，恢复可“成功清库” | 已修（固定白名单 + schemaVersion + 行数校验）+ 测试 |
+| F-R3-04 | High | health 不签发 CSRF cookie，客户端恢复路径不可用 | 已修 + 测试 |
+| F-R3-05 | Medium | 账号桶键含 IP、成功清 IP 桶 | 已修 + 测试 |
+| F-R3-06 | Medium | `getForUpdate` 无 `FOR UPDATE`、扣库存不校验 listed | 已修 + 测试 |
+| F-R3-07 | Medium | `--port` 覆盖后 publicOrigin 未重建 | 已修 + 进程级测试 |
+| F-R3-08 | Medium | Host 白名单缺 `localhost:<port>` | 已修 + 测试 |
+| F-R3-09 | Medium | 无会话 logout 返回 401 | 已修 + 测试 |
+| F-R3-10 | Medium | CLI 未把 40001/40P01/57014/55P03 映射为退出码 3 | 已修 + 测试 |
+| F-R3-11 | Medium | restore.sh 未校验就启动 api | 已修（脚本校验失败即停） |
+| F-R3-12 | Medium | health 超时不销毁连接，可能耗尽池 | 已修（release(true)）+ 测试 |
+| F-R3-13 | Medium | `.env.example` 占位口令可通过 production 校验 | 已修 + 测试 |
 
-结果：仅 `products.mjs:58` 的 `UPDATE products SET ${fields.join(", ")} ...`，列名来自固定分支（`unit_price_cents`/`stock`/`listed`），**无用户输入拼接**。
+## 3. cso（官方 launcher）结果
 
-### 2.3 N+1 定位
+- run `1792294626627-4aa9fb56ea93339d`；submit 4 findings；finish `partial`；elapsed 498s。
+- 4 条 Low：备份权限/内容、限流进程内、本地无 TLS、CLI restore 版本校验。
+- 处置：备份 0700/0600 已修；restore schemaVersion 已修；限流与 TLS 作为文档边界（单实例/localhost demo）。
+- 未评估：history-inputs、stride、data-classification；离线 scanner profiles 不可用；二进制图片 withheld。**不称全量通过**。
 
-`server/orders.mjs` 原实现对每个订单调用 `itemsForOrder()`。已改为 `itemsByOrderIds()` 批量查询（列表 2 条 SQL）。
-
-## 3. 安全探针（真实输出）
-
-脚本：`.gstack/sec-probe.mjs`（临时，gitignore），基于测试夹具启动真实 HTTP 服务。
+## 4. 回归与门禁
 
 ```text
-health.dbPath = test.db | absolute? false
-sqli productId status/code = 404 product-not-found
-traversal status/code = 404 not-found
-malformed cookie status/code = 401 auth-required
-headers csp=true nosniff=nosniff no-store=no-store
+node --test --test-concurrency=4   # 137/137 pass（连续 4 次 0 失败）
+node scripts/record-test-count.mjs
+node scripts/verify.mjs --full     # PASS（见 ring-ship/最终证据）
 ```
 
-## 4. 修复后的复核
+## 5. 诚实边界
 
-| 命令 | 结果 |
-|---|---|
-| `node --test` | 96 项，96 通过，0 失败 |
-| `node scripts/verify.mjs` | PASS 5/5 |
-| `node --check cli.mjs` | 通过 |
-
-## 5. 修复清单（与 review.md §2 对应）
-
-| # | 文件 | 变更 |
-|---:|---|---|
-| 1 | `server/orders.mjs` | 批量明细查询，消除 N+1 |
-| 2 | `server/orders.mjs` | 幂等唯一冲突时返回已有订单 |
-| 3 | `server/auth.mjs` | Cookie 解码容错 |
-| 4 | `server/router.mjs` | health 不泄露绝对路径 |
-| 5 | `server/router.mjs` | 登录时作废旧会话 |
-| 6 | `cli.mjs` | 删除未使用变量 |
-
-## 6. 不可用与未做
-
-- 官方 `gstack-review`（含跨模型对抗）与 `/cso`（六类扫描器、Docker 隔离）：**不可用**，未运行。
-- 真实浏览器人工渗透、容器动态扫描、依赖漏洞扫描（无第三方依赖）：未做。
-- ASK 项（会话过期、CSRF、限流、403 泄露、审计、分页、图片尺寸）：按 PRD 边界与既有取舍保留，未擅自扩大范围。
+1. codex 复核未运行测试/容器；是同族静态复核。
+2. cso 是离线静态 run（`partial`），不是跨模型、不是全量安全通过。
+3. F-R3-11（restore.sh）为容器脚本，未纳入 `node --test`，以脚本 + qa 环手工恢复证据为准。
+4. 修复后的复测：以 qa 环的真实容器/浏览器证据和 ship 环最终 verify 为准。

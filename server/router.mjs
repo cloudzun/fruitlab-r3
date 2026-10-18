@@ -1,7 +1,7 @@
 // HTTP 层：只做协议（Host/Origin、体读取、路由/405、信封、Cookie、状态码）。
 // 依赖规则：不得 import pg / repositories / db（tests/layering.test.mjs 断言）。
 import crypto from "node:crypto";
-import { errorBody, statusFor, toAppError, isConnectionError } from "./errors.mjs";
+import { errorBody, statusFor, toAppError, isConnectionError, isKnownAppCode } from "./errors.mjs";
 import {
   COOKIE_NAME,
   CSRF_COOKIE_NAME,
@@ -43,13 +43,15 @@ function sendJson(res, status, body, extraHeaders = {}) {
 function hostAllowedSets(config) {
   const set = new Set();
   set.add(config.publicOrigin.host);
+  const publicPort = config.publicOrigin.port || (config.publicOrigin.protocol === "https:" ? "443" : "80");
+  set.add(`127.0.0.1:${publicPort}`);
+  set.add(`localhost:${publicPort}`);
   set.add(`127.0.0.1:${config.port}`);
   set.add(`localhost:${config.port}`);
   if (config.port === 80) {
     set.add("127.0.0.1");
     set.add("localhost");
   }
-  set.add(`127.0.0.1:${config.publicOrigin.port || (config.publicOrigin.protocol === "https:" ? 443 : 80)}`);
   return set;
 }
 
@@ -178,6 +180,10 @@ export function createApiHandler({ services, config, version }) {
       }
 
       const cookies = parseCookies(req.headers.cookie ?? "");
+      // 安全 GET 在缺失时签发 CSRF Cookie（health 也可作为 bootstrap，C-116）。
+      if ((method === "GET" || method === "HEAD") && !cookies[CSRF_COOKIE_NAME]) {
+        res.setHeader("Set-Cookie", csrfCookie(createCsrfToken(), cookieOptions));
+      }
       let user = null;
       try {
         user = await services.auth.me(cookies[COOKIE_NAME]);
@@ -185,7 +191,7 @@ export function createApiHandler({ services, config, version }) {
         user = null;
       }
 
-      const needsAuth = !["/api/auth/login", "/api/auth/register", "/api/products", "/api/health"].includes(pathname);
+      const needsAuth = !["/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/products", "/api/health"].includes(pathname);
       if (needsAuth && !user) return sendJson(res, 401, errorBody("auth-required")), true;
 
       // 3) CSRF：带会话的写请求（login/register 豁免）
@@ -263,13 +269,10 @@ export function createApiHandler({ services, config, version }) {
       }
       return sendJson(res, 404, errorBody("not-found")), true;
     } catch (error) {
-      if (error?.code && typeof error.code === "string" && error.code !== "internal-error") {
+      if (isKnownAppCode(error?.code)) {
         const headers = {};
         if (error.code === "auth-rate-limited" && Number.isInteger(error.details?.retryAfter)) {
           headers["Retry-After"] = String(error.details.retryAfter);
-        }
-        if (error.code === "unsupported-media-type" || error.code === "payload-too-large") {
-          return sendJson(res, statusFor(error.code), errorBody(error.code)), true;
         }
         return sendJson(res, statusFor(error.code), errorBody(error.code, error.details), headers), true;
       }

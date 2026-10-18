@@ -1,0 +1,73 @@
+# review.md（R3 第 4/7 环）
+
+> **对象**：build 环提交 `1a56eb0`（review 修复后的提交见文末）。
+> **方法**：codex 独立子代理只读复核 + 官方 `/cso` launcher 实跑（WSL）；人工逐项处置与回归测试。
+> **输入**：`SPEC.md` v1.2、`DECISIONS.md` 42 条 OB、`docs/contracts.md`、`docs/error-catalog.md`、`evidence/spec-forensics.md`（11 缺陷）。
+
+## 1. 结论
+
+| 项 | 结果 |
+|---|---|
+| 11 个 R2 缺陷点 | **11/11 关闭**（其中 C-2、S-2 在 review 环被发现“未真正关闭”，已修并补测试） |
+| codex 新 findings | 13 条（4 High / 7 Medium / 2 Medium？见下表）；**全部修复并补回归测试** |
+| 官方 cso | 官方 run `1792294626627-4aa9fb56ea93339d`：submit **4 findings**（Low）、finish `partial`；4 条按文档边界/低风险处置 |
+| 测试 | 137 项全部通过（真实 Postgres；连续 4 次稳定性复跑 0 失败） |
+| 门禁 | `verify.mjs --full` 全 PASS（review 修复后重跑） |
+
+## 2. 11 个缺陷点关闭表
+
+| 编号 | R2 问题 | R3 关闭方式 | 证据 |
+|---|---|---|---|
+| C-1 | `db reset` WAL/占用时假成功 | 先 JSON Lines 备份（失败即中止）→ 单事务 drop/migrate/seed → 校验；测试覆盖失败/成功 | `tests/cli.test.mjs`、`server/db.mjs resetDatabase` |
+| C-2 | `enqueueWrite` 未接入、BUSY 映射、无并发测试 | `enqueueWrite` 退役；SQLSTATE 映射 + `withTransaction` 有界重试；review 发现 router 错误分类漏洞（F-R3-01），已修 | `server/errors.mjs`、`server/router.mjs`、`tests/db.test.mjs`、`tests/review-fixes.test.mjs` |
+| C-3 | 动态路由 405 不完整 | 统一路由表（精确+动态）+ 表驱动 405 | `tests/api.test.mjs` |
+| C-4 | 认证先于体校验 | 体协议（415/413/400）→ 405 → 401 → CSRF → 403 | `tests/api.test.mjs` |
+| C-5 | api-client 超时未覆盖响应体 | AbortSignal 覆盖 fetch+body+JSON；headers-then-hang/abort 测试 | `tests/client.test.mjs` |
+| C-6 | 畸形百分号 → 500 | 安全 decode → 400 `invalid-path` | `tests/api.test.mjs` |
+| C-7 | `id`/`userId` 形状不一致 | 统一 `{id,username,role}` + 形状断言 | `tests/api.test.mjs`、`tests/auth.test.mjs` |
+| S-1 | 登录时序枚举 | 缺失用户 dummy scrypt，两条路径各一次 verify（分支断言） | `tests/auth.test.mjs` |
+| S-2 | 无限流 | 账号桶 + IP 桶；review 发现账号桶键含 IP（单账号多 IP 可绕过）、成功登录清 IP 桶，已修 | `server/auth.mjs`、`tests/review-fixes.test.mjs` |
+| S-3 | 会话永不过期 | `expires_at` + SQL 校验 + 启动清理 + 登录轮换 | `tests/auth.test.mjs`、`tests/api.test.mjs` |
+| S-4 | 403 泄露订单存在性 | 他人订单一律 404（D-32 superseded） | `tests/api.test.mjs` |
+
+## 3. codex 同族复核 findings 与处置
+
+> 复核者：codex 子代理（`opencode-go/deepseek-v4.1-flash`），**同族，不是跨模型**；报告 `evidence/codex/review-codex.md`。
+
+| 编号 | 级别 | 问题 | 处置 | 回归测试 |
+|---|---|---|---|---|
+| F-R3-01 | High | router catch 把任意字符串 `error.code` 当应用码，SQLSTATE 返回 500 且可能泄露 | 改为 `isKnownAppCode` 判定，未知错误走 `toAppError`；补充映射测试与 40P01→503 | `tests/review-fixes.test.mjs` |
+| F-R3-02 | High | `isSeeded` 不区分 classroom/production，演示库可被当生产 | 新增 `app_meta.seed_mode`；production 拒绝 classroom 库；`seedProductionAdmin` 检测 userA/userB 并拒绝 | `tests/cli.test.mjs`、`tests/review-fixes.test.mjs` |
+| F-R3-03 | High | restore 缺表按空表处理；列名来自文件拼接 | 固定表/列白名单、schemaVersion 校验、缺表/缺列/未知列拒绝、恢复后行数校验 | `tests/review-fixes.test.mjs` |
+| F-R3-04 | High | health 不签发 CSRF cookie，客户端 bootstrap 不可用 | 安全 GET 缺失时下发 `fruitlab_csrf`；客户端 bootstrap 测试 | `tests/review-fixes.test.mjs` |
+| F-R3-05 | Medium | 账号桶键含 IP；成功登录清 IP 桶；超长用户名入 Map | 账号桶=username（截断 64），IP 桶独立；成功只清账号桶；补单账号多 IP 测试 | `tests/review-fixes.test.mjs` |
+| F-R3-06 | Medium | `getForUpdate` 无 `FOR UPDATE`；扣库存不校验 listed | 加 `FOR UPDATE`；扣库存 SQL 加 `listed = true`；行锁/下架测试 | `tests/review-fixes.test.mjs` |
+| F-R3-07 | Medium | `--port` 覆盖后 publicOrigin 未重建，Origin 误判 | serve/cli 在未显式 PUBLIC_URL 时按最终 host/port 重建；进程级测试 | `tests/review-fixes2.test.mjs` |
+| F-R3-08 | Medium | Host 白名单缺 `localhost:4175` | 允许集合同时生成 `127.0.0.1:<publicPort>` 与 `localhost:<publicPort>`；localhost 测试 | `tests/review-fixes.test.mjs` |
+| F-R3-09 | Medium | 无会话 logout 返回 401（SPEC 为可选会话） | logout 加入免认证列表；无会话 204 + 清 Cookie | `tests/review-fixes.test.mjs` |
+| F-R3-10 | Medium | CLI 未把 40001/40P01/57014/55P03 映射为暂时性失败 | CLI 复用 `toAppError`；连接失败测试 exit 3 | `tests/review-fixes2.test.mjs` |
+| F-R3-11 | Medium | restore.sh 未真正校验 schema/种子/行数就启 api | 校验 schemaVersion≥2、products≥14、users≥1；失败保持 api 停止并 exit 1 | `scripts/restore.sh`（容器脚本，手工证据） |
+| F-R3-12 | Medium | health 超时只返回 503，不取消底层查询，可能耗尽连接 | health 用独立连接 + 超时 `release(true)` 销毁连接；慢查询模拟测试 | `tests/review-fixes.test.mjs` |
+| F-R3-13 | Medium | `.env.example` 占位口令可通过 production 校验 | production 拒绝 `change-me/changeme/placeholder`；测试 | `tests/review-fixes.test.mjs`、`tests/cli.test.mjs` |
+
+## 4. 官方 `/cso`（WSL launcher）
+
+- launcher：`gstack-cso 3.0.0 (helper ABI 3)`；run `1792294626627-4aa9fb56ea93339d`；`start → submit（4 findings）→ finish`，completeness **partial**。
+- 报告：`evidence/cso-r3/report.md`、`report.json`、`submission.json`、`inspect.json`、`start.json`。
+- findings（均 Low）：①备份含口令哈希且默认权限；②限流状态进程内；③本地 compose 无 TLS；④CLI restore 未校验 schemaVersion。
+- 处置：①已修（备份目录 0700、文件 0600）；②文档边界（单实例、重启清零）；③文档边界（本地 demo，生产需外部 TLS + `COOKIE_SECURE=1`）；④已修（schemaVersion 严格比对 + 截断/列校验）。
+- 诚实边界：离线 run，scanner profiles 不可用；history-inputs/stride/data-classification `not_assessed`；二进制图片 withheld；**不是全量安全通过**，也不是跨模型。
+
+## 5. 复核命令与结果
+
+```text
+node --test --test-concurrency=4      # 137 tests, 137 pass, 0 fail（连续 4 次稳定）
+node scripts/verify.mjs               # 全 PASS（见 evidence/ring-review.md）
+```
+
+## 6. 诚实边界
+
+1. codex 复核是**同族第二智能体静态复核**，未运行测试/容器；不是跨模型、不是渗透测试。
+2. cso 是官方 launcher 的离线静态 run，`partial`；不称“全量安全通过”。
+3. F-R3-11 的 restore.sh 校验属容器脚本，未纳入 node --test（依赖 compose），以 `docs/deploy.md` 与手工命令为证据；已在 qa 环复测备份恢复。
+4. 未做读屏器/对比度仪器审查；交 qa 环记录 `UNVERIFIED`。

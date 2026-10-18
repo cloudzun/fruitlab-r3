@@ -58,8 +58,14 @@ export function loadConfig({ env = process.env, databaseUrl } = {}) {
     if (!adminPassword) throw new ConfigError("APP_ENV=production requires ADMIN_PASSWORD");
     if (adminPassword.length < 12) throw new ConfigError("ADMIN_PASSWORD must be at least 12 characters");
     if (adminPassword === "demo1234") throw new ConfigError("ADMIN_PASSWORD must not be the demo password");
+    if (/change-me|changeme|placeholder/i.test(adminPassword)) {
+      throw new ConfigError("ADMIN_PASSWORD must not be the .env.example placeholder");
+    }
     if (demoPassword && adminPassword === demoPassword) {
       throw new ConfigError("ADMIN_PASSWORD must differ from DEMO_PASSWORD");
+    }
+    if (env.POSTGRES_PASSWORD && /change-me|changeme|placeholder/i.test(env.POSTGRES_PASSWORD)) {
+      throw new ConfigError("POSTGRES_PASSWORD must not be the .env.example placeholder");
     }
     if (!cookieSecure) throw new ConfigError("APP_ENV=production requires COOKIE_SECURE=1");
   }

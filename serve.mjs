@@ -158,7 +158,11 @@ export async function main(argv = process.argv.slice(2)) {
   }
   if (options.port !== undefined) config.port = options.port;
   if (options.host !== undefined) config.host = options.host;
-  if (!config.publicUrl.includes(":")) config.publicUrl = `http://${config.host}:${config.port}`;
+  if (!process.env.PUBLIC_URL) {
+    const publicHost = config.host === "0.0.0.0" ? "127.0.0.1" : config.host;
+    config.publicUrl = `http://${publicHost}:${config.port}`;
+    config.publicOrigin = new URL(config.publicUrl);
+  }
 
   let app;
   try {
@@ -169,6 +173,12 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
   const { server, port } = await createStaticServer(app, config);
+  if (!process.env.PUBLIC_URL) {
+    const publicHost = config.host === "0.0.0.0" ? "127.0.0.1" : config.host;
+    config.port = port;
+    config.publicUrl = `http://${publicHost}:${port}`;
+    config.publicOrigin = new URL(config.publicUrl);
+  }
   process.stdout.write(
     `${JSON.stringify({ event: "listening", url: `http://${config.host}:${port}`, port, db: "postgres", schema: app.schemaVersion, seeded: true, version: app.version, static: config.serveStatic })}\n`,
   );

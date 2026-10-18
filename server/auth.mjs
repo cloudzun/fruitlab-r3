@@ -180,10 +180,14 @@ export function createRateLimiter({
     }
   }
 
+  function accountKey(username) {
+    return String(username ?? "").slice(0, 64);
+  }
+
   function check({ username, ip }) {
     const time = now();
     prune(time);
-    const account = get(`a:${username}`, accountLimit);
+    const account = get(`a:${accountKey(username)}`, accountLimit);
     const address = get(`i:${ip}`, ipLimit);
     const locked = Math.max(account.lockedUntil, address.lockedUntil);
     if (locked > time) {
@@ -194,7 +198,7 @@ export function createRateLimiter({
 
   function recordFailure({ username, ip }) {
     const time = now();
-    for (const [key, limit] of [[`a:${username}`, accountLimit], [`i:${ip}`, ipLimit]]) {
+    for (const [key, limit] of [[`a:${accountKey(username)}`, accountLimit], [`i:${ip}`, ipLimit]]) {
       const bucket = get(key, limit);
       if (time - bucket.firstAt > windowMs) {
         bucket.firstAt = time;
@@ -207,8 +211,8 @@ export function createRateLimiter({
   }
 
   function clear({ username, ip }) {
-    buckets.delete(`a:${username}`);
-    buckets.delete(`i:${ip}`);
+    // 成功登录只清账号桶；IP 桶保留，防止攻击者用自有账号重置喷洒计数。
+    buckets.delete(`a:${accountKey(username)}`);
   }
 
   return {

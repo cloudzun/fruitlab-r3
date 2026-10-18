@@ -1,0 +1,3372 @@
+{
+  "report": {
+    "schemaVersion": 3,
+    "runId": "1792294626627-4aa9fb56ea93339d",
+    "repoId": "d341b0fd8683ea40337788ea",
+    "createdAt": "2026-10-18T03:37:06.601Z",
+    "deadline": "2026-10-18T03:47:06.601Z",
+    "status": "finished",
+    "completeness": "partial",
+    "policy": {
+      "mode": "daily",
+      "scope": "code",
+      "diff": false,
+      "base": "origin/main",
+      "offline": true,
+      "budgetSeconds": 600,
+      "maxWorkers": 3,
+      "maxRepairs": 3
+    },
+    "source": {
+      "root": "<REDACTED-internal.user_path>",
+      "snapshotHash": "09ecaf05a1daf0c791bac8923ffa7662a3f9585dd051742ef3e04e9274d64bc3",
+      "originalHash": "b91f42e48a408c26971f9cccc13404c7ba82441d7e375fbcf71e4b1e9a4727f8",
+      "transformations": [
+        {
+          "path": ".env.example",
+          "handling": "excluded: credential or execution configuration"
+        },
+        {
+          "path": "BUILD.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "CLAUDE.md",
+          "handling": "excluded: credential or execution configuration"
+        },
+        {
+          "path": "DECISIONS.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "Dockerfile",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "Dockerfile.web",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "NEXT-SESSION-PROMPT.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "PRD-R2.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "PRD-R3.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "R1-八环讲解记录.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "README.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "SPEC.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "VERSION",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "assets/api-client.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "assets/app.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "assets/images/products/banana.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/blueberry.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/cherry.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/durian.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/fuji-apple.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/golden-pineapple.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/hami-melon.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/kiwi.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/mango.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/navel-orange.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/peach.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/red-dragon-fruit.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/shine-muscat.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "assets/images/products/strawberry.jpg",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "compose.simple.yml",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "config.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "docker-compose.yml",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "docs/api.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "docs/assets-credits.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "docs/contracts.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "docs/decision-log.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "docs/deploy.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/assets-manifest.json",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/ceo.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/design.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/dx.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/eng.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-ceo-prompt.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-ceo.log",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-des-prompt.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-des.log",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-dx-prompt.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-dx.log",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-dx.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-eng-prompt.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/autoplan-voices/r3-eng.log",
+          "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+        },
+        {
+          "path": "evidence/baseline-tests.txt",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "evidence/codex/SPEC-snapshot-v1.0.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/codex/SPEC-snapshot-v1.1.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/codex/apply-spec-v1.1.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/codex/review-prompt.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/codex/spec-review-codex.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/codex/spec-review-disposition.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/codex/spec-review-prompt.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/codex/spec-review-prompt2.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/codex/spec-review-run.log",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "evidence/codex/spec-review-run2.log",
+          "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+        },
+        {
+          "path": "evidence/codex/spec-review-run3.log",
+          "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+        },
+        {
+          "path": "evidence/codex/spec-review2-prompt.txt",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/cso/cso-report.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/cso/report.json",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/debug415.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/handle-probe.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/index.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/ring-build.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/ring-review-codex.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/ring-review-cso.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/ring-ship.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/smoke-m1.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/spec-forensics.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/toolchain-recon.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "evidence/visual/home-1440.png",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "evidence/visual/home-390-cart.png",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "evidence/visual/home-390-top.png",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "evidence/visual/home-834.png",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "retro.md",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "review.md",
+          "handling": "withheld: binary or redaction failed"
+        },
+        {
+          "path": "server/app.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "server/router.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "tests/app.test.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "tests/controller.test.mjs",
+          "handling": "secret spans redacted"
+        },
+        {
+          "path": "tests/helpers/pg.mjs",
+          "handling": "secret spans redacted"
+        }
+      ]
+    },
+    "application": {
+      "actors": [
+        "anonymous visitor",
+        "authenticated user (userA/userB)",
+        "admin",
+        "operator with database/backup access"
+      ],
+      "assets": [
+        "products database",
+        "orders database",
+        "sessions",
+        "user credentials (scrypt hashes)",
+        "database backups"
+      ],
+      "entrypoints": [
+        "GET /api/health",
+        "GET /api/products",
+        "POST /api/auth/register",
+        "POST /api/auth/login",
+        "POST /api/auth/logout",
+        "GET /api/auth/me",
+        "POST /api/orders",
+        "GET /api/orders/mine",
+        "GET /api/orders/{orderNumber}",
+        "GET /api/admin/orders",
+        "GET /api/admin/products",
+        "PATCH /api/admin/products/{id}",
+        "web static files via Caddy (4175)"
+      ],
+      "tenantBoundaries": [
+        "order.user_id ownership (other users' orders return 404)",
+        "role admin vs user",
+        "compose network boundary: api/db not published"
+      ],
+      "sensitiveOperations": [
+        "session issuance and expiry",
+        "password verification (scrypt)",
+        "read order by number",
+        "admin price/stock/listing update",
+        "database backup and restore"
+      ],
+      "invariants": [
+        "users can only read own orders; other users' orders are indistinguishable from missing (404)",
+        "admin mutations require admin role",
+        "passwords stored as salted scrypt hash; dummy scrypt runs for missing users",
+        "stock never negative (conditional UPDATE)",
+        "state-changing requests with a session require CSRF token",
+        "sessions expire server-side"
+      ]
+    },
+    "coverage": [
+      {
+        "domain": "snapshot-inputs",
+        "scope": "code",
+        "status": "partial",
+        "method": "fail-closed captured source inventory",
+        "gaps": [
+          "assets/images/products/banana.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/blueberry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/cherry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/durian.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/fuji-apple.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/golden-pineapple.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/hami-melon.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/kiwi.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/mango.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/navel-orange.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/peach.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/red-dragon-fruit.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/shine-muscat.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "assets/images/products/strawberry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/autoplan-voices/r3-ceo.log: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/autoplan-voices/r3-des.log: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/autoplan-voices/r3-dx.log: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/autoplan-voices/r3-eng.log: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/baseline-tests.txt: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/codex/spec-review-run.log: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/codex/spec-review-run2.log: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/codex/spec-review-run3.log: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/visual/home-1440.png: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/visual/home-390-cart.png: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/visual/home-390-top.png: in-scope source payload was unread and withheld from static and runtime assessment",
+          "evidence/visual/home-834.png: in-scope source payload was unread and withheld from static and runtime assessment",
+          "review.md: in-scope source payload was unread and withheld from static and runtime assessment"
+        ],
+        "exclusions": [
+          ".env.example: excluded: credential or execution configuration",
+          "CLAUDE.md: excluded: credential or execution configuration"
+        ],
+        "evidence": [
+          "172 sanitized execution inputs captured; 2 explicit non-executable exclusions; 27 unread in-scope inputs; 0 tracked deletions"
+        ]
+      },
+      {
+        "domain": "history-inputs",
+        "scope": "code",
+        "status": "not_assessed",
+        "method": "bounded helper-retained Git history",
+        "gaps": [
+          "Could not read bounded Git metadata: log exceeded the output limit (request rejected); source may not be a Git repository"
+        ],
+        "exclusions": [],
+        "evidence": []
+      },
+      {
+        "domain": "application-model",
+        "scope": "code",
+        "status": "assessed",
+        "method": "manual static review of routes, auth/session, rate limiting, CSRF, schema and backup paths",
+        "gaps": [],
+        "exclusions": [],
+        "evidence": [
+          "server/router.mjs",
+          "server/services/auth.mjs",
+          "server/auth.mjs",
+          "server/repositories/sessions.mjs",
+          "server/migrations/0001_init.sql"
+        ]
+      },
+      {
+        "domain": "attack-surface",
+        "scope": "code",
+        "status": "assessed",
+        "method": "route census over /api, static allowlist and compose-exposed ports",
+        "gaps": [],
+        "exclusions": [],
+        "evidence": [
+          "server/router.mjs",
+          "server/allowlist.mjs",
+          "docker-compose.yml",
+          "Caddyfile"
+        ]
+      },
+      {
+        "domain": "llm-agentic-mcp",
+        "scope": "code",
+        "status": "not_applicable",
+        "method": "repository has no LLM/MCP surface",
+        "gaps": [],
+        "exclusions": [],
+        "evidence": [
+          "no agent tooling in repo"
+        ]
+      },
+      {
+        "domain": "owasp-2025",
+        "scope": "code",
+        "status": "partial",
+        "method": "manual review of A01/A02/A03/A05/A07",
+        "gaps": [
+          "offline run: gitleaks/osv/semgrep/trivy scanner profiles unavailable"
+        ],
+        "exclusions": [],
+        "evidence": [
+          "server/router.mjs",
+          "server/services/auth.mjs",
+          "server/services/orders.mjs"
+        ]
+      },
+      {
+        "domain": "stride",
+        "scope": "code",
+        "status": "not_assessed",
+        "method": "pending investigation",
+        "gaps": [
+          "Assessment has not been submitted"
+        ],
+        "exclusions": [],
+        "evidence": []
+      },
+      {
+        "domain": "data-classification",
+        "scope": "code",
+        "status": "not_assessed",
+        "method": "pending investigation",
+        "gaps": [
+          "Assessment has not been submitted"
+        ],
+        "exclusions": [],
+        "evidence": []
+      }
+    ],
+    "findings": [
+      {
+        "id": "036baa11ac1dd244470e93e22426cf11",
+        "fingerprint": "036baa11ac1dd244470e93e22426cf11",
+        "title": "Database backup artifacts contain password hashes and inherit default file permissions",
+        "rootCause": "The SQL/JSON-Lines backup export (CLI db backup) and pg_dump output store complete rows, including users.password_hash, and are written with the process umask. No explicit 0600 permission or encryption is applied.",
+        "location": {
+          "path": "cli.mjs",
+          "line": 1,
+          "symbol": "exportBackup"
+        },
+        "advisoryIds": [],
+        "severity": "low",
+        "confidence": "high",
+        "confidenceRationale": "Direct source reading of exportBackup and scripts/backup.sh; no runtime inspection of resulting file modes.",
+        "evidence": "supported",
+        "attackerControl": "Local user or process with read access to the backups directory",
+        "impact": "Offline password-hash disclosure enables offline guessing; order/user data disclosure.",
+        "scenario": "A backup file created during class or operations is readable by another local account and copied off the machine.",
+        "trace": [
+          "node cli.mjs db backup --out backups",
+          "exportBackup writes rows incl. password_hash",
+          "scripts/backup.sh writes pg_dump output"
+        ],
+        "references": [
+          "cli.mjs exportBackup",
+          "scripts/backup.sh",
+          "docs/backup-restore.md"
+        ],
+        "recommendation": "Create backups with mode 0600 (or a dedicated directory 0700), document encryption-at-rest for production, and avoid shipping backups with the repo.",
+        "challenge": {
+          "reviewer": "codex-second-agent",
+          "independent": true,
+          "mode": "independent_agent",
+          "callers": "checked CLI backup and scripts/backup.sh",
+          "controls": "backups/ is gitignored and documented as operator-only",
+          "counterevidence": "local classroom demo has no multi-user host threat model",
+          "conclusion": "survives as a low-severity operational hygiene issue"
+        },
+        "reproduction": "not_attempted",
+        "repair": "not_attempted",
+        "closure": "open"
+      },
+      {
+        "id": "9864501f165ae9690115c8269f74bc80",
+        "fingerprint": "9864501f165ae9690115c8269f74bc80",
+        "title": "Rate limiting state is process-local; restart or a second instance resets counters",
+        "rootCause": "createRateLimiter keeps failures in an in-memory Map keyed by account+IP and IP. The application is documented as single-instance; a restart clears lockouts and a second replica would not share counters.",
+        "location": {
+          "path": "server/auth.mjs",
+          "line": 1,
+          "symbol": "createRateLimiter"
+        },
+        "advisoryIds": [],
+        "severity": "low",
+        "confidence": "high",
+        "confidenceRationale": "Direct source reading; R3 explicitly designs a single-instance demo and documents the boundary.",
+        "evidence": "supported",
+        "attackerControl": "Ability to wait for a restart or to target a deployment with multiple replicas",
+        "impact": "Online password guessing budget resets; brute-force protection is weaker than a shared store.",
+        "scenario": "Attacker waits for a service restart or deployment scale-out and retries the password list.",
+        "trace": [
+          "POST /api/auth/login",
+          "auth service rateLimiter.check",
+          "createRateLimiter Map"
+        ],
+        "references": [
+          "server/auth.mjs",
+          "docs/deploy.md",
+          "README.md security boundaries"
+        ],
+        "recommendation": "Keep for R3 and document the single-instance boundary; for production, move counters to a shared store (or edge/WAF rate limiting).",
+        "challenge": {
+          "reviewer": "codex-second-agent",
+          "independent": true,
+          "mode": "independent_agent",
+          "callers": "checked login service and compose deployment",
+          "controls": "two buckets (account+IP, IP) and 15-minute lock",
+          "counterevidence": "R3 declares no horizontal scaling and a single replica in compose",
+          "conclusion": "survives as a scoped limitation, not a functional bug"
+        },
+        "reproduction": "not_attempted",
+        "repair": "not_attempted",
+        "closure": "open"
+      },
+      {
+        "id": "c85092e68c5b44bf5bc375240ce2b157",
+        "fingerprint": "c85092e68c5b44bf5bc375240ce2b157",
+        "title": "Local compose does not terminate TLS; cookie Secure flag depends on deployer configuration",
+        "rootCause": "The default docker-compose.yml exposes HTTP on 4175 and defaults COOKIE_SECURE=0 for classroom. Production requires APP_ENV=production plus COOKIE_SECURE=1, but TLS/HTTPS itself is delegated to an external reverse proxy and is not part of the delivered compose file.",
+        "location": {
+          "path": "docker-compose.yml",
+          "line": 1,
+          "symbol": "web service port mapping"
+        },
+        "advisoryIds": [],
+        "severity": "low",
+        "confidence": "high",
+        "confidenceRationale": "Direct reading of compose env defaults and config.mjs production checks; no external TLS terminator is shipped.",
+        "evidence": "supported",
+        "attackerControl": "Network attacker on the path between browser and host",
+        "impact": "Session cookie could travel over plaintext if the deployer exposes 4175 directly.",
+        "scenario": "Operator publishes the compose port to a LAN/WAN without a TLS proxy; login credentials and session cookie are sent in clear text.",
+        "trace": [
+          "browser -> web:4175 (HTTP)",
+          "Caddy :8080",
+          "api sets fruitlab_session"
+        ],
+        "references": [
+          "docker-compose.yml",
+          "config.mjs production checks",
+          "docs/deploy.md"
+        ],
+        "recommendation": "Document that the delivered stack is localhost/demo only; for deployment terminate TLS at an external proxy and keep COOKIE_SECURE=1 enforced in production (already checked).",
+        "challenge": {
+          "reviewer": "codex-second-agent",
+          "independent": true,
+          "mode": "independent_agent",
+          "callers": "checked compose ports and production config validation",
+          "controls": "APP_ENV=production refuses COOKIE_SECURE=0",
+          "counterevidence": "PRD explicitly excludes HTTPS certificates for local compose",
+          "conclusion": "survives as a documented deployment boundary"
+        },
+        "reproduction": "not_attempted",
+        "repair": "not_attempted",
+        "closure": "open"
+      },
+      {
+        "id": "c5ff7110138659de7030a44e04d44da0",
+        "fingerprint": "c5ff7110138659de7030a44e04d44da0",
+        "title": "CLI db restore trusts operator-supplied JSON Lines without schema-version compatibility check",
+        "rootCause": "importBackup validates the meta.type/app marker but not that meta.schemaVersion matches the running binary; a backup from a different schema version could be partially applied before failing, though it runs in one transaction.",
+        "location": {
+          "path": "cli.mjs",
+          "line": 1,
+          "symbol": "importBackup"
+        },
+        "advisoryIds": [],
+        "severity": "low",
+        "confidence": "medium",
+        "confidenceRationale": "Direct source reading; transactional rollback limits impact to restore failure rather than corruption.",
+        "evidence": "supported",
+        "attackerControl": "Operator/supply-chain control over the backup file",
+        "impact": "Restore fails or produces schema/data mismatch that is detected only by later checks.",
+        "scenario": "An old backup file is restored after a future schema change; insert order/columns no longer match.",
+        "trace": [
+          "node cli.mjs db restore --in <file> --yes",
+          "importBackup parses meta",
+          "resetDatabase + inserts"
+        ],
+        "references": [
+          "cli.mjs importBackup",
+          "server/migrations/0001_init.sql"
+        ],
+        "recommendation": "Compare meta.schemaVersion with the current migration version and refuse mismatches with a clear error; add a backup format version test.",
+        "challenge": {
+          "reviewer": "codex-second-agent",
+          "independent": true,
+          "mode": "independent_agent",
+          "callers": "checked CLI restore path",
+          "controls": "single transaction and --yes confirmation",
+          "counterevidence": "R3 ships a single schema version, so mismatch is not reachable in classroom",
+          "conclusion": "survives as a low-severity forward-compatibility gap"
+        },
+        "reproduction": "not_attempted",
+        "repair": "not_attempted",
+        "closure": "open"
+      }
+    ],
+    "gaps": [
+      "history-inputs: not assessed",
+      "stride: not assessed",
+      "data-classification: not assessed"
+    ],
+    "events": [
+      {
+        "at": "2026-10-18T03:37:16.327Z",
+        "kind": "snapshot",
+        "message": "Captured 201 source entries; 87 transformations disclosed"
+      },
+      {
+        "at": "2026-10-18T03:45:20.646Z",
+        "kind": "early-finding",
+        "message": "low supported finding 036baa11ac1dd244470e93e22426cf11"
+      },
+      {
+        "at": "2026-10-18T03:45:20.648Z",
+        "kind": "early-finding",
+        "message": "low supported finding 9864501f165ae9690115c8269f74bc80"
+      },
+      {
+        "at": "2026-10-18T03:45:20.650Z",
+        "kind": "early-finding",
+        "message": "low supported finding c85092e68c5b44bf5bc375240ce2b157"
+      },
+      {
+        "at": "2026-10-18T03:45:20.656Z",
+        "kind": "early-finding",
+        "message": "low supported finding c5ff7110138659de7030a44e04d44da0"
+      },
+      {
+        "at": "2026-10-18T03:45:24.640Z",
+        "kind": "terminal",
+        "message": "Audit finished and retained according to the private-state policy"
+      }
+    ]
+  },
+  "manifest": {
+    "version": 3,
+    "root": "<REDACTED-internal.user_path>",
+    "createdAt": "2026-10-18T03:37:07.222Z",
+    "expiresAt": "2026-10-25T03:37:07.223Z",
+    "entries": [
+      {
+        "originalHash": "024ddc320fd0154c155809e911b081d7bf43c1587e453aca5e93acdd3d918edd",
+        "bytes": 135,
+        "mode": 511,
+        "executionHash": "024ddc320fd0154c155809e911b081d7bf43c1587e453aca5e93acdd3d918edd",
+        "path": ".dockerignore"
+      },
+      {
+        "originalHash": "ca6a02e2dd32f9135f9c8da533cb5c7820fce91cb907cbdeae1dd4fc1bf50901",
+        "bytes": 633,
+        "mode": 511,
+        "transformation": "excluded: credential or execution configuration",
+        "path": ".env.example"
+      },
+      {
+        "originalHash": "d7b5c793de5534d63a179633bdae96726bbec276e876c6e959cda8b26e98a241",
+        "bytes": 168,
+        "mode": 511,
+        "executionHash": "d7b5c793de5534d63a179633bdae96726bbec276e876c6e959cda8b26e98a241",
+        "path": ".gitignore"
+      },
+      {
+        "originalHash": "f3e6739e4bcdd68dea269a83edb957433c06e392e4376d166a86841404a85e40",
+        "bytes": 4205,
+        "mode": 511,
+        "executionHash": "f3e6739e4bcdd68dea269a83edb957433c06e392e4376d166a86841404a85e40",
+        "path": "BUILD-LOG.md"
+      },
+      {
+        "originalHash": "e006d739f9d9901e3bcf7ba1fba8d363192598ea24a469dfd3b635a5279d23fd",
+        "bytes": 23450,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "d5a0cb64b4962220ccb62a6d5ff1c97c1cb7f7543bf3f7e648d26574fbf9a5d1",
+        "path": "BUILD.md"
+      },
+      {
+        "originalHash": "33c157fa3cfa0d869627d40e4f61e933c65e30db28026d102236244bc0397a32",
+        "bytes": 4953,
+        "mode": 511,
+        "executionHash": "33c157fa3cfa0d869627d40e4f61e933c65e30db28026d102236244bc0397a32",
+        "path": "CHANGELOG.md"
+      },
+      {
+        "originalHash": "8964cc306b17c20203296216f1739a9ae884497b1803947cd4ba5bb1e9a093e6",
+        "bytes": 899,
+        "mode": 511,
+        "transformation": "excluded: credential or execution configuration",
+        "path": "CLAUDE.md"
+      },
+      {
+        "originalHash": "72b5c222f2c8ec29e0b71b346c01ee0e8b91f21825c2452abe29a944b2af5e9b",
+        "bytes": 615,
+        "mode": 511,
+        "executionHash": "72b5c222f2c8ec29e0b71b346c01ee0e8b91f21825c2452abe29a944b2af5e9b",
+        "path": "Caddyfile"
+      },
+      {
+        "originalHash": "081c4c552041e3141da9684674f4cf68265efd12b57e9f98196b0022afb4c5e8",
+        "bytes": 16587,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "2f7b32599882535813acd246e313d6d4e696ce73af17b9ba1ac40e9e912c656d",
+        "path": "DECISIONS.md"
+      },
+      {
+        "originalHash": "41c8311549e760da35592480edea51fb944b9328c300052aafea3bfa972b859f",
+        "bytes": 907,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "dce9500777bde724eb6fcd2d94fd451719b7e93dde5c3824ba77498334b1c72e",
+        "path": "Dockerfile"
+      },
+      {
+        "originalHash": "b7f732de91adf3230bb2ca3fffbf0e0676877f79464fd8854c988086ac6d1680",
+        "bytes": 900,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "edcbb34188eaf1f6014f7c9bedd4fbe96555178c05694e520faae1b955900344",
+        "path": "Dockerfile.web"
+      },
+      {
+        "originalHash": "fc5564a36feeace36045816c3de3c05ff59509a16f59ee34e7ea93c8e9c8c8c3",
+        "bytes": 5784,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "6f3732e6f95e80272cebc1078ca87f96bd422cbc21abe4e06c1844239320845e",
+        "path": "NEXT-SESSION-PROMPT.md"
+      },
+      {
+        "originalHash": "1d3977f933f7671e69daca46c6e5ee4914fc83d7a306fb51f3c5d094a2ece9e5",
+        "bytes": 5342,
+        "mode": 511,
+        "executionHash": "1d3977f933f7671e69daca46c6e5ee4914fc83d7a306fb51f3c5d094a2ece9e5",
+        "path": "OFFICE_HOURS.md"
+      },
+      {
+        "originalHash": "72a24167b6580d71b6f61e0d7c17a7f6f75ae859c302859172212b6a658fab9b",
+        "bytes": 12636,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "9d48b30ad50f31704c1ece788633d2e8b3e6dd4f1fd1b7f59a715ce0c9ce00cb",
+        "path": "PRD-R2.md"
+      },
+      {
+        "originalHash": "dd83d76b02a5fd6f198d7feb72b57ad417499b32d7170546d0215754554740be",
+        "bytes": 17088,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "70228781a3f17eb8550c4742fba73b839e152b3db5850073004ba75bdb1d1f8e",
+        "path": "PRD-R3.md"
+      },
+      {
+        "originalHash": "e33b89da369a3a84816aa193240806ef7ed18b0b2c2f9398763c48bf7f010eb3",
+        "bytes": 33607,
+        "mode": 511,
+        "executionHash": "e33b89da369a3a84816aa193240806ef7ed18b0b2c2f9398763c48bf7f010eb3",
+        "path": "R1-义务覆盖率核查.md"
+      },
+      {
+        "originalHash": "9fefb9c7b5637eaf9afe4e691a153f17cafb24396d36ecc605d3caeb3e1fca93",
+        "bytes": 22210,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "56fd9ed242817ea1899a0791d8567e5d5f245fe5c010ffddca1994a1060727e5",
+        "path": "R1-八环讲解记录.md"
+      },
+      {
+        "originalHash": "341e5ceda487188b4100347b2ff9bdf06ced37d1a588d194133e26732507fec2",
+        "bytes": 5496,
+        "mode": 511,
+        "executionHash": "341e5ceda487188b4100347b2ff9bdf06ced37d1a588d194133e26732507fec2",
+        "path": "R1-操作经验教训.md"
+      },
+      {
+        "originalHash": "5ac711ebacedf500eae317d678c142562ecc9d4f61e9af650f8d12a866320532",
+        "bytes": 5278,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "0616cbd0c7058878efba57b62bac7664e94ced2a95d2e99acb02b306327b9463",
+        "path": "README.md"
+      },
+      {
+        "originalHash": "e4fdd4997191240caf1f62b8a5bc4a212403872f761c778451455dde337c901f",
+        "bytes": 68025,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "5d37e9e6b806146346ec178606390912dc900362e61e8fb4c7ffa7739abfc5eb",
+        "path": "SPEC.md"
+      },
+      {
+        "originalHash": "bdb616d6969519f0fd276d79c82d1a48a733c273a1d49f0fb46ead40e82ae9b8",
+        "bytes": 9,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "973e4fc16fc0f014fd01215501caaed24ca54fc0a53c5b7022d4f6763cc1b1f6",
+        "path": "VERSION"
+      },
+      {
+        "originalHash": "6872292c4ae8236eab01dda340013bdf9591ac1ade1e3b588ed18cf80d968b6c",
+        "bytes": 9762,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "d82282d5de3153f154e90a8ca878471849c46d8f00d873d31002e4aa3af5a149",
+        "path": "assets/api-client.mjs"
+      },
+      {
+        "originalHash": "4bcec613c68cdd0bf883b14ce762ddab8b70db3cc941537c1afee32ca210f2b8",
+        "bytes": 60303,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "160815cecc6f2cfad15f95ef029ac1402e856a0f892fa69f12da0770f5c7464a",
+        "path": "assets/app.mjs"
+      },
+      {
+        "originalHash": "75074cacf6505cfd9b14e3cdef5b97e80e6ea2c86a36a0f787eec00035d219fa",
+        "bytes": 728,
+        "mode": 511,
+        "executionHash": "75074cacf6505cfd9b14e3cdef5b97e80e6ea2c86a36a0f787eec00035d219fa",
+        "path": "assets/boot-guard.js"
+      },
+      {
+        "originalHash": "9f8826042b02b61bbdda3fb878a65bec610acb5f37e778f65fedab81097a7c4c",
+        "bytes": 14136,
+        "mode": 511,
+        "executionHash": "9f8826042b02b61bbdda3fb878a65bec610acb5f37e778f65fedab81097a7c4c",
+        "path": "assets/controller.mjs"
+      },
+      {
+        "originalHash": "4ea6c33e8d65b3feaf0d45e1a6f2f44879c6f7d04c4d6c6c099abc14a6126c99",
+        "bytes": 8604,
+        "mode": 511,
+        "executionHash": "4ea6c33e8d65b3feaf0d45e1a6f2f44879c6f7d04c4d6c6c099abc14a6126c99",
+        "path": "assets/domain.mjs"
+      },
+      {
+        "originalHash": "78e1b347e0697d555fafc45fa6791c700a454e9ce408c1155ae5d92de7fe71c9",
+        "bytes": 112650,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/banana.jpg"
+      },
+      {
+        "originalHash": "791c7b3ff5c050160cd36478edcac0b125451fa48a478c1d37cb6730874abf91",
+        "bytes": 205342,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/blueberry.jpg"
+      },
+      {
+        "originalHash": "1e9c91cb0de3cfa93a8dfa1f64e9b7cb3216a29fc873a5563387bfcd2e17bb76",
+        "bytes": 142155,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/cherry.jpg"
+      },
+      {
+        "originalHash": "8b4e463015bcd3c1a029338bc5c7113dae91ec9ec2361123c5089d2a9bfee512",
+        "bytes": 35222,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/durian.jpg"
+      },
+      {
+        "originalHash": "6dc0a34b7046e36612df2142609066d992244a1d960d9f5d921a2f9c6f9f577e",
+        "bytes": 116234,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/fuji-apple.jpg"
+      },
+      {
+        "originalHash": "47d8bdc4214e37db39dd216b345ca1d68a89cfca8361d47ddea79cc7b7786808",
+        "bytes": 218458,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/golden-pineapple.jpg"
+      },
+      {
+        "originalHash": "4da3ba6c2efa7c393651213dec7b6256a414cdc1ad9a4920ba67f331041b74fc",
+        "bytes": 200512,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/hami-melon.jpg"
+      },
+      {
+        "originalHash": "83953f2f0bfcdaae910fa804d68fafbb0f8bf075789822308f19de347cde75a5",
+        "bytes": 104333,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/kiwi.jpg"
+      },
+      {
+        "originalHash": "cf0aa92db31a5d4ce40bd4592c98649e82d65832b30e963fca5f31e01a6d8e83",
+        "bytes": 39708,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/mango.jpg"
+      },
+      {
+        "originalHash": "cbdadd4bdae8bfb62694359fcd5f3c62cfb496a7943aeb51a6102e6fd4f2b447",
+        "bytes": 155958,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/navel-orange.jpg"
+      },
+      {
+        "originalHash": "3679b9da78d0dd67607d686f3f59477f0c672324d10d5167102263e2beb21680",
+        "bytes": 124743,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/peach.jpg"
+      },
+      {
+        "originalHash": "aaedfca7de99f5b78bec2777b3d59485ae4e01149a40417f2fc50535be723b7e",
+        "bytes": 157324,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/red-dragon-fruit.jpg"
+      },
+      {
+        "originalHash": "4a2cf3fac0a3941ce458c6bdc170338c7746425673ef683924ab6687136eca85",
+        "bytes": 102076,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/shine-muscat.jpg"
+      },
+      {
+        "originalHash": "6aa291cfd5922d6fb46893654102afca212ee76f9c1b6b0cdc9c76b53473fe43",
+        "bytes": 255303,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "assets/images/products/strawberry.jpg"
+      },
+      {
+        "originalHash": "d948bed8598e4d320e08e08ab6898639293f78fcb1c6cfc70379c31104d9d54b",
+        "bytes": 23066,
+        "mode": 511,
+        "executionHash": "d948bed8598e4d320e08e08ab6898639293f78fcb1c6cfc70379c31104d9d54b",
+        "path": "assets/styles.css"
+      },
+      {
+        "originalHash": "0a7c6dfdd8e5d6decb8cb6739b5baecd107059e222669bd4ce84233ace5dcf81",
+        "bytes": 17956,
+        "mode": 511,
+        "executionHash": "0a7c6dfdd8e5d6decb8cb6739b5baecd107059e222669bd4ce84233ace5dcf81",
+        "path": "cli.mjs"
+      },
+      {
+        "originalHash": "508fecc076fb7c42f2b58c484324d1d33542be6b31d0ac8536a95867b6e33636",
+        "bytes": 205,
+        "mode": 511,
+        "executionHash": "508fecc076fb7c42f2b58c484324d1d33542be6b31d0ac8536a95867b6e33636",
+        "path": "compose.debug.yml"
+      },
+      {
+        "originalHash": "8089e7e0c6e7bdd37dade47606e569127801afcdad0f90ebe84957db9871bcfa",
+        "bytes": 1758,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "b633b90f0784f2dca43db43c01fec00b2e0e1dfc351e159077778fbce0f72ba6",
+        "path": "compose.simple.yml"
+      },
+      {
+        "originalHash": "45fb9426ae17002d3d8bd6f9c58b5deab8c810a5ca610428583a64e1b57e88dd",
+        "bytes": 3894,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "5a90c6d1a8233d91d037250bb799ff07045353d6d6c7634c94f28e8b83bc8293",
+        "path": "config.mjs"
+      },
+      {
+        "originalHash": "8ad28c1a40942dc09420a350ef4de4b80b03ca79f31c6fad325d0a0fb04d7860",
+        "bytes": 1973,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "dae5d6b0086ee48d17de2565310b3558d93aaa54178b958c66572b8d469765e6",
+        "path": "docker-compose.yml"
+      },
+      {
+        "originalHash": "a53ca34be1caa6e2448489700831adfdbb5c3831424c001c2b57da5e51337e7e",
+        "bytes": 3478,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "e416cfbf354701e564bdbb26cff0eadae9697be15a01b712f0cd57618a39f7d7",
+        "path": "docs/api.md"
+      },
+      {
+        "originalHash": "c6145111361ada7e73ea08eed8e64ccaf23b32a273baae99376b00bca857eaaa",
+        "bytes": 3223,
+        "mode": 511,
+        "executionHash": "c6145111361ada7e73ea08eed8e64ccaf23b32a273baae99376b00bca857eaaa",
+        "path": "docs/architecture.md"
+      },
+      {
+        "originalHash": "2f9f0822c336cc4245a335a8090ede563ffd1dec796826f045adfce0ba62e1bf",
+        "bytes": 3232,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "432383ccbb954113d6eccf503f7319488d64797f5d3f9653037e788ad72392e8",
+        "path": "docs/assets-credits.md"
+      },
+      {
+        "originalHash": "b0c0aec255d662db3f5f3660ef1ab4ea59c87381bdae97d76e2b00272cb32b5c",
+        "bytes": 1886,
+        "mode": 511,
+        "executionHash": "b0c0aec255d662db3f5f3660ef1ab4ea59c87381bdae97d76e2b00272cb32b5c",
+        "path": "docs/backup-restore.md"
+      },
+      {
+        "originalHash": "af2c60fbc93eafec21712567d64698813ccaffef9237137b3c8bf49d36539b18",
+        "bytes": 3252,
+        "mode": 511,
+        "executionHash": "af2c60fbc93eafec21712567d64698813ccaffef9237137b3c8bf49d36539b18",
+        "path": "docs/branch-matrix.md"
+      },
+      {
+        "originalHash": "a250b004e51203f4a4c13bc81301feb3daa565ecadb4db257c05413f2971caf3",
+        "bytes": 2560,
+        "mode": 511,
+        "executionHash": "a250b004e51203f4a4c13bc81301feb3daa565ecadb4db257c05413f2971caf3",
+        "path": "docs/cli.md"
+      },
+      {
+        "originalHash": "04477ba1c2ed5c74fb68ea42ff3fdac4a16347427dabfd93fec57dc8451a85b5",
+        "bytes": 4600,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "073f7254a2785e1e0955216f496592b560b154cc538ecf8f40fea12071ec347b",
+        "path": "docs/contracts.md"
+      },
+      {
+        "originalHash": "de0ed3008825a4957ea5fe5eed58268802724816d3b557adbe670bd7379be739",
+        "bytes": 4460,
+        "mode": 511,
+        "executionHash": "de0ed3008825a4957ea5fe5eed58268802724816d3b557adbe670bd7379be739",
+        "path": "docs/coverage-audit.md"
+      },
+      {
+        "originalHash": "4902529ada0681ee9084826abde855bfaee3aa7866f82ceadf9127587c43c21b",
+        "bytes": 24375,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "5dce63b731f6c1f45e86965ed08336f4ef7e03aae1b42c46c1bec7313bf99bf0",
+        "path": "docs/decision-log.md"
+      },
+      {
+        "originalHash": "14f79003b230832ea61ccc32c08b184db86b663e39eae53e73db2ff38a72fc79",
+        "bytes": 2920,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "fe289aed118e2fff5e6529961a7a0ccd3ee2c0e8e6ac3aa81f718f32545ff416",
+        "path": "docs/deploy.md"
+      },
+      {
+        "originalHash": "e655991dffe7bb9ee52541e63020664b5d21b732fb0a1bf85b528ba2281f2ff8",
+        "bytes": 2246,
+        "mode": 511,
+        "executionHash": "e655991dffe7bb9ee52541e63020664b5d21b732fb0a1bf85b528ba2281f2ff8",
+        "path": "docs/design-tokens.md"
+      },
+      {
+        "originalHash": "3f581e82f9b07a61ecd78083ee373e0f13f5cc62242c56f93dc802fcc94f068a",
+        "bytes": 20687,
+        "mode": 511,
+        "executionHash": "3f581e82f9b07a61ecd78083ee373e0f13f5cc62242c56f93dc802fcc94f068a",
+        "path": "docs/designs/fruitlab-traceable-demo.md"
+      },
+      {
+        "originalHash": "61aa5d441774310a3ad9e22ada6bb53447074e6a7e5d647908790d3246bbe11a",
+        "bytes": 11848,
+        "mode": 511,
+        "executionHash": "61aa5d441774310a3ad9e22ada6bb53447074e6a7e5d647908790d3246bbe11a",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-1.design.md"
+      },
+      {
+        "originalHash": "62e575f753c0f6c9a527b7bc8afe648250bffc9655bd6cfd59b9ac328b9e20bc",
+        "bytes": 7589,
+        "mode": 511,
+        "executionHash": "62e575f753c0f6c9a527b7bc8afe648250bffc9655bd6cfd59b9ac328b9e20bc",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-1.json"
+      },
+      {
+        "originalHash": "16a7f2dcc3aa81fc0ab49c77e06fbdf8a0863ed374071a895b06a105eee24d1e",
+        "bytes": 6123,
+        "mode": 511,
+        "executionHash": "16a7f2dcc3aa81fc0ab49c77e06fbdf8a0863ed374071a895b06a105eee24d1e",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-1.prompt.md"
+      },
+      {
+        "originalHash": "343c71a65b94cd46e491e0ceab7362d1db4e9872056d14d14f870e48afbb1a5f",
+        "bytes": 16955,
+        "mode": 511,
+        "executionHash": "343c71a65b94cd46e491e0ceab7362d1db4e9872056d14d14f870e48afbb1a5f",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-2.design.md"
+      },
+      {
+        "originalHash": "aaa088c8feda0a4268056400ae7bf647ab257bb6fceb7a68c29e961ab61a3292",
+        "bytes": 7353,
+        "mode": 511,
+        "executionHash": "aaa088c8feda0a4268056400ae7bf647ab257bb6fceb7a68c29e961ab61a3292",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-2.json"
+      },
+      {
+        "originalHash": "7ddd3d479f832cdde76db6d78380ef5f816b60833471b363830292fa48229173",
+        "bytes": 26619,
+        "mode": 511,
+        "executionHash": "7ddd3d479f832cdde76db6d78380ef5f816b60833471b363830292fa48229173",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-2.prompt.md"
+      },
+      {
+        "originalHash": "aa2bf5553656528954769d5eb81bbdd6269f84e6f8463b78ff050b575c309098",
+        "bytes": 17479,
+        "mode": 511,
+        "executionHash": "aa2bf5553656528954769d5eb81bbdd6269f84e6f8463b78ff050b575c309098",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-3.design.md"
+      },
+      {
+        "originalHash": "8bdd0a0489854f36b71578289797ec9d433fd88a30d336ee7d41f4c6176f318c",
+        "bytes": 4419,
+        "mode": 511,
+        "executionHash": "8bdd0a0489854f36b71578289797ec9d433fd88a30d336ee7d41f4c6176f318c",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-3.json"
+      },
+      {
+        "originalHash": "8bc01d3d17f6c8d58c65df4450ab0b22d14fe4524e836b40586bc93cb4cb4794",
+        "bytes": 16985,
+        "mode": 511,
+        "executionHash": "8bc01d3d17f6c8d58c65df4450ab0b22d14fe4524e836b40586bc93cb4cb4794",
+        "path": "docs/designs/fruitlab-traceable-demo.md.review.129855/round-3.prompt.md"
+      },
+      {
+        "originalHash": "73ed83ab00d64244949b611fe5d5cf89a794ac527e148c4ebb85cf3561fb020d",
+        "bytes": 5240,
+        "mode": 511,
+        "executionHash": "73ed83ab00d64244949b611fe5d5cf89a794ac527e148c4ebb85cf3561fb020d",
+        "path": "docs/error-catalog.md"
+      },
+      {
+        "originalHash": "575bcabeda77b8fc671397ac3bd25bee667aa57899f9bcf0577357b5c9eded84",
+        "bytes": 2526,
+        "mode": 511,
+        "executionHash": "575bcabeda77b8fc671397ac3bd25bee667aa57899f9bcf0577357b5c9eded84",
+        "path": "docs/learnings.md"
+      },
+      {
+        "originalHash": "4a63d198af63a66e216cf95b978cdaaa263cf27160cd8368c3fae6029b7cd4ac",
+        "bytes": 6132,
+        "mode": 511,
+        "executionHash": "4a63d198af63a66e216cf95b978cdaaa263cf27160cd8368c3fae6029b7cd4ac",
+        "path": "docs/obligations.md"
+      },
+      {
+        "originalHash": "0b3ff5f2d297cf79ce66dc1b12c98af4a9f1c91cc54bc34769762d00a7e2f35d",
+        "bytes": 7334,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "29110dd73c6ea9ba77a6d68bc1128cf7f82e1a8f619bfb0747a467927e436428",
+        "path": "evidence/assets-manifest.json"
+      },
+      {
+        "originalHash": "04c85f5c23b1c4b5cd91ff555cee734abbbfb334b9d096041f0e417248deeca2",
+        "bytes": 9914,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "fb062fb48bfd3727a894d23c00cb09d0e2350685fceded7cdf8fe72513065485",
+        "path": "evidence/autoplan-voices/ceo.txt"
+      },
+      {
+        "originalHash": "a477cd51d382b29f476dd5ff1c8c1b90026951791a19c845c12951318f5d0e4a",
+        "bytes": 7749,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "225c679d905d73ade06e8b3002869d1a5f7e6508974c60c12a415e4daebba304",
+        "path": "evidence/autoplan-voices/design.txt"
+      },
+      {
+        "originalHash": "7a758567f4eee1cc6ff96b0e79a235a4d2e482356ab4ac848c404b4b25b052ea",
+        "bytes": 17344,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "50afee3bcf552a09f8c41c7ecec47ef68310876b8e353feb1e7b1c54b12d28e4",
+        "path": "evidence/autoplan-voices/dx.txt"
+      },
+      {
+        "originalHash": "a9a724af235bea130dbf78cbefb3d8fb24a2b005b58a1246f896e7a32343dd89",
+        "bytes": 10957,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "47404fce66be3611500da82dd40eaf36f9edd1e2504d0c377b336870a19f911b",
+        "path": "evidence/autoplan-voices/eng.txt"
+      },
+      {
+        "originalHash": "19e3dc960c48f776153f2cd523d2e644320d61751aedcdd462ac99c24a976dd0",
+        "bytes": 1279,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "d8a9e13f03c3aac57e559f108d7b1b60c536970e318d928469ba1a16e6c7d693",
+        "path": "evidence/autoplan-voices/r3-ceo-prompt.txt"
+      },
+      {
+        "originalHash": "09c272d27a868b498ac0b7a88efd01697ebd23e530c8b4b0048b66855fa81080",
+        "bytes": 357598,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/autoplan-voices/r3-ceo.log"
+      },
+      {
+        "originalHash": "f5cb749937f9cb5aa601470862448396c1f93adadc66b080fbeedce4607f9394",
+        "bytes": 6964,
+        "mode": 511,
+        "executionHash": "f5cb749937f9cb5aa601470862448396c1f93adadc66b080fbeedce4607f9394",
+        "path": "evidence/autoplan-voices/r3-ceo.md"
+      },
+      {
+        "originalHash": "1640015fa9e080892ac9d282e0bf786a3cc8439cc6f21cd0a7c1a9ba34afed62",
+        "bytes": 1415,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "188f9ce7a8ed0f88f41d6be9080faf5daa9438244430d7db9afb23fac5f1885b",
+        "path": "evidence/autoplan-voices/r3-des-prompt.txt"
+      },
+      {
+        "originalHash": "e342020ff42dc5153a4ed532ce44343e6c9d7d4ab3bb9b2a3471204391abac09",
+        "bytes": 525916,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/autoplan-voices/r3-des.log"
+      },
+      {
+        "originalHash": "118d67ca795e22b1fa79c74126b12310d02e918659b20aff891353050a547590",
+        "bytes": 5545,
+        "mode": 511,
+        "executionHash": "118d67ca795e22b1fa79c74126b12310d02e918659b20aff891353050a547590",
+        "path": "evidence/autoplan-voices/r3-des.md"
+      },
+      {
+        "originalHash": "ddc1fe5a2504cf36a46bca71d4660a05e6996e4afd3574b406798ca8e3a14f6d",
+        "bytes": 1297,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "3ddd7dbf7bc41e60d665d52c7f3b83b0612e02097d6b623c028f2cd5a5f25510",
+        "path": "evidence/autoplan-voices/r3-dx-prompt.txt"
+      },
+      {
+        "originalHash": "60e0f198a745803ecae45f152cedf0147ac26774e7b1ea9217641f3f0e4876ad",
+        "bytes": 433390,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/autoplan-voices/r3-dx.log"
+      },
+      {
+        "originalHash": "db01bcb7707e7b7b3d6824ce965342c267068584326c98c8f16eabc4a77912d4",
+        "bytes": 7713,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "de0ec17afd8329cef0937232355b3bf9b4e5fc96f6a976e23124e7a56baf094d",
+        "path": "evidence/autoplan-voices/r3-dx.md"
+      },
+      {
+        "originalHash": "fc847593ac722ae439009cbde093560e912d39a98bca5bf13d399d39ca607026",
+        "bytes": 1337,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "953737c755c7b95df2a1bd4a21514e878f6aedfb1585c5dd55645328cf63ed55",
+        "path": "evidence/autoplan-voices/r3-eng-prompt.txt"
+      },
+      {
+        "originalHash": "a2566029df0905daa22fb40a3051623d6ae81e21b07b8964b6509ea0f016210c",
+        "bytes": 1616472,
+        "mode": 511,
+        "transformation": "withheld: exceeds the 1 MiB redacting-reader limit",
+        "path": "evidence/autoplan-voices/r3-eng.log"
+      },
+      {
+        "originalHash": "cad329d30e8dd19b8df3d6da809cfb780d8c686db5105253d2ea03dd74d5483b",
+        "bytes": 8374,
+        "mode": 511,
+        "executionHash": "cad329d30e8dd19b8df3d6da809cfb780d8c686db5105253d2ea03dd74d5483b",
+        "path": "evidence/autoplan-voices/r3-eng.md"
+      },
+      {
+        "originalHash": "58533eacc42fccde4acd951d8d874579d32acb724910372b61617a9b5218f8d3",
+        "bytes": 898,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/baseline-tests.txt"
+      },
+      {
+        "originalHash": "b28213f9116cb1a457e5a52685a714143e081126939319ed7e046e5dce4dfc34",
+        "bytes": 1127,
+        "mode": 511,
+        "executionHash": "b28213f9116cb1a457e5a52685a714143e081126939319ed7e046e5dce4dfc34",
+        "path": "evidence/clean-run.md"
+      },
+      {
+        "originalHash": "de78e754cab77d0dcc7b9084d9028a0b80941527daeb7ab2c9aa4c9e14c3b53b",
+        "bytes": 45141,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "4eed89221cb043c08a06f9f97dab5cc11174bdc8b3311418dbb7ea0bcbb97b7e",
+        "path": "evidence/codex/SPEC-snapshot-v1.0.md"
+      },
+      {
+        "originalHash": "adc8f220b017d2257e20af4f58968c154421fa17b0c873cd93f4efcc463a65e5",
+        "bytes": 54162,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "06fc16d0a193382202456d95009f8b6890726931734bbc42bfe2def26d74da38",
+        "path": "evidence/codex/SPEC-snapshot-v1.1.md"
+      },
+      {
+        "originalHash": "993f23c1fbd2aa2aa35e53bd8ffacf71b55d1991a9c6cd736bfc5bc68ea877ff",
+        "bytes": 17307,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "a2848d87e8dc528d52f9d6a2676efb2980a97df9a8714e293e9adaed3a833120",
+        "path": "evidence/codex/apply-spec-v1.1.mjs"
+      },
+      {
+        "originalHash": "d3e9c9c0bf7252791a794bc60f19ac44794b62640a9598d896d6ca9360e0ba2c",
+        "bytes": 2996,
+        "mode": 511,
+        "executionHash": "d3e9c9c0bf7252791a794bc60f19ac44794b62640a9598d896d6ca9360e0ba2c",
+        "path": "evidence/codex/apply-spec-v1.2.mjs"
+      },
+      {
+        "originalHash": "91781d0a8dc1542d9ec4cc5006d56652cc05ec2f24927c0b2ef504d4fd11ef39",
+        "bytes": 6870,
+        "mode": 511,
+        "executionHash": "91781d0a8dc1542d9ec4cc5006d56652cc05ec2f24927c0b2ef504d4fd11ef39",
+        "path": "evidence/codex/gen-build.mjs"
+      },
+      {
+        "originalHash": "839c6cb6098308abd0dccc87e489028c36e6510494c39620e755bb173029fc8c",
+        "bytes": 1384,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "8a4bd90d3ab1144b37230b26d894c622e7a3522e4e0d0d1f21a57fbaa512208d",
+        "path": "evidence/codex/review-prompt.txt"
+      },
+      {
+        "originalHash": "c4a445bf4d869cbe49b0c1c13f1bd0c83fdb4198c7c79fe61b96a3f23bf964c4",
+        "bytes": 13687,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "a54418a158a1ea96b91ea4736d903f08cedbdfabcf468bc721dfbbe70e4f397b",
+        "path": "evidence/codex/spec-review-codex.md"
+      },
+      {
+        "originalHash": "1af00f32c9c610595f40d9569d2794c44617b0186463e06e37ee5bcf753cd46d",
+        "bytes": 3565,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "5ed0edb7181bf806c65c6f9b6f809b054f7026bc50211b10f0507e27d01b60e9",
+        "path": "evidence/codex/spec-review-disposition.md"
+      },
+      {
+        "originalHash": "c3c42627bae3f17327d4065bae4f6e627a06a7a61a17a7c29e7459af41f26dc4",
+        "bytes": 1703,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "f393a2e17fc65416bf1e7035947ca37e8ffca6028ef55442498ed008f73f0472",
+        "path": "evidence/codex/spec-review-prompt.txt"
+      },
+      {
+        "originalHash": "e11ac3e341288ce0b72f49d24b5940292636c0f8c0e16f0cb1ce10b2fef7c67a",
+        "bytes": 2030,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "fe789df61b6d791264ab4daedcf9e48b1d2e1307c68aa69326261d1709fafc78",
+        "path": "evidence/codex/spec-review-prompt2.txt"
+      },
+      {
+        "originalHash": "f155022219577560730918b3d6aa6c1c9fbb9ba0d87996c41a459134a9b9e4e3",
+        "bytes": 16907,
+        "mode": 511,
+        "executionHash": "f155022219577560730918b3d6aa6c1c9fbb9ba0d87996c41a459134a9b9e4e3",
+        "path": "evidence/codex/spec-review-round2-codex.md"
+      },
+      {
+        "originalHash": "3fba034fa66f3b1d5ef4bc40d3669ce36b937b800eb6ecdf97055c74a0e20feb",
+        "bytes": 510952,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/codex/spec-review-run.log"
+      },
+      {
+        "originalHash": "2bed2b069aa8ef35d9f361b3ce723d34ef3820b3669ea815744c70530349e864",
+        "bytes": 1758220,
+        "mode": 511,
+        "transformation": "withheld: exceeds the 1 MiB redacting-reader limit",
+        "path": "evidence/codex/spec-review-run2.log"
+      },
+      {
+        "originalHash": "65d6729428cb958c79238521f49ab33710665f88668fdb3a2ccd9408774e45c3",
+        "bytes": 1185652,
+        "mode": 511,
+        "transformation": "withheld: exceeds the 1 MiB redacting-reader limit",
+        "path": "evidence/codex/spec-review-run3.log"
+      },
+      {
+        "originalHash": "aeea50b3c6c4e9fe24e8219b6cfb57ecd58f40fb84eeef21f222406f9e52e705",
+        "bytes": 1268,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "d4e6b63e3506051e32e79a6edd5227ac1f1e761c450996df279214c300f4cfea",
+        "path": "evidence/codex/spec-review2-prompt.txt"
+      },
+      {
+        "originalHash": "17234324d459ba184c9a39158ac93a22bad257b88cd92e84bb8e1c745e9d671c",
+        "bytes": 11561,
+        "mode": 511,
+        "executionHash": "17234324d459ba184c9a39158ac93a22bad257b88cd92e84bb8e1c745e9d671c",
+        "path": "evidence/codex/spec-section16.md"
+      },
+      {
+        "originalHash": "b1bbd42082c09cef3aaf6d1383c2f8f51dce7e2389151a53fdffe6ce302072a2",
+        "bytes": 275,
+        "mode": 511,
+        "executionHash": "b1bbd42082c09cef3aaf6d1383c2f8f51dce7e2389151a53fdffe6ce302072a2",
+        "path": "evidence/container/after-down-up-order.json"
+      },
+      {
+        "originalHash": "b1bbd42082c09cef3aaf6d1383c2f8f51dce7e2389151a53fdffe6ce302072a2",
+        "bytes": 275,
+        "mode": 511,
+        "executionHash": "b1bbd42082c09cef3aaf6d1383c2f8f51dce7e2389151a53fdffe6ce302072a2",
+        "path": "evidence/container/after-restart-order.json"
+      },
+      {
+        "originalHash": "b1bbd42082c09cef3aaf6d1383c2f8f51dce7e2389151a53fdffe6ce302072a2",
+        "bytes": 275,
+        "mode": 511,
+        "executionHash": "b1bbd42082c09cef3aaf6d1383c2f8f51dce7e2389151a53fdffe6ce302072a2",
+        "path": "evidence/container/after-restore-order.json"
+      },
+      {
+        "originalHash": "0c40339a0dc385c12320d05b857d169996e8e41ad1b2ae8a1ad355fd5a134262",
+        "bytes": 94,
+        "mode": 511,
+        "executionHash": "0c40339a0dc385c12320d05b857d169996e8e41ad1b2ae8a1ad355fd5a134262",
+        "path": "evidence/container/health-after-down-up.json"
+      },
+      {
+        "originalHash": "a7e844fb1b7cea90a6a69c38ef953930c7a901ff9f0503186d1f3411139bec90",
+        "bytes": 25,
+        "mode": 511,
+        "executionHash": "a7e844fb1b7cea90a6a69c38ef953930c7a901ff9f0503186d1f3411139bec90",
+        "path": "evidence/container/order-number.txt"
+      },
+      {
+        "originalHash": "ebf4737bb7adf08f98eed5523dbb65f47f26fe0e8dcba52ec2b8e20b6883c8e4",
+        "bytes": 43,
+        "mode": 511,
+        "executionHash": "ebf4737bb7adf08f98eed5523dbb65f47f26fe0e8dcba52ec2b8e20b6883c8e4",
+        "path": "evidence/container/restore-file.txt"
+      },
+      {
+        "originalHash": "365e164bc07f75544d6e2c7cf42350b806b95b0371ee0ab88eaf36654caa5a3b",
+        "bytes": 17175,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "c93ed406e150aa7f98fbf82c11129a267d4fe4ae88f03e2ab430555099501a48",
+        "path": "evidence/cso/cso-report.md"
+      },
+      {
+        "originalHash": "1a6b7e24d72a5d914d56b1abb9d97b59ab3a05d9135c28d1c815e317cfe6c35a",
+        "bytes": 169,
+        "mode": 511,
+        "executionHash": "1a6b7e24d72a5d914d56b1abb9d97b59ab3a05d9135c28d1c815e317cfe6c35a",
+        "path": "evidence/cso/history-status.json"
+      },
+      {
+        "originalHash": "116fd06412817e15c7912e49e9a5289dabbcbd622c2a8e0e042cc92376de2a1d",
+        "bytes": 20554,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "33c8c57a390dd849b43fd3c3df1ee4749bde8410551bdf340cb4be337d69d40f",
+        "path": "evidence/cso/report.json"
+      },
+      {
+        "originalHash": "0ec9f40e0c4e0779120ada8cf2c6ceb2c3e38926121683e0caa944f46ae72f48",
+        "bytes": 9153,
+        "mode": 511,
+        "executionHash": "0ec9f40e0c4e0779120ada8cf2c6ceb2c3e38926121683e0caa944f46ae72f48",
+        "path": "evidence/cso/submission.json"
+      },
+      {
+        "originalHash": "054baad41aa4529a694841ed55c4cd86432afdb8b2b9facf7d81eb7a006d4ea0",
+        "bytes": 469,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "ff7a1622384eff7c32ee6c7722bd5929d34e5530d54b655224cc5138d3f85098",
+        "path": "evidence/debug415.mjs"
+      },
+      {
+        "originalHash": "b5bca4237df3a9a9f804ea0d0d4f77cdd037cc922d46852b3f874fb36b96162a",
+        "bytes": 1699,
+        "mode": 511,
+        "executionHash": "b5bca4237df3a9a9f804ea0d0d4f77cdd037cc922d46852b3f874fb36b96162a",
+        "path": "evidence/demo-script.md"
+      },
+      {
+        "originalHash": "c6fee498c3a640ff5f85f40469dc7cc5b34892f1758ea2a1896681b7c7611f2b",
+        "bytes": 539,
+        "mode": 511,
+        "executionHash": "c6fee498c3a640ff5f85f40469dc7cc5b34892f1758ea2a1896681b7c7611f2b",
+        "path": "evidence/g7-release-merge.txt"
+      },
+      {
+        "originalHash": "6a9a9602628dddbcf65c44537ddde032821e029641ace7328fdce5502a94832d",
+        "bytes": 426,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "b29e84ebaa31cff5c117b2cf460eb4ad548489ba0a7986d3e2052c3474f15734",
+        "path": "evidence/handle-probe.mjs"
+      },
+      {
+        "originalHash": "e3b7e7d9998b32de0d5ef3dfb505d611b60ed8d9bf2c6592d2e8c25a9b02b095",
+        "bytes": 2489,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "fffa02f05265ed2c25327ce75355ccf1243b25b6b35f7e0bba050421129e9770",
+        "path": "evidence/index.md"
+      },
+      {
+        "originalHash": "49d81c3f484d17b9710c6de567cf931234ec6be379f0055dba99eb7defc0c725",
+        "bytes": 823,
+        "mode": 511,
+        "executionHash": "49d81c3f484d17b9710c6de567cf931234ec6be379f0055dba99eb7defc0c725",
+        "path": "evidence/learner-checks/pre-spec.md"
+      },
+      {
+        "originalHash": "f3aff5536b965731e9f01a1a59804ca8bb6a440b3eb2cddc53695bae79fa416d",
+        "bytes": 11916,
+        "mode": 511,
+        "executionHash": "f3aff5536b965731e9f01a1a59804ca8bb6a440b3eb2cddc53695bae79fa416d",
+        "path": "evidence/manifest.json"
+      },
+      {
+        "originalHash": "a471924d67434b290fd45d3d9e1406b76749fae4e15ab77a366c0724335cf1f6",
+        "bytes": 1974,
+        "mode": 511,
+        "executionHash": "a471924d67434b290fd45d3d9e1406b76749fae4e15ab77a366c0724335cf1f6",
+        "path": "evidence/manual-checks/browser.md"
+      },
+      {
+        "originalHash": "c0422c032cc12dcc5fb5ff0ac5377bd6edd303b90ade0969d449b6580331338a",
+        "bytes": 4511,
+        "mode": 511,
+        "executionHash": "c0422c032cc12dcc5fb5ff0ac5377bd6edd303b90ade0969d449b6580331338a",
+        "path": "evidence/ring-autoplan.md"
+      },
+      {
+        "originalHash": "78bc643f89a87f89842372404b03c655e17bf0fc992e4c13355a95f9ea0d6f69",
+        "bytes": 5663,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "d54c53e58370431191d965ebdef94b4339bad7217509f6e49e72af2d89af415b",
+        "path": "evidence/ring-build.md"
+      },
+      {
+        "originalHash": "9fba3b7c6b1e67275b19b5f2505c663bc03c1d5828eaa670717806f6ccec3e1d",
+        "bytes": 4127,
+        "mode": 511,
+        "executionHash": "9fba3b7c6b1e67275b19b5f2505c663bc03c1d5828eaa670717806f6ccec3e1d",
+        "path": "evidence/ring-qa.md"
+      },
+      {
+        "originalHash": "81cbbf0c7cfd40012701b1e5fe49b19f018d6068caaac5ee3cadf64759075457",
+        "bytes": 2593,
+        "mode": 511,
+        "executionHash": "81cbbf0c7cfd40012701b1e5fe49b19f018d6068caaac5ee3cadf64759075457",
+        "path": "evidence/ring-retro.md"
+      },
+      {
+        "originalHash": "6b91661d2c8a5974cf5de6d76663d14b6ec9ba6f0e47decf7a887b807383e503",
+        "bytes": 8062,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "295f502205d4eef8dca7f79e4bc5f9e1d1c100e86b45865468779dd4a29c4b1c",
+        "path": "evidence/ring-review-codex.md"
+      },
+      {
+        "originalHash": "481be040328ea5976f79cdfc0bcf6bdbd26bcd7e634646e3afe178d1fd49b4bd",
+        "bytes": 3672,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "12fabd2fd9b3331888d5cba151304626075ec95972a29e2f1caccc8b1c7f0cd3",
+        "path": "evidence/ring-review-cso.md"
+      },
+      {
+        "originalHash": "c7d1b7a14a2a0045bdcf30f71dc668bf1d2aff5c1bbb445e245e5e543a497f62",
+        "bytes": 2782,
+        "mode": 511,
+        "executionHash": "c7d1b7a14a2a0045bdcf30f71dc668bf1d2aff5c1bbb445e245e5e543a497f62",
+        "path": "evidence/ring-review.md"
+      },
+      {
+        "originalHash": "7f0a99e0caaea7aadf574bd2878334f94ec3427352aec1add689e8b92d6200c4",
+        "bytes": 2993,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "0cc0fda5d85ff59e8dc19f67389dfcfe648419697c0c2221fa4b7d9a04e05cae",
+        "path": "evidence/ring-ship.md"
+      },
+      {
+        "originalHash": "787912a70db1c8db6110bb21af4cf3acf23bb387f242e4d74f6ddcaa0f3d7167",
+        "bytes": 5583,
+        "mode": 511,
+        "executionHash": "787912a70db1c8db6110bb21af4cf3acf23bb387f242e4d74f6ddcaa0f3d7167",
+        "path": "evidence/ring-spec.md"
+      },
+      {
+        "originalHash": "9f9d62dc90322ab7394b26fce7b14b897943dc3b0196432d1d765dbdb2fa8cdf",
+        "bytes": 3255,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "6f729bb61b82c97f44bab249a7f7b8638177a161a5a181998d0def78487c0234",
+        "path": "evidence/smoke-m1.mjs"
+      },
+      {
+        "originalHash": "4e41c83e3cb9effd6f8a04549e20827258017b0a7bbc7b93834f0c62dd0a33ee",
+        "bytes": 10891,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "72e02b1c99f7ff370d02469a1c5f82a4e7f3bec6de6aca27883790437ed7ed76",
+        "path": "evidence/spec-forensics.md"
+      },
+      {
+        "originalHash": "c8321ce3b08630f103e74f53d7650737ae6429fdcace96055c3f8317e417acbd",
+        "bytes": 4366,
+        "mode": 511,
+        "executionHash": "c8321ce3b08630f103e74f53d7650737ae6429fdcace96055c3f8317e417acbd",
+        "path": "evidence/spec-quality-gate.md"
+      },
+      {
+        "originalHash": "b147864ce59aac8c76209353f2baf5231dfd0c29772b3dd04ba4925490648e38",
+        "bytes": 1705,
+        "mode": 511,
+        "executionHash": "b147864ce59aac8c76209353f2baf5231dfd0c29772b3dd04ba4925490648e38",
+        "path": "evidence/test-count.txt"
+      },
+      {
+        "originalHash": "024daa48931d7a7dc8b03e51551250fbb51456238d6ac0709bdc97d721ae0c5b",
+        "bytes": 4719,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "2ed0c508d4dda2fcb533227585176d8f045c404aef6a4187bd6e8d8c29d7ba86",
+        "path": "evidence/toolchain-recon.md"
+      },
+      {
+        "originalHash": "4a89ca43839931c0aad4bcd772f2b1c2d65fc6451ad9eadb4fe5b9107e79a096",
+        "bytes": 326245,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/visual/home-1440.png"
+      },
+      {
+        "originalHash": "5475040826b9ad20054999f4c031b30caefbfd88a5e2f8418828b1d741dc4e3a",
+        "bytes": 172023,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/visual/home-390-cart.png"
+      },
+      {
+        "originalHash": "0058ef8985b10d7ea437284a746e19c22e4e95e960f53c95861910f4a3c72c4f",
+        "bytes": 126251,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/visual/home-390-top.png"
+      },
+      {
+        "originalHash": "fb3afcb17e87a7f8a1996a8931b58823b829f839fc0592dabc686ee4db072f01",
+        "bytes": 189815,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "evidence/visual/home-834.png"
+      },
+      {
+        "originalHash": "ccaa83eb7392a7387cce9a31f119b06bc56d9668099539b4e934c41b0311151a",
+        "bytes": 12221,
+        "mode": 511,
+        "executionHash": "ccaa83eb7392a7387cce9a31f119b06bc56d9668099539b4e934c41b0311151a",
+        "path": "index.html"
+      },
+      {
+        "originalHash": "1444e69a84d47c4eafc9ee1f81678800884f952612b4eb313b0d26f57cf217ca",
+        "bytes": 5743,
+        "mode": 511,
+        "executionHash": "1444e69a84d47c4eafc9ee1f81678800884f952612b4eb313b0d26f57cf217ca",
+        "path": "package-lock.json"
+      },
+      {
+        "originalHash": "833b871edc53bafee0dc13b2af81e69402e2c42dce2c54a411de0c8d83bfe7b3",
+        "bytes": 574,
+        "mode": 511,
+        "executionHash": "833b871edc53bafee0dc13b2af81e69402e2c42dce2c54a411de0c8d83bfe7b3",
+        "path": "package.json"
+      },
+      {
+        "originalHash": "5f5cccda4c5c5c5179fe6467c45432bb3ff5274ca6f2c9d126189da9920920f1",
+        "bytes": 4903,
+        "mode": 511,
+        "executionHash": "5f5cccda4c5c5c5179fe6467c45432bb3ff5274ca6f2c9d126189da9920920f1",
+        "path": "qa-report.md"
+      },
+      {
+        "originalHash": "85197a08363d390bc24804de2ccf14879d6f9a8c02b4679cf2eb258f0ad6cdc4",
+        "bytes": 6228,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "8db43b7e4a7c21755583302aee89ab32bc826354ff0de82f88fe9c7d65446803",
+        "path": "retro.md"
+      },
+      {
+        "originalHash": "4f9c4cf30ffc1e89125f0214b1c05191e597b3af940a7c5a344162d35efa3649",
+        "bytes": 7553,
+        "mode": 511,
+        "transformation": "withheld: binary or redaction failed",
+        "path": "review.md"
+      },
+      {
+        "originalHash": "d9f74b76a3495e51a665339933ef468dcf188b049845df3d1cd49295efa98870",
+        "bytes": 319,
+        "mode": 511,
+        "executionHash": "d9f74b76a3495e51a665339933ef468dcf188b049845df3d1cd49295efa98870",
+        "path": "scripts/backup.ps1"
+      },
+      {
+        "originalHash": "77e512d6648625763c81e28ac27b8f7d6ae509f431229ae2302835c44d8af379",
+        "bytes": 645,
+        "mode": 511,
+        "executionHash": "77e512d6648625763c81e28ac27b8f7d6ae509f431229ae2302835c44d8af379",
+        "path": "scripts/backup.sh"
+      },
+      {
+        "originalHash": "435f70187f531f47d53df7951e9a33220a058c38715589e13a10fe7d501ee3f4",
+        "bytes": 1218,
+        "mode": 511,
+        "executionHash": "435f70187f531f47d53df7951e9a33220a058c38715589e13a10fe7d501ee3f4",
+        "path": "scripts/build-public.mjs"
+      },
+      {
+        "originalHash": "972622261817c1409b8c3c285fee9dbf9a5af2d546184e7fd5d9a95caa8148a0",
+        "bytes": 1199,
+        "mode": 511,
+        "executionHash": "972622261817c1409b8c3c285fee9dbf9a5af2d546184e7fd5d9a95caa8148a0",
+        "path": "scripts/check-compose.mjs"
+      },
+      {
+        "originalHash": "d175b95e4fcf57de76dc543c1863aed18b2211776c6a6ac79d5331e684d41598",
+        "bytes": 1568,
+        "mode": 511,
+        "executionHash": "d175b95e4fcf57de76dc543c1863aed18b2211776c6a6ac79d5331e684d41598",
+        "path": "scripts/check-docs-stale.mjs"
+      },
+      {
+        "originalHash": "99fd4a61ace3ddc0801a76a07c24f954d9de0f32a65a88a3e888bfce0861a85d",
+        "bytes": 1826,
+        "mode": 511,
+        "executionHash": "99fd4a61ace3ddc0801a76a07c24f954d9de0f32a65a88a3e888bfce0861a85d",
+        "path": "scripts/check-links.mjs"
+      },
+      {
+        "originalHash": "03ecd2a6e1ee40a063b3ec60e62e4d53515bc3e8ae2302bd7212eaec58a923d7",
+        "bytes": 1756,
+        "mode": 511,
+        "executionHash": "03ecd2a6e1ee40a063b3ec60e62e4d53515bc3e8ae2302bd7212eaec58a923d7",
+        "path": "scripts/check-numbering.mjs"
+      },
+      {
+        "originalHash": "e9e27ac6f9f3409d97c873ca141288c6e47ed7f2d0de3812e48ffbd5e08825a2",
+        "bytes": 2957,
+        "mode": 511,
+        "executionHash": "e9e27ac6f9f3409d97c873ca141288c6e47ed7f2d0de3812e48ffbd5e08825a2",
+        "path": "scripts/check-redaction.mjs"
+      },
+      {
+        "originalHash": "b2651f061e7064e413d4a4e03f0fdcc135e3eadba0c94f9c160ccbf65d06d8a5",
+        "bytes": 1528,
+        "mode": 511,
+        "executionHash": "b2651f061e7064e413d4a4e03f0fdcc135e3eadba0c94f9c160ccbf65d06d8a5",
+        "path": "scripts/check-traceability.mjs"
+      },
+      {
+        "originalHash": "5eaccb2029b7e0abbed2b8640dc1bec6376f45720ed9d38bdf150df1bfb59c75",
+        "bytes": 7642,
+        "mode": 511,
+        "executionHash": "5eaccb2029b7e0abbed2b8640dc1bec6376f45720ed9d38bdf150df1bfb59c75",
+        "path": "scripts/fetch-product-images.mjs"
+      },
+      {
+        "originalHash": "00a34a34484a7dfb8d33d79e0fcb0c91a56233641a7ebda733494f1e2f8e7883",
+        "bytes": 2808,
+        "mode": 511,
+        "executionHash": "00a34a34484a7dfb8d33d79e0fcb0c91a56233641a7ebda733494f1e2f8e7883",
+        "path": "scripts/pgctl.mjs"
+      },
+      {
+        "originalHash": "399ed88f707101c7b0d01a4a26617384155326a4d7cf0156c0b823185c22f4ea",
+        "bytes": 2993,
+        "mode": 511,
+        "executionHash": "399ed88f707101c7b0d01a4a26617384155326a4d7cf0156c0b823185c22f4ea",
+        "path": "scripts/preflight.mjs"
+      },
+      {
+        "originalHash": "b6597cb074f9a288572ce67a48d43cea7b3c701faa3846b93f81f43878f2d17d",
+        "bytes": 2679,
+        "mode": 511,
+        "executionHash": "b6597cb074f9a288572ce67a48d43cea7b3c701faa3846b93f81f43878f2d17d",
+        "path": "scripts/record-test-count.mjs"
+      },
+      {
+        "originalHash": "0bf13f59279fe400128f439db5ec548983102d5e712caf594fa582de76249f7c",
+        "bytes": 510,
+        "mode": 511,
+        "executionHash": "0bf13f59279fe400128f439db5ec548983102d5e712caf594fa582de76249f7c",
+        "path": "scripts/restore.ps1"
+      },
+      {
+        "originalHash": "a4f8111a129f514b743953d14f56ae13721a7e4f9ce589aaf9d429c24f14a41a",
+        "bytes": 1072,
+        "mode": 511,
+        "executionHash": "a4f8111a129f514b743953d14f56ae13721a7e4f9ce589aaf9d429c24f14a41a",
+        "path": "scripts/restore.sh"
+      },
+      {
+        "originalHash": "6e09da05a1a57e45d55748a5b69917b9a9a624cc3deef4b51afb210d71dafb88",
+        "bytes": 2926,
+        "mode": 511,
+        "executionHash": "6e09da05a1a57e45d55748a5b69917b9a9a624cc3deef4b51afb210d71dafb88",
+        "path": "scripts/start-all.mjs"
+      },
+      {
+        "originalHash": "7acc5b2afd769cefa5ca5bb77276971d08e6d2571e5ad17a4b7a698272804cc7",
+        "bytes": 1961,
+        "mode": 511,
+        "executionHash": "7acc5b2afd769cefa5ca5bb77276971d08e6d2571e5ad17a4b7a698272804cc7",
+        "path": "scripts/start-both.mjs"
+      },
+      {
+        "originalHash": "dcc6de4e3353eaaf821f5d90eef5c4daf11aab147d66a777c7f805c674bc1cfc",
+        "bytes": 2460,
+        "mode": 511,
+        "executionHash": "dcc6de4e3353eaaf821f5d90eef5c4daf11aab147d66a777c7f805c674bc1cfc",
+        "path": "scripts/verify-evidence.mjs"
+      },
+      {
+        "originalHash": "5b3a822b25f27d3da47136dc59485446de6ff7091581d263dfbfb201f7526c24",
+        "bytes": 2755,
+        "mode": 511,
+        "executionHash": "5b3a822b25f27d3da47136dc59485446de6ff7091581d263dfbfb201f7526c24",
+        "path": "scripts/verify.mjs"
+      },
+      {
+        "originalHash": "a8336c94c92d5ae93acabd8879ed2a0b09b6968ff40a8280f301a30ae811c707",
+        "bytes": 7109,
+        "mode": 511,
+        "executionHash": "a8336c94c92d5ae93acabd8879ed2a0b09b6968ff40a8280f301a30ae811c707",
+        "path": "serve.mjs"
+      },
+      {
+        "originalHash": "a7f00f873a1dd3d7e48ade6ca38df67e2da2f6f9e510285bb207917326939423",
+        "bytes": 2443,
+        "mode": 511,
+        "executionHash": "a7f00f873a1dd3d7e48ade6ca38df67e2da2f6f9e510285bb207917326939423",
+        "path": "server/allowlist.mjs"
+      },
+      {
+        "originalHash": "cbf327a96ae861973fc0400a1a383e528f5580d6f32e63b7ff86c363a142ea36",
+        "bytes": 3458,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "63e288708951acf8c65c00ce2b6553a8555dcadefd7e79400f5eff7107f17d68",
+        "path": "server/app.mjs"
+      },
+      {
+        "originalHash": "d7c4765a90de05e0f47d20f7b78b71d205f4647287b991299079d01a9ea7f93f",
+        "bytes": 7375,
+        "mode": 511,
+        "executionHash": "d7c4765a90de05e0f47d20f7b78b71d205f4647287b991299079d01a9ea7f93f",
+        "path": "server/auth.mjs"
+      },
+      {
+        "originalHash": "ac34fc4c053b76c0ec93001590832d14c504d098cfd89c11cc13ac9e0d923587",
+        "bytes": 9842,
+        "mode": 511,
+        "executionHash": "ac34fc4c053b76c0ec93001590832d14c504d098cfd89c11cc13ac9e0d923587",
+        "path": "server/db.mjs"
+      },
+      {
+        "originalHash": "988d63df495607fb424b0de7c16dd907c880cc8caa10918a472cdc29e68600ec",
+        "bytes": 3966,
+        "mode": 511,
+        "executionHash": "988d63df495607fb424b0de7c16dd907c880cc8caa10918a472cdc29e68600ec",
+        "path": "server/errors.mjs"
+      },
+      {
+        "originalHash": "7a172e6e46267e95ecd7641ff9a9dae4c0f46cf7822ae6d5ec84e781e294bbd3",
+        "bytes": 2525,
+        "mode": 511,
+        "executionHash": "7a172e6e46267e95ecd7641ff9a9dae4c0f46cf7822ae6d5ec84e781e294bbd3",
+        "path": "server/migrations/0001_init.sql"
+      },
+      {
+        "originalHash": "c3c0404fa96de72309f3ebebe3b5170dca5ae3fdae73826ed801fa62f054d7c5",
+        "bytes": 8031,
+        "mode": 511,
+        "executionHash": "c3c0404fa96de72309f3ebebe3b5170dca5ae3fdae73826ed801fa62f054d7c5",
+        "path": "server/orders.mjs"
+      },
+      {
+        "originalHash": "6f8aadbcebc36a36d83c32990052c9e36fa409abe42bbb1f221753ed3267379a",
+        "bytes": 2214,
+        "mode": 511,
+        "executionHash": "6f8aadbcebc36a36d83c32990052c9e36fa409abe42bbb1f221753ed3267379a",
+        "path": "server/products.mjs"
+      },
+      {
+        "originalHash": "c7734493012edbf7d0e227de158afa7df0ede9ce91178c113b29f49313d956d0",
+        "bytes": 4876,
+        "mode": 511,
+        "executionHash": "c7734493012edbf7d0e227de158afa7df0ede9ce91178c113b29f49313d956d0",
+        "path": "server/repositories/orders.mjs"
+      },
+      {
+        "originalHash": "63ba0c1effa11b16c27a36e00a5c14b8460cada619d87316c9e87acd7d830316",
+        "bytes": 2035,
+        "mode": 511,
+        "executionHash": "63ba0c1effa11b16c27a36e00a5c14b8460cada619d87316c9e87acd7d830316",
+        "path": "server/repositories/products.mjs"
+      },
+      {
+        "originalHash": "4bf78c4d248bf3faa69be00609cd279b03471889cbd44cbc9f87e60d3e3a5dde",
+        "bytes": 1358,
+        "mode": 511,
+        "executionHash": "4bf78c4d248bf3faa69be00609cd279b03471889cbd44cbc9f87e60d3e3a5dde",
+        "path": "server/repositories/sessions.mjs"
+      },
+      {
+        "originalHash": "5707e1c5fab3b440f8dbafe2e0b1ff019cf228936a03a9717af06854785df7ca",
+        "bytes": 1437,
+        "mode": 511,
+        "executionHash": "5707e1c5fab3b440f8dbafe2e0b1ff019cf228936a03a9717af06854785df7ca",
+        "path": "server/repositories/users.mjs"
+      },
+      {
+        "originalHash": "9f4d7131099033db5df91f8b206fc69c9afc2aab0e63fa67b07eb81c275158db",
+        "bytes": 11643,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "ef207475697fe7d321260e3348a0831056820c49489658597c2bcb60de0e9426",
+        "path": "server/router.mjs"
+      },
+      {
+        "originalHash": "bb37a790d08b6056e30a76931bb6b118f7094db0ef03bb4ddafb4311754d6319",
+        "bytes": 2122,
+        "mode": 511,
+        "executionHash": "bb37a790d08b6056e30a76931bb6b118f7094db0ef03bb4ddafb4311754d6319",
+        "path": "server/seed.mjs"
+      },
+      {
+        "originalHash": "f07ba52af581ffb5bbd419a17cd19e45019fa4d641dbcb3b5841d33d6d626836",
+        "bytes": 3437,
+        "mode": 511,
+        "executionHash": "f07ba52af581ffb5bbd419a17cd19e45019fa4d641dbcb3b5841d33d6d626836",
+        "path": "server/services/auth.mjs"
+      },
+      {
+        "originalHash": "eb8e7e42b869bd9358892ac1f2628e8ca9150c7eb836584ea236ae4723466cfc",
+        "bytes": 1762,
+        "mode": 511,
+        "executionHash": "eb8e7e42b869bd9358892ac1f2628e8ca9150c7eb836584ea236ae4723466cfc",
+        "path": "server/services/catalog.mjs"
+      },
+      {
+        "originalHash": "3bde65146ca6765419242d903f2ec52b9366d53c988f11f0bca34baabace0fc9",
+        "bytes": 1331,
+        "mode": 511,
+        "executionHash": "3bde65146ca6765419242d903f2ec52b9366d53c988f11f0bca34baabace0fc9",
+        "path": "server/services/health.mjs"
+      },
+      {
+        "originalHash": "9a649cbffa0610a029d6db89bec4ba97268ffc8cccdb96d96792b658339542bd",
+        "bytes": 1190,
+        "mode": 511,
+        "executionHash": "9a649cbffa0610a029d6db89bec4ba97268ffc8cccdb96d96792b658339542bd",
+        "path": "server/services/index.mjs"
+      },
+      {
+        "originalHash": "dba731c849a99cde46106779df2effa5fce9b4723bd1dd517c2ab8996ebb3c33",
+        "bytes": 5392,
+        "mode": 511,
+        "executionHash": "dba731c849a99cde46106779df2effa5fce9b4723bd1dd517c2ab8996ebb3c33",
+        "path": "server/services/orders.mjs"
+      },
+      {
+        "originalHash": "769b01e0d0ebdcbc7f54890b96945b4907ab517562918a4503d92e13404c2346",
+        "bytes": 12208,
+        "mode": 511,
+        "executionHash": "769b01e0d0ebdcbc7f54890b96945b4907ab517562918a4503d92e13404c2346",
+        "path": "tests/api.test.mjs"
+      },
+      {
+        "originalHash": "5d9b80f38054163bbd7b0bad8a8ee357032fc63a8318114e79a4fb8df4f17d5c",
+        "bytes": 46446,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "5446fb2583a2aaf272fa95c1f9dd076b3effd1fa76f08a9d5a2186fdeb92625d",
+        "path": "tests/app.test.mjs"
+      },
+      {
+        "originalHash": "9e6780c1c3f36209d46df78265ec3f21608a0d0dc330245b4a0c5e60f3bc45e1",
+        "bytes": 2046,
+        "mode": 511,
+        "executionHash": "9e6780c1c3f36209d46df78265ec3f21608a0d0dc330245b4a0c5e60f3bc45e1",
+        "path": "tests/assets.test.mjs"
+      },
+      {
+        "originalHash": "ac658bd2f9f6e41c35c20b97892466ab29458aea554d5a389b238d1aa1aa6feb",
+        "bytes": 7670,
+        "mode": 511,
+        "executionHash": "ac658bd2f9f6e41c35c20b97892466ab29458aea554d5a389b238d1aa1aa6feb",
+        "path": "tests/auth.test.mjs"
+      },
+      {
+        "originalHash": "7cb4ed441c02ab131f024a19854295ec119f46c02e502b98eab84febd7284092",
+        "bytes": 7037,
+        "mode": 511,
+        "executionHash": "7cb4ed441c02ab131f024a19854295ec119f46c02e502b98eab84febd7284092",
+        "path": "tests/cli.test.mjs"
+      },
+      {
+        "originalHash": "81faf29f357a081ca68c82d4969d6a3159492937cf065041ed70b8d2072b8409",
+        "bytes": 4475,
+        "mode": 511,
+        "executionHash": "81faf29f357a081ca68c82d4969d6a3159492937cf065041ed70b8d2072b8409",
+        "path": "tests/client.test.mjs"
+      },
+      {
+        "originalHash": "647dce480633155550cf5c397d70fecab69a71e79fc5b25f9224de685557ecbc",
+        "bytes": 2931,
+        "mode": 511,
+        "executionHash": "647dce480633155550cf5c397d70fecab69a71e79fc5b25f9224de685557ecbc",
+        "path": "tests/contracts.test.mjs"
+      },
+      {
+        "originalHash": "faa0054d075d635c8eb475503b90de1a538164a9599dccf97982858a5277bf2b",
+        "bytes": 11288,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "f705011845daf284e7123c05f03a1872b6908caadd933782297f9a1cd4914a5b",
+        "path": "tests/controller.test.mjs"
+      },
+      {
+        "originalHash": "36c259f2da0d381f62d513c84a7a328eea45e067552b5fe10bed3770eea6f066",
+        "bytes": 11608,
+        "mode": 511,
+        "executionHash": "36c259f2da0d381f62d513c84a7a328eea45e067552b5fe10bed3770eea6f066",
+        "path": "tests/db.test.mjs"
+      },
+      {
+        "originalHash": "447e597838149d088085f6fe44884d04a0621aa38c1408a22bcd70044a6ec8f6",
+        "bytes": 10113,
+        "mode": 511,
+        "executionHash": "447e597838149d088085f6fe44884d04a0621aa38c1408a22bcd70044a6ec8f6",
+        "path": "tests/domain.test.mjs"
+      },
+      {
+        "originalHash": "9681865728b26db010090f6a2185e99688632c9cf9675026259161702535a8b5",
+        "bytes": 770,
+        "mode": 511,
+        "executionHash": "9681865728b26db010090f6a2185e99688632c9cf9675026259161702535a8b5",
+        "path": "tests/helpers/db.mjs"
+      },
+      {
+        "originalHash": "a6814fb3821ab00c4c988f63cc95cec4f70f1b62da7ab9662a32b1517c51bee7",
+        "bytes": 4318,
+        "mode": 511,
+        "transformation": "secret spans redacted",
+        "executionHash": "7426bd57f31c9e1e71f1e176fb377f51b8a26af7bfce5ae28f742e77c831fe0b",
+        "path": "tests/helpers/pg.mjs"
+      },
+      {
+        "originalHash": "a19d7162fde114795d61c76f9d9424ed38cdf03247b6dced62643f9cafa41c82",
+        "bytes": 2708,
+        "mode": 511,
+        "executionHash": "a19d7162fde114795d61c76f9d9424ed38cdf03247b6dced62643f9cafa41c82",
+        "path": "tests/helpers/server.mjs"
+      },
+      {
+        "originalHash": "137cdc5582bfda6c36594210f5bc6193872c13ef45332dd8a4939371f533b904",
+        "bytes": 3914,
+        "mode": 511,
+        "executionHash": "137cdc5582bfda6c36594210f5bc6193872c13ef45332dd8a4939371f533b904",
+        "path": "tests/layering.test.mjs"
+      },
+      {
+        "originalHash": "8c0e245d431823884519aa217e91664618609df72b0c34770dadf3c06cc1a0c9",
+        "bytes": 9726,
+        "mode": 511,
+        "executionHash": "8c0e245d431823884519aa217e91664618609df72b0c34770dadf3c06cc1a0c9",
+        "path": "tests/static-scan.test.mjs"
+      }
+    ],
+    "headCommit": "1a56eb0b75fb7c9ac04f4e190eec1d9c2cfe18da",
+    "originalHash": "b91f42e48a408c26971f9cccc13404c7ba82441d7e375fbcf71e4b1e9a4727f8",
+    "executionHash": "09ecaf05a1daf0c791bac8923ffa7662a3f9585dd051742ef3e04e9274d64bc3"
+  },
+  "history": {
+    "status": "not_assessed",
+    "gap": "Could not read bounded Git metadata: log exceeded the output limit (request rejected); source may not be a Git repository"
+  },
+  "sensitiveEvidence": [
+    {
+      "path": ".env.example",
+      "findings": [
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 7,
+          "col": 19
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 17,
+          "col": 15
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 20,
+          "col": 16
+        }
+      ]
+    },
+    {
+      "path": "BUILD.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 39,
+          "col": 31
+        }
+      ]
+    },
+    {
+      "path": "DECISIONS.md",
+      "findings": [
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 3,
+          "col": 10
+        }
+      ]
+    },
+    {
+      "path": "Dockerfile",
+      "findings": [
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 27,
+          "col": 23
+        }
+      ]
+    },
+    {
+      "path": "Dockerfile.web",
+      "findings": [
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 22,
+          "col": 28
+        }
+      ]
+    },
+    {
+      "path": "NEXT-SESSION-PROMPT.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 44,
+          "col": 76
+        }
+      ]
+    },
+    {
+      "path": "PRD-R2.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 18,
+          "col": 9
+        }
+      ]
+    },
+    {
+      "path": "PRD-R3.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 5,
+          "col": 13
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 14,
+          "col": 9
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 61,
+          "col": 60
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 195,
+          "col": 10
+        }
+      ]
+    },
+    {
+      "path": "R1-八环讲解记录.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 363,
+          "col": 9
+        }
+      ]
+    },
+    {
+      "path": "README.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 3,
+          "col": 11
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 27,
+          "col": 9
+        }
+      ]
+    },
+    {
+      "path": "SPEC.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 7,
+          "col": 13
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 22,
+          "col": 15
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 22,
+          "col": 93
+        },
+        {
+          "id": "internal.user_path",
+          "tier": "LOW",
+          "line": 43,
+          "col": 29
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 74,
+          "col": 62
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 74,
+          "col": 95
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 81,
+          "col": 31
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 358,
+          "col": 559
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 404,
+          "col": 31
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 485,
+          "col": 48
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 487,
+          "col": 27
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 487,
+          "col": 42
+        }
+      ]
+    },
+    {
+      "path": "VERSION",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 1,
+          "col": 1
+        }
+      ]
+    },
+    {
+      "path": "assets/api-client.mjs",
+      "findings": [
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 23,
+          "col": 32
+        }
+      ]
+    },
+    {
+      "path": "assets/app.mjs",
+      "findings": [
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 222,
+          "col": 17
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 1049,
+          "col": 16
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 1100,
+          "col": 16
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 1117,
+          "col": 18
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 1138,
+          "col": 16
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 1143,
+          "col": 18
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 1154,
+          "col": 18
+        }
+      ]
+    },
+    {
+      "path": "compose.simple.yml",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 26,
+          "col": 24
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 47,
+          "col": 43
+        }
+      ]
+    },
+    {
+      "path": "config.mjs",
+      "findings": [
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 81,
+          "col": 20
+        }
+      ]
+    },
+    {
+      "path": "docker-compose.yml",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 24,
+          "col": 24
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 43,
+          "col": 43
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 54,
+          "col": 28
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 61,
+          "col": 49
+        }
+      ]
+    },
+    {
+      "path": "docs/api.md",
+      "findings": [
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 67,
+          "col": 9
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 69,
+          "col": 51
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 73,
+          "col": 3
+        }
+      ]
+    },
+    {
+      "path": "docs/assets-credits.md",
+      "findings": [
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 8,
+          "col": 157
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 11,
+          "col": 146
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 12,
+          "col": 180
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 17,
+          "col": 156
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 19,
+          "col": 133
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 20,
+          "col": 130
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 21,
+          "col": 141
+        }
+      ]
+    },
+    {
+      "path": "docs/contracts.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 46,
+          "col": 9
+        }
+      ]
+    },
+    {
+      "path": "docs/decision-log.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 131,
+          "col": 31
+        }
+      ]
+    },
+    {
+      "path": "docs/deploy.md",
+      "findings": [
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 21,
+          "col": 9
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 30,
+          "col": 28
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 31,
+          "col": 24
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 54,
+          "col": 9
+        }
+      ]
+    },
+    {
+      "path": "evidence/assets-manifest.json",
+      "findings": [
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 11,
+          "col": 63
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 53,
+          "col": 50
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 67,
+          "col": 64
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 137,
+          "col": 63
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 165,
+          "col": 63
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 179,
+          "col": 63
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 193,
+          "col": 62
+        }
+      ]
+    },
+    {
+      "path": "evidence/autoplan-voices/r3-dx.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 12,
+          "col": 122
+        }
+      ]
+    },
+    {
+      "path": "evidence/codex/SPEC-snapshot-v1.0.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 7,
+          "col": 13
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 21,
+          "col": 15
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 21,
+          "col": 93
+        },
+        {
+          "id": "internal.user_path",
+          "tier": "LOW",
+          "line": 42,
+          "col": 29
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 73,
+          "col": 62
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 73,
+          "col": 95
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 374,
+          "col": 37
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 445,
+          "col": 48
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 447,
+          "col": 27
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 447,
+          "col": 42
+        }
+      ]
+    },
+    {
+      "path": "evidence/codex/SPEC-snapshot-v1.1.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 7,
+          "col": 13
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 21,
+          "col": 15
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 21,
+          "col": 93
+        },
+        {
+          "id": "internal.user_path",
+          "tier": "LOW",
+          "line": 42,
+          "col": 29
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 73,
+          "col": 62
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 73,
+          "col": 95
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 80,
+          "col": 31
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 347,
+          "col": 559
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 393,
+          "col": 31
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 473,
+          "col": 48
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 475,
+          "col": 27
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 475,
+          "col": 42
+        }
+      ]
+    },
+    {
+      "path": "evidence/codex/apply-spec-v1.1.mjs",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 20,
+          "col": 38
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 21,
+          "col": 32
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 81,
+          "col": 562
+        }
+      ]
+    },
+    {
+      "path": "evidence/codex/spec-review-codex.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 15,
+          "col": 96
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 15,
+          "col": 128
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 15,
+          "col": 238
+        }
+      ]
+    },
+    {
+      "path": "evidence/codex/spec-review-disposition.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 14,
+          "col": 26
+        }
+      ]
+    },
+    {
+      "path": "evidence/cso/cso-report.md",
+      "findings": [
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 6,
+          "col": 6
+        }
+      ]
+    },
+    {
+      "path": "evidence/cso/report.json",
+      "findings": [
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 3,
+          "col": 13
+        }
+      ]
+    },
+    {
+      "path": "evidence/index.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 18,
+          "col": 57
+        }
+      ]
+    },
+    {
+      "path": "evidence/ring-build.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 27,
+          "col": 53
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 27,
+          "col": 79
+        },
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 35,
+          "col": 9
+        }
+      ]
+    },
+    {
+      "path": "evidence/ring-review-codex.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 15,
+          "col": 22
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 15,
+          "col": 33
+        }
+      ]
+    },
+    {
+      "path": "evidence/ring-review-cso.md",
+      "findings": [
+        {
+          "id": "internal.user_path",
+          "tier": "LOW",
+          "line": 12,
+          "col": 22
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 12,
+          "col": 66
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 22,
+          "col": 4
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 23,
+          "col": 6
+        },
+        {
+          "id": "internal.user_path",
+          "tier": "LOW",
+          "line": 28,
+          "col": 10
+        },
+        {
+          "id": "internal.user_path",
+          "tier": "LOW",
+          "line": 32,
+          "col": 44
+        }
+      ]
+    },
+    {
+      "path": "evidence/ring-ship.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 13,
+          "col": 21
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 29,
+          "col": 25
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 30,
+          "col": 16
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 30,
+          "col": 28
+        }
+      ]
+    },
+    {
+      "path": "evidence/smoke-m1.mjs",
+      "findings": [
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 34,
+          "col": 17
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 35,
+          "col": 14
+        }
+      ]
+    },
+    {
+      "path": "evidence/spec-forensics.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 20,
+          "col": 62
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 20,
+          "col": 85
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 20,
+          "col": 121
+        }
+      ]
+    },
+    {
+      "path": "evidence/toolchain-recon.md",
+      "findings": [
+        {
+          "id": "internal.url_private",
+          "tier": "MEDIUM",
+          "line": 12,
+          "col": 87
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 23,
+          "col": 29
+        },
+        {
+          "id": "pii.phone.e164",
+          "tier": "MEDIUM",
+          "line": 62,
+          "col": 99
+        }
+      ]
+    },
+    {
+      "path": "retro.md",
+      "findings": [
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 9,
+          "col": 11
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 90,
+          "col": 8
+        },
+        {
+          "id": "pii.ip_public",
+          "tier": "MEDIUM",
+          "line": 90,
+          "col": 20
+        }
+      ]
+    },
+    {
+      "path": "server/app.mjs",
+      "findings": [
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 49,
+          "col": 30
+        }
+      ]
+    },
+    {
+      "path": "server/router.mjs",
+      "findings": [
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 219,
+          "col": 21
+        }
+      ]
+    },
+    {
+      "path": "tests/app.test.mjs",
+      "findings": [
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 357,
+          "col": 22
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 414,
+          "col": 16
+        },
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 453,
+          "col": 20
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 893,
+          "col": 43
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 994,
+          "col": 76
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 1009,
+          "col": 23
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 1056,
+          "col": 25
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 1062,
+          "col": 76
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 1067,
+          "col": 82
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 1081,
+          "col": 50
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 1085,
+          "col": 23
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 1184,
+          "col": 70
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 1188,
+          "col": 84
+        }
+      ]
+    },
+    {
+      "path": "tests/controller.test.mjs",
+      "findings": [
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 153,
+          "col": 36
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 168,
+          "col": 24
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 169,
+          "col": 24
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 171,
+          "col": 74
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 210,
+          "col": 31
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 213,
+          "col": 39
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 220,
+          "col": 22
+        },
+        {
+          "id": "pii.cc",
+          "tier": "MEDIUM",
+          "line": 241,
+          "col": 33
+        }
+      ]
+    },
+    {
+      "path": "tests/helpers/pg.mjs",
+      "findings": [
+        {
+          "id": "env.kv",
+          "tier": "MEDIUM",
+          "line": 112,
+          "col": 21
+        }
+      ]
+    }
+  ],
+  "recovery": []
+}

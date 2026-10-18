@@ -1,0 +1,4 @@
+{
+  "status": "not_assessed",
+  "gap": "Could not read bounded Git metadata: log exceeded the output limit (request rejected); source may not be a Git repository"
+}

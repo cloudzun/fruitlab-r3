@@ -1,0 +1,762 @@
+{
+  "schemaVersion": 3,
+  "runId": "1792294626627-4aa9fb56ea93339d",
+  "repoId": "d341b0fd8683ea40337788ea",
+  "createdAt": "2026-10-18T03:37:06.601Z",
+  "deadline": "2026-10-18T03:47:06.601Z",
+  "status": "finished",
+  "completeness": "partial",
+  "policy": {
+    "mode": "daily",
+    "scope": "code",
+    "diff": false,
+    "base": "origin/main",
+    "offline": true,
+    "budgetSeconds": 600,
+    "maxWorkers": 3,
+    "maxRepairs": 3
+  },
+  "source": {
+    "root": "<REDACTED-internal.user_path>",
+    "snapshotHash": "09ecaf05a1daf0c791bac8923ffa7662a3f9585dd051742ef3e04e9274d64bc3",
+    "originalHash": "b91f42e48a408c26971f9cccc13404c7ba82441d7e375fbcf71e4b1e9a4727f8",
+    "transformations": [
+      {
+        "path": ".env.example",
+        "handling": "excluded: credential or execution configuration"
+      },
+      {
+        "path": "BUILD.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "CLAUDE.md",
+        "handling": "excluded: credential or execution configuration"
+      },
+      {
+        "path": "DECISIONS.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "Dockerfile",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "Dockerfile.web",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "NEXT-SESSION-PROMPT.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "PRD-R2.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "PRD-R3.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "R1-八环讲解记录.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "README.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "SPEC.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "VERSION",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/api-client.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/app.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "assets/images/products/banana.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/blueberry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/cherry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/durian.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/fuji-apple.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/golden-pineapple.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/hami-melon.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/kiwi.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/mango.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/navel-orange.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/peach.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/red-dragon-fruit.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/shine-muscat.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "assets/images/products/strawberry.jpg",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "compose.simple.yml",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "config.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docker-compose.yml",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/api.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/assets-credits.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/contracts.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/decision-log.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "docs/deploy.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/assets-manifest.json",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/ceo.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/design.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/dx.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/eng.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-ceo-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-ceo.log",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-des-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-des.log",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-dx-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-dx.log",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-dx.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-eng-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/autoplan-voices/r3-eng.log",
+        "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+      },
+      {
+        "path": "evidence/baseline-tests.txt",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/codex/SPEC-snapshot-v1.0.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/SPEC-snapshot-v1.1.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/apply-spec-v1.1.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/review-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-codex.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-disposition.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-prompt2.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/codex/spec-review-run.log",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/codex/spec-review-run2.log",
+        "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+      },
+      {
+        "path": "evidence/codex/spec-review-run3.log",
+        "handling": "withheld: exceeds the 1 MiB redacting-reader limit"
+      },
+      {
+        "path": "evidence/codex/spec-review2-prompt.txt",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/cso/cso-report.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/cso/report.json",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/debug415.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/handle-probe.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/index.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-build.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-review-codex.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-review-cso.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/ring-ship.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/smoke-m1.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/spec-forensics.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/toolchain-recon.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "evidence/visual/home-1440.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-390-cart.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-390-top.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "evidence/visual/home-834.png",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "retro.md",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "review.md",
+        "handling": "withheld: binary or redaction failed"
+      },
+      {
+        "path": "server/app.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "server/router.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "tests/app.test.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "tests/controller.test.mjs",
+        "handling": "secret spans redacted"
+      },
+      {
+        "path": "tests/helpers/pg.mjs",
+        "handling": "secret spans redacted"
+      }
+    ]
+  },
+  "application": {
+    "actors": [
+      "anonymous visitor",
+      "authenticated user (userA/userB)",
+      "admin",
+      "operator with database/backup access"
+    ],
+    "assets": [
+      "products database",
+      "orders database",
+      "sessions",
+      "user credentials (scrypt hashes)",
+      "database backups"
+    ],
+    "entrypoints": [
+      "GET /api/health",
+      "GET /api/products",
+      "POST /api/auth/register",
+      "POST /api/auth/login",
+      "POST /api/auth/logout",
+      "GET /api/auth/me",
+      "POST /api/orders",
+      "GET /api/orders/mine",
+      "GET /api/orders/{orderNumber}",
+      "GET /api/admin/orders",
+      "GET /api/admin/products",
+      "PATCH /api/admin/products/{id}",
+      "web static files via Caddy (4175)"
+    ],
+    "tenantBoundaries": [
+      "order.user_id ownership (other users' orders return 404)",
+      "role admin vs user",
+      "compose network boundary: api/db not published"
+    ],
+    "sensitiveOperations": [
+      "session issuance and expiry",
+      "password verification (scrypt)",
+      "read order by number",
+      "admin price/stock/listing update",
+      "database backup and restore"
+    ],
+    "invariants": [
+      "users can only read own orders; other users' orders are indistinguishable from missing (404)",
+      "admin mutations require admin role",
+      "passwords stored as salted scrypt hash; dummy scrypt runs for missing users",
+      "stock never negative (conditional UPDATE)",
+      "state-changing requests with a session require CSRF token",
+      "sessions expire server-side"
+    ]
+  },
+  "coverage": [
+    {
+      "domain": "snapshot-inputs",
+      "scope": "code",
+      "status": "partial",
+      "method": "fail-closed captured source inventory",
+      "gaps": [
+        "assets/images/products/banana.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/blueberry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/cherry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/durian.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/fuji-apple.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/golden-pineapple.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/hami-melon.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/kiwi.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/mango.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/navel-orange.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/peach.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/red-dragon-fruit.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/shine-muscat.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "assets/images/products/strawberry.jpg: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/autoplan-voices/r3-ceo.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/autoplan-voices/r3-des.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/autoplan-voices/r3-dx.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/autoplan-voices/r3-eng.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/baseline-tests.txt: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/codex/spec-review-run.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/codex/spec-review-run2.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/codex/spec-review-run3.log: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-1440.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-390-cart.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-390-top.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "evidence/visual/home-834.png: in-scope source payload was unread and withheld from static and runtime assessment",
+        "review.md: in-scope source payload was unread and withheld from static and runtime assessment"
+      ],
+      "exclusions": [
+        ".env.example: excluded: credential or execution configuration",
+        "CLAUDE.md: excluded: credential or execution configuration"
+      ],
+      "evidence": [
+        "172 sanitized execution inputs captured; 2 explicit non-executable exclusions; 27 unread in-scope inputs; 0 tracked deletions"
+      ]
+    },
+    {
+      "domain": "history-inputs",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "bounded helper-retained Git history",
+      "gaps": [
+        "Could not read bounded Git metadata: log exceeded the output limit (request rejected); source may not be a Git repository"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "application-model",
+      "scope": "code",
+      "status": "assessed",
+      "method": "manual static review of routes, auth/session, rate limiting, CSRF, schema and backup paths",
+      "gaps": [],
+      "exclusions": [],
+      "evidence": [
+        "server/router.mjs",
+        "server/services/auth.mjs",
+        "server/auth.mjs",
+        "server/repositories/sessions.mjs",
+        "server/migrations/0001_init.sql"
+      ]
+    },
+    {
+      "domain": "attack-surface",
+      "scope": "code",
+      "status": "assessed",
+      "method": "route census over /api, static allowlist and compose-exposed ports",
+      "gaps": [],
+      "exclusions": [],
+      "evidence": [
+        "server/router.mjs",
+        "server/allowlist.mjs",
+        "docker-compose.yml",
+        "Caddyfile"
+      ]
+    },
+    {
+      "domain": "llm-agentic-mcp",
+      "scope": "code",
+      "status": "not_applicable",
+      "method": "repository has no LLM/MCP surface",
+      "gaps": [],
+      "exclusions": [],
+      "evidence": [
+        "no agent tooling in repo"
+      ]
+    },
+    {
+      "domain": "owasp-2025",
+      "scope": "code",
+      "status": "partial",
+      "method": "manual review of A01/A02/A03/A05/A07",
+      "gaps": [
+        "offline run: gitleaks/osv/semgrep/trivy scanner profiles unavailable"
+      ],
+      "exclusions": [],
+      "evidence": [
+        "server/router.mjs",
+        "server/services/auth.mjs",
+        "server/services/orders.mjs"
+      ]
+    },
+    {
+      "domain": "stride",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    },
+    {
+      "domain": "data-classification",
+      "scope": "code",
+      "status": "not_assessed",
+      "method": "pending investigation",
+      "gaps": [
+        "Assessment has not been submitted"
+      ],
+      "exclusions": [],
+      "evidence": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "036baa11ac1dd244470e93e22426cf11",
+      "fingerprint": "036baa11ac1dd244470e93e22426cf11",
+      "title": "Database backup artifacts contain password hashes and inherit default file permissions",
+      "rootCause": "The SQL/JSON-Lines backup export (CLI db backup) and pg_dump output store complete rows, including users.password_hash, and are written with the process umask. No explicit 0600 permission or encryption is applied.",
+      "location": {
+        "path": "cli.mjs",
+        "line": 1,
+        "symbol": "exportBackup"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "high",
+      "confidenceRationale": "Direct source reading of exportBackup and scripts/backup.sh; no runtime inspection of resulting file modes.",
+      "evidence": "supported",
+      "attackerControl": "Local user or process with read access to the backups directory",
+      "impact": "Offline password-hash disclosure enables offline guessing; order/user data disclosure.",
+      "scenario": "A backup file created during class or operations is readable by another local account and copied off the machine.",
+      "trace": [
+        "node cli.mjs db backup --out backups",
+        "exportBackup writes rows incl. password_hash",
+        "scripts/backup.sh writes pg_dump output"
+      ],
+      "references": [
+        "cli.mjs exportBackup",
+        "scripts/backup.sh",
+        "docs/backup-restore.md"
+      ],
+      "recommendation": "Create backups with mode 0600 (or a dedicated directory 0700), document encryption-at-rest for production, and avoid shipping backups with the repo.",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked CLI backup and scripts/backup.sh",
+        "controls": "backups/ is gitignored and documented as operator-only",
+        "counterevidence": "local classroom demo has no multi-user host threat model",
+        "conclusion": "survives as a low-severity operational hygiene issue"
+      },
+      "reproduction": "not_attempted",
+      "repair": "not_attempted",
+      "closure": "open"
+    },
+    {
+      "id": "9864501f165ae9690115c8269f74bc80",
+      "fingerprint": "9864501f165ae9690115c8269f74bc80",
+      "title": "Rate limiting state is process-local; restart or a second instance resets counters",
+      "rootCause": "createRateLimiter keeps failures in an in-memory Map keyed by account+IP and IP. The application is documented as single-instance; a restart clears lockouts and a second replica would not share counters.",
+      "location": {
+        "path": "server/auth.mjs",
+        "line": 1,
+        "symbol": "createRateLimiter"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "high",
+      "confidenceRationale": "Direct source reading; R3 explicitly designs a single-instance demo and documents the boundary.",
+      "evidence": "supported",
+      "attackerControl": "Ability to wait for a restart or to target a deployment with multiple replicas",
+      "impact": "Online password guessing budget resets; brute-force protection is weaker than a shared store.",
+      "scenario": "Attacker waits for a service restart or deployment scale-out and retries the password list.",
+      "trace": [
+        "POST /api/auth/login",
+        "auth service rateLimiter.check",
+        "createRateLimiter Map"
+      ],
+      "references": [
+        "server/auth.mjs",
+        "docs/deploy.md",
+        "README.md security boundaries"
+      ],
+      "recommendation": "Keep for R3 and document the single-instance boundary; for production, move counters to a shared store (or edge/WAF rate limiting).",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked login service and compose deployment",
+        "controls": "two buckets (account+IP, IP) and 15-minute lock",
+        "counterevidence": "R3 declares no horizontal scaling and a single replica in compose",
+        "conclusion": "survives as a scoped limitation, not a functional bug"
+      },
+      "reproduction": "not_attempted",
+      "repair": "not_attempted",
+      "closure": "open"
+    },
+    {
+      "id": "c85092e68c5b44bf5bc375240ce2b157",
+      "fingerprint": "c85092e68c5b44bf5bc375240ce2b157",
+      "title": "Local compose does not terminate TLS; cookie Secure flag depends on deployer configuration",
+      "rootCause": "The default docker-compose.yml exposes HTTP on 4175 and defaults COOKIE_SECURE=0 for classroom. Production requires APP_ENV=production plus COOKIE_SECURE=1, but TLS/HTTPS itself is delegated to an external reverse proxy and is not part of the delivered compose file.",
+      "location": {
+        "path": "docker-compose.yml",
+        "line": 1,
+        "symbol": "web service port mapping"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "high",
+      "confidenceRationale": "Direct reading of compose env defaults and config.mjs production checks; no external TLS terminator is shipped.",
+      "evidence": "supported",
+      "attackerControl": "Network attacker on the path between browser and host",
+      "impact": "Session cookie could travel over plaintext if the deployer exposes 4175 directly.",
+      "scenario": "Operator publishes the compose port to a LAN/WAN without a TLS proxy; login credentials and session cookie are sent in clear text.",
+      "trace": [
+        "browser -> web:4175 (HTTP)",
+        "Caddy :8080",
+        "api sets fruitlab_session"
+      ],
+      "references": [
+        "docker-compose.yml",
+        "config.mjs production checks",
+        "docs/deploy.md"
+      ],
+      "recommendation": "Document that the delivered stack is localhost/demo only; for deployment terminate TLS at an external proxy and keep COOKIE_SECURE=1 enforced in production (already checked).",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked compose ports and production config validation",
+        "controls": "APP_ENV=production refuses COOKIE_SECURE=0",
+        "counterevidence": "PRD explicitly excludes HTTPS certificates for local compose",
+        "conclusion": "survives as a documented deployment boundary"
+      },
+      "reproduction": "not_attempted",
+      "repair": "not_attempted",
+      "closure": "open"
+    },
+    {
+      "id": "c5ff7110138659de7030a44e04d44da0",
+      "fingerprint": "c5ff7110138659de7030a44e04d44da0",
+      "title": "CLI db restore trusts operator-supplied JSON Lines without schema-version compatibility check",
+      "rootCause": "importBackup validates the meta.type/app marker but not that meta.schemaVersion matches the running binary; a backup from a different schema version could be partially applied before failing, though it runs in one transaction.",
+      "location": {
+        "path": "cli.mjs",
+        "line": 1,
+        "symbol": "importBackup"
+      },
+      "advisoryIds": [],
+      "severity": "low",
+      "confidence": "medium",
+      "confidenceRationale": "Direct source reading; transactional rollback limits impact to restore failure rather than corruption.",
+      "evidence": "supported",
+      "attackerControl": "Operator/supply-chain control over the backup file",
+      "impact": "Restore fails or produces schema/data mismatch that is detected only by later checks.",
+      "scenario": "An old backup file is restored after a future schema change; insert order/columns no longer match.",
+      "trace": [
+        "node cli.mjs db restore --in <file> --yes",
+        "importBackup parses meta",
+        "resetDatabase + inserts"
+      ],
+      "references": [
+        "cli.mjs importBackup",
+        "server/migrations/0001_init.sql"
+      ],
+      "recommendation": "Compare meta.schemaVersion with the current migration version and refuse mismatches with a clear error; add a backup format version test.",
+      "challenge": {
+        "reviewer": "codex-second-agent",
+        "independent": true,
+        "mode": "independent_agent",
+        "callers": "checked CLI restore path",
+        "controls": "single transaction and --yes confirmation",
+        "counterevidence": "R3 ships a single schema version, so mismatch is not reachable in classroom",
+        "conclusion": "survives as a low-severity forward-compatibility gap"
+      },
+      "reproduction": "not_attempted",
+      "repair": "not_attempted",
+      "closure": "open"
+    }
+  ],
+  "gaps": [
+    "history-inputs: not assessed",
+    "stride: not assessed",
+    "data-classification: not assessed"
+  ],
+  "events": [
+    {
+      "at": "2026-10-18T03:37:16.327Z",
+      "kind": "snapshot",
+      "message": "Captured 201 source entries; 87 transformations disclosed"
+    },
+    {
+      "at": "2026-10-18T03:45:20.646Z",
+      "kind": "early-finding",
+      "message": "low supported finding 036baa11ac1dd244470e93e22426cf11"
+    },
+    {
+      "at": "2026-10-18T03:45:20.648Z",
+      "kind": "early-finding",
+      "message": "low supported finding 9864501f165ae9690115c8269f74bc80"
+    },
+    {
+      "at": "2026-10-18T03:45:20.650Z",
+      "kind": "early-finding",
+      "message": "low supported finding c85092e68c5b44bf5bc375240ce2b157"
+    },
+    {
+      "at": "2026-10-18T03:45:20.656Z",
+      "kind": "early-finding",
+      "message": "low supported finding c5ff7110138659de7030a44e04d44da0"
+    },
+    {
+      "at": "2026-10-18T03:45:24.640Z",
+      "kind": "terminal",
+      "message": "Audit finished and retained according to the private-state policy"
+    }
+  ]
+}

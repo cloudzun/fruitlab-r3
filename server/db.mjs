@@ -146,6 +146,16 @@ export async function isSeeded(pool) {
   }
 }
 
+export async function isSeededOn(client) {
+  try {
+    const products = await client.query("SELECT COUNT(*)::int AS n FROM products");
+    const users = await client.query("SELECT COUNT(*)::int AS n FROM users");
+    return products.rows[0].n > 0 && users.rows[0].n > 0;
+  } catch {
+    return false;
+  }
+}
+
 export async function withTransaction(pool, fn, { retries = 3, onRetry } = {}) {
   let lastError;
   for (let attempt = 0; attempt <= retries; attempt += 1) {

@@ -13,7 +13,7 @@ fi
 : "${POSTGRES_USER:?POSTGRES_USER required}"
 : "${POSTGRES_DB:?POSTGRES_DB required}"
 
-mkdir -p backups
+mkdir -p -m 700 backups
 STAMP="$(date +%Y%m%d-%H%M%S)"
 FILE="backups/${STAMP}.dump"
 docker compose exec -T db pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc > "$FILE"
@@ -21,4 +21,5 @@ if [ ! -s "$FILE" ]; then
   echo "[backup-failed] empty dump: $FILE" >&2
   exit 1
 fi
+chmod 600 "$FILE"
 echo "备份完成: $FILE ($(wc -c < "$FILE") bytes)"

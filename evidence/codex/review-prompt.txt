@@ -1,0 +1,11 @@
+﻿你是 FruitLab R3 的独立代码复核者（同族第二智能体，非跨模型）。只读复核，不修改代码/配置，不运行测试/容器，不做 git 操作。
+
+仓库：D:\vibecoding\easyvibe\r3-fruitlab，提交 1a56eb0（build 环完成）。
+需要读：server/（db/migrations/repositories/services/router/app）、serve.mjs、cli.mjs、config.mjs、assets/api-client.mjs、tests/、docker-compose.yml/Caddyfile/Dockerfile*、docs/error-catalog.md、docs/contracts.md、SPEC.md（v1.2）、DECISIONS.md（42 条 OB）、evidence/spec-forensics.md（11 个缺陷）。
+
+任务：
+1) 逐条判断 R2 的 11 个缺陷点（C-1..C-7、S-1..S-4）在 R3 是否真正关闭（看实现+测试，不看文档声明）。
+2) 找新的 High/Medium：安全（会话/限流/CSRF/时序/404/口令）、并发与事务（幂等/锁顺序/重试/连接池）、分层（router 无 SQL、依赖方向）、容器（HOST/反代/Host 白名单/非 root/healthcheck/备份恢复）、CLI、错误映射。
+3) 不要为凑数编造；没发现就写“未发现”。
+
+输出：只写 evidence/codex/review-codex.md。开头注明“同族第二智能体，非跨模型；对象 commit 1a56eb0”。格式：结论（可进入 qa / 需修）、11 缺陷关闭表、新 findings（编号/严重度/位置/问题/建议）、未评估项。写完即结束，不要等待确认。

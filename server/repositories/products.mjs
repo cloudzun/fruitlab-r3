@@ -28,9 +28,9 @@ export async function get(pool, productId) {
   return result.rowCount === 0 ? null : rowToProduct(result.rows[0]);
 }
 
-// 事务内读取（价格快照/上下架校验必须与扣库存同一事务）。
+// 事务内读取并加行锁（防止 admin 改价/下架与 checkout 竞争）。
 export async function getForUpdate(client, productId) {
-  const result = await client.query("SELECT * FROM products WHERE product_id = $1", [productId]);
+  const result = await client.query("SELECT * FROM products WHERE product_id = $1 FOR UPDATE", [productId]);
   return result.rowCount === 0 ? null : rowToProduct(result.rows[0]);
 }
 

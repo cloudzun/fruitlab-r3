@@ -34,6 +34,10 @@ export const ERROR_CODES = Object.freeze({
   "server-busy": { status: 503, message: "数据库繁忙，请稍后重试" },
 });
 
+export function isKnownAppCode(code) {
+  return typeof code === "string" && Object.hasOwn(ERROR_CODES, code);
+}
+
 export function errorBody(code, details) {
   const entry = ERROR_CODES[code] ?? ERROR_CODES["internal-error"];
   const body = { ok: false, code, message: entry.message };
@@ -64,7 +68,7 @@ export function constraintOf(error) {
 
 export function isConnectionError(error) {
   const code = sqlStateOf(error);
-  if (["53300", "08000", "08003", "08006", "08001", "08004", "57P01"].includes(code)) return true;
+  if (["53300", "08000", "08003", "08006", "08001", "08004", "57P01", "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT", "ENOTFOUND"].includes(code)) return true;
   const message = String(error?.message ?? "");
   return /ECONNREFUSED|ECONNRESET|ETIMEDOUT|Connection terminated|timeout exceeded when trying to connect/i.test(message);
 }

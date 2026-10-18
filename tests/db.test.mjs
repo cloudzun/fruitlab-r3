@@ -1,7 +1,7 @@
 // DB 集成测试：真实 Postgres，每个用例独立数据库。
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createTestDatabase, dropStaleTestDatabases } from "./helpers/pg.mjs";
+import { createTestDatabase } from "./helpers/pg.mjs";
 import {
   migrate,
   withTransaction,
@@ -26,9 +26,9 @@ const orderService = (pool) => createOrderService({ pool, repos, clock });
 test("migrate is idempotent, records version + checksum", async () => {
   const db = await createTestDatabase({ seed: false });
   try {
-    assert.equal(await schemaVersion(db.pool), 1);
+    assert.equal(await schemaVersion(db.pool), 2);
     await withTransaction(db.pool, (client) => migrate(client));
-    assert.equal(await schemaVersion(db.pool), 1);
+    assert.equal(await schemaVersion(db.pool), 2);
     assert.deepEqual(await verifyMigrationChecksums(db.pool), []);
     assert.equal(await isSeeded(db.pool), false);
   } finally {
@@ -203,8 +203,8 @@ test("concurrent db migrate is serialized by advisory lock", async () => {
   const db = await createTestDatabase({ seed: false });
   try {
     const [first, second] = await Promise.all([runMigrations(db.pool), runMigrations(db.pool)]);
-    assert.equal(first, 1);
-    assert.equal(second, 1);
+    assert.equal(first, 2);
+    assert.equal(second, 2);
     assert.deepEqual(await verifyMigrationChecksums(db.pool), []);
   } finally {
     await db.close();
@@ -251,9 +251,4 @@ test("catalog service validates price/stock/listed bounds", async () => {
   } finally {
     await db.close();
   }
-});
-
-test("stale test databases are removable", async () => {
-  await dropStaleTestDatabases();
-  assert.ok(true);
 });

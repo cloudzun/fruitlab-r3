@@ -28,7 +28,7 @@ test("health and products expose the expected contract", async () => {
     assert.equal(health.status, 200);
     assert.equal(health.body.ok, true);
     assert.equal(health.body.db, "up");
-    assert.equal(health.body.schemaVersion, 1);
+    assert.equal(health.body.schemaVersion, 2);
     assert.equal(health.body.seeded, true);
     const products = await request(server.base, "GET", "/api/products");
     assert.equal(products.status, 200);

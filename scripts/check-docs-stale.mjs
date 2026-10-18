@@ -20,7 +20,7 @@ const PATTERNS = [
   { name: "sqlite", re: /\bSQLite\b|node:sqlite/i },
   { name: "zero-dependency", re: /零依赖|零第三方依赖/ },
 ];
-const HISTORY = /R2|历史|升级前|superseded|不再|旧口径|迁移|before|已移除|破坏性|变更|对比/i;
+const HISTORY = /R2|历史|升级前|superseded|不再|旧口径|迁移|before|已移除|破坏性|变更|对比|改为|→/i;
 
 const hits = [];
 for (const relative of FILES) {

@@ -23,7 +23,16 @@ docker compose exec -T db psql -U "$POSTGRES_USER" -d postgres -c \
   "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$POSTGRES_DB' AND pid <> pg_backend_pid();"
 docker compose exec -T db pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   --clean --if-exists --single-transaction --exit-on-error < "$FILE"
-docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
-  "SELECT 'products=' || COUNT(*) FROM products; SELECT 'users=' || COUNT(*) FROM users;"
+SCHEMA="$(docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+  "SELECT COALESCE(MAX(version),0) FROM schema_migrations;" | tr -d '[:space:]')"
+PRODUCTS="$(docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+  "SELECT COUNT(*) FROM products;" | tr -d '[:space:]')"
+USERS="$(docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+  "SELECT COUNT(*) FROM users;" | tr -d '[:space:]')"
+echo "校验: schema=${SCHEMA} products=${PRODUCTS} users=${USERS}"
+if [ "${SCHEMA:-0}" -lt 2 ] || [ "${PRODUCTS:-0}" -lt 14 ] || [ "${USERS:-0}" -lt 1 ]; then
+  echo "[restore-verify-failed] schema/products/users 不满足最低要求；API 保持停止" >&2
+  exit 1
+fi
 docker compose start api
 echo "恢复完成: $FILE"

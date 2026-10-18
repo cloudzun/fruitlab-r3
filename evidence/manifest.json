@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T03:35:13.725Z",
+  "generatedAt": "2026-10-18T04:01:06.217Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -122,6 +122,21 @@
       "bytes": 6870
     },
     {
+      "file": "evidence/codex/review-codex.md",
+      "sha256": "2b2b5d5e66a8cfbf88e7b3d025503104e4809cba4608e8c0fcc8ed725627f282",
+      "bytes": 12466
+    },
+    {
+      "file": "evidence/codex/review-prompt.txt",
+      "sha256": "839c6cb6098308abd0dccc87e489028c36e6510494c39620e755bb173029fc8c",
+      "bytes": 1384
+    },
+    {
+      "file": "evidence/codex/review-run.log",
+      "sha256": "0f56470f8c92336be12cf9f4b4c7b94092047a40739dc13e70220cacb0803dae",
+      "bytes": 2384958
+    },
+    {
       "file": "evidence/codex/spec-review-codex.md",
       "sha256": "c4a445bf4d869cbe49b0c1c13f1bd0c83fdb4198c7c79fe61b96a3f23bf964c4",
       "bytes": 13687
@@ -212,6 +227,51 @@
       "bytes": 892
     },
     {
+      "file": "evidence/cso-r3-submission.json",
+      "sha256": "ad2f5150af61669fee6d797bb032f4721adae7246248184222a3400f865348d2",
+      "bytes": 10894
+    },
+    {
+      "file": "evidence/cso-r3/cso-report.md",
+      "sha256": "b4ad8d39c684697e4a6df7851cd0f357e8e0148ee23ef8d5ae88e9de482ec2cf",
+      "bytes": 24361
+    },
+    {
+      "file": "evidence/cso-r3/history-status.json",
+      "sha256": "853e773423a8747539e0e7eff89b3c38f4eeb639160dfda73a1f1d67cbebf703",
+      "bytes": 165
+    },
+    {
+      "file": "evidence/cso-r3/inspect.json",
+      "sha256": "279b083328ba4d6d4ca382aa7a3399b5682ddd64d688c0f9db81c723d707085b",
+      "bytes": 113403
+    },
+    {
+      "file": "evidence/cso-r3/report.json",
+      "sha256": "0754d2b3dedeac7974abe03c9e60eeca1bcf43e544e93b9c039b2cdac8a9476e",
+      "bytes": 28230
+    },
+    {
+      "file": "evidence/cso-r3/report.md",
+      "sha256": "b4ad8d39c684697e4a6df7851cd0f357e8e0148ee23ef8d5ae88e9de482ec2cf",
+      "bytes": 24361
+    },
+    {
+      "file": "evidence/cso-r3/snapshot.json",
+      "sha256": "138683191bb32b5bf87529633a9f80aa5b007cfd6d14f912fa91045de6592c84",
+      "bytes": 56707
+    },
+    {
+      "file": "evidence/cso-r3/start.json",
+      "sha256": "0c04187289aa34d987ae960e877de4c6a6f36b4ba9c0d82451b91d9235cc0e37",
+      "bytes": 16856
+    },
+    {
+      "file": "evidence/cso-r3/submission.json",
+      "sha256": "ad2f5150af61669fee6d797bb032f4721adae7246248184222a3400f865348d2",
+      "bytes": 10894
+    },
+    {
       "file": "evidence/cso/cso-report.md",
       "sha256": "365e164bc07f75544d6e2c7cf42350b806b95b0371ee0ab88eaf36654caa5a3b",
       "bytes": 17175
@@ -267,14 +327,19 @@
       "bytes": 1974
     },
     {
+      "file": "evidence/review-md-r3.md",
+      "sha256": "d0067fba806279a5941da37154773c03259125670288b180f80f120f516dd177",
+      "bytes": 7376
+    },
+    {
       "file": "evidence/ring-autoplan.md",
       "sha256": "c0422c032cc12dcc5fb5ff0ac5377bd6edd303b90ade0969d449b6580331338a",
       "bytes": 4511
     },
     {
       "file": "evidence/ring-build.md",
-      "sha256": "e81b912c0e22c9864a92347c609505305d62cf16c78c263d8806657dbc4d7cbe",
-      "bytes": 4202
+      "sha256": "78bc643f89a87f89842372404b03c655e17bf0fc992e4c13355a95f9ea0d6f69",
+      "bytes": 5663
     },
     {
       "file": "evidence/ring-qa.md",
@@ -297,9 +362,14 @@
       "bytes": 3672
     },
     {
+      "file": "evidence/ring-review-new.md",
+      "sha256": "55f447809f96828b108b6f13e91a61c0048fe76bc5d593faaeebb1d403d54a4c",
+      "bytes": 3874
+    },
+    {
       "file": "evidence/ring-review.md",
-      "sha256": "c7d1b7a14a2a0045bdcf30f71dc668bf1d2aff5c1bbb445e245e5e543a497f62",
-      "bytes": 2782
+      "sha256": "55f447809f96828b108b6f13e91a61c0048fe76bc5d593faaeebb1d403d54a4c",
+      "bytes": 3874
     },
     {
       "file": "evidence/ring-ship.md",
@@ -328,7 +398,7 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "b147864ce59aac8c76209353f2baf5231dfd0c29772b3dd04ba4925490648e38",
+      "sha256": "6d117c303553a7a5aaa2d14555bf17caeadcce1fdec3c5e0a5b6b908b3a64f92",
       "bytes": 1705
     },
     {
