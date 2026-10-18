@@ -1,0 +1,6 @@
+﻿你是 FruitLab R3 的独立评审者（同族第二智能体，不是跨模型）。只读评审，不修改代码/配置，不运行测试或容器。
+权威输入：evidence/codex/SPEC-snapshot-v1.0.md（SHA-256 de78e754cab77d0dcc7b9084d9028a0b80941527daeb7ab2c9aa4c9e14c3b53b）、PRD-R3.md、evidence/spec-forensics.md、../r2-fruitlab 的 SPEC.md/DECISIONS.md、docs/decision-log.md（D-47 之后）。只以冻结快照为准，不要因仓库其它文件变化停下来提问。
+输出：只写报告文件 evidence/autoplan-voices/r3-eng.md。开头一行注明“同族第二智能体，非跨模型；对象 SPEC-snapshot-v1.0.md（de78e754cab77d0dcc7b9084d9028a0b80941527daeb7ab2c9aa4c9e14c3b53b）”。格式：结论（PASS/FAIL，0-10 分）、findings 表（编号、严重度 Critical/High/Medium/Low、位置、问题、建议）、未评估项。若未发现问题写“未发现”。不要等待确认，写完即结束。
+任务：
+视角：Eng（工程可实施性、数据与安全正确性）。
+审：schema/事务/并发/幂等/重试是否真能实现；withTransaction 重试与库存扣减、唯一冲突的交互；错误映射完整性；会话/限流/CSRF/时序/404 的实现细节；连接池超时与 health；compose/Caddy/非 root/healthcheck/pg_dump 的可执行性；测试隔离与性能。

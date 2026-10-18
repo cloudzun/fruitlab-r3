@@ -139,3 +139,37 @@
 | D-80 | BUILD.md 提供 96 项逐测试处置表（保留/等价迁移/预期变更/删除理由），变更仅限已定决策 | 笼统写"语义保留" | 403→404、CSRF、过期、URL 优先级、换库必然改断言，笼统口径不可机械核对（F-09） | BUILD/测试/AC-91 | accepted |
 | D-81 | codex 同族复核 10 条 F-01..F-10 全部处置（采纳/部分采纳并改 SPEC v1.1）；跨模型仍 `unavailable` | 只跑同族就宣称门禁通过 | 同族不是跨模型；10 条中 4 High 必须落到 AC | 门禁/SPEC/证据 | accepted |
 | D-82 | 修订 D-71：不再取 XFF 最左段；改为 **Caddy 覆盖** `X-Forwarded-For` 为 `{remote_host}`，api 仅在 `TRUST_PROXY=1` 且来源为 compose 内网时信任 | 保留最左段信任 | 最左段可被客户端伪造，限流可绕过（codex F-08） | 限流/反代/测试 | accepted |
+
+## 2026-10-18 · R3 autoplan 环节（第 2/7 环）
+
+> 四路 codex 同族外部声音（CEO/Design/DX/Eng）+ v1.1 二轮复核共 42 条发现 → 42 条 `OB-R3-*`；四阶段均 FAIL，接受修复不转 PASS。门禁由执行代理按用户授权自审。
+> SPEC 升至 v1.2（§16 优先），新增 AC-106..AC-118。
+
+| 编号 | 决策 | 备选项 | 理由 | 影响面 | 状态 |
+|---|---|---|---|---|---|
+| D-83 | 工时重估 35–45 agent 工时；M1/M2/M3 各 8–10/8–10/10–14h，设停止线 | 维持 20–30h | CEO-01：57 AC + 96 测试迁移 + 3 容器不匹配 20–30h | 计划/验收 | accepted |
+| D-84 | 新增结果型 AC-106..109（旅程/管理变更/DB down/备份恢复）与 AC-110 demo 脚本 | 只保留机制 AC | CEO-02：机制全绿不等于可用 | 验收/qa | accepted |
+| D-85 | R2 在 `start-all` 中用**仓库外临时 SQLite 文件**启动，重启后数据仍在 | 内存库（原 D-70） | CEO-03：内存库抹掉“SQLite 持久化”教学对照 | 课堂脚本/AC-111 | accepted |
+| D-86 | 课程目标矩阵 + 5–8 分钟三幕 demo 脚本 | 仅技术 README | CEO-04：课堂需要可观察结果 | SPEC §4.1/evidence | accepted |
+| D-87 | 拒绝砍 CSRF/simple 对照/N+1；`compose.debug.yml` 降为可选 | 按 CEO-05 砍范围 | 前三项是 PRD 硬约束；debug 仅调试用 | 范围/证据 | accepted |
+| D-88 | `start-all` 探测原生 Docker/WSL；README 双预检 | 只写 WSL 命令 | CEO-06：换机器课堂失效 | 脚本/README | accepted |
+| D-89 | `scripts/check-docs-stale.mjs`：R3 学员文档禁止未标注旧口径 | 靠人工检查 | CEO-07：克隆的 R2 文本会污染课堂 | 文档/verify | accepted |
+| D-90 | compose/DSN/healthcheck/备份**全变量化**（`POSTGRES_USER/DB`），非默认值实测 | 固定 `fruitlab` 用户/库 | N-01：两套互斥身份 | compose/备份/AC-100 | accepted |
+| D-91 | seed 拆 `seedClassroom`（14+3）与 `seedProductionAdmin`（14+admin）；**D-67 superseded** | production 也 seed 3 账号 | N-02：production 不能带演示账号；AC-57 需分模式 | seed/AC-57/82 | accepted |
+| D-92 | health 专用 `healthTimeoutMs=3000` + `Promise.race`；池参数明确映射 | 只靠 statement_timeout | N-03：15s 超时无法保证 health ≤5s | health/AC-103 | accepted |
+| D-93 | AC-91 变更白名单补 D-47/D-62/D-79/D-82；F-09→AC-91 | 只列六项 | N-04：换库/health/输入/IP 都会改断言 | BUILD/测试 | accepted |
+| D-94 | XFF 以 **D-82** 为唯一决策；D-71 superseded；compose `TRUST_PROXY=1`，simple 0 | 保留 D-71 旧口径 | N-05：决策源冲突 | 限流/反代/AC-104 | accepted |
+| D-95 | schema 增 username 3–32、价格 ≤9999999、库存 ≤99999 CHECK；password 只 service | 全部靠 DB CHECK | N-06：password 无法用 CHECK 表达；AC-105 需拆 | schema/AC-105 | accepted |
+| D-96 | `migrate(client)`/`seed(client,{mode})`/`resetDatabase(client,deps)` 同一 client 同一事务；三路失败测试 | pool 级 migrate | E-02：reset 无法同事务；嵌套事务死锁 | db/CLI/测试 | accepted |
+| D-97 | 扣库存前按 `productId` 字典序排序 | 按请求顺序 | E-03：反向购物车死锁 | orders/并发测试 | accepted |
+| D-98 | 异步 `crypto.scrypt` + 信号量 4 + 队列上限 100；限流前置 | 继续 scryptSync | E-04：同步 scrypt 阻塞事件循环 | auth/限流 | accepted |
+| D-99 | web 加 `/healthz` + compose healthcheck | 只查 api/db | E-05：Caddy 坏也被当 running | compose/AC-86 | accepted |
+| D-100 | restore：停 api→断连→`--single-transaction --exit-on-error`→校验→启 api | 直接 pg_restore | E-06：锁等待/部分删除 | 备份恢复/AC-109 | accepted |
+| D-101 | CLI 增 `db restore --in --yes`（JSON Lines 往返）；compose 挂 `./backups` | 只有 pg_dump | E-07/DX-03：备份无恢复不闭环 | CLI/AC-109 | accepted |
+| D-102 | 测试池 max=2、`--test-concurrency=4`、清理残留、120s 预算；`test-pg.mjs up/status/down` | 默认并发/默认池 | E-08：撞 max_connections/耗时 | 测试基础设施 | accepted |
+| D-103 | 两桶限流：账号 5/15min + IP 50/15min | 只 username+IP | E-09：同 IP 可喷洒账号 | auth/测试 | accepted |
+| D-104 | CSRF 登录/轮换重发 token；Secure 跟随；登出清两 Cookie；客户端 403 重试一次 | 缺失才补发 | E-10/DES-02：token fixation/无恢复 | auth/前端 | accepted |
+| D-105 | int8 显式安全解析（`Number.isSafeInteger`），ID 不暴露 | 全局 setTypeParser | E-11：精度风险 | db/contracts | accepted |
+| D-106 | 迁移 `pg_advisory_xact_lock` + checksum；并发 migrate 测试 | 无锁 | E-12：并发迁移争写 | db/测试 | accepted |
+| D-107 | 路径规范化：尾斜杠/编码/空段→404，`%zz`→400 `invalid-path`，405 表驱动 | 各分支自行判断 | E-13：400/404/405 漂移 | router/测试 | accepted |
+| D-108 | preflight + `verify --quick/--full`；CLI 矩阵；镜像 digest/engines；路径可移植/PS 包装 | 文档口头说明 | DX-01/06/07/08/09：干净 checkout 不可运行 | 脚本/文档/verify | accepted |

@@ -1,85 +1,60 @@
-# 证据 · autoplan 环（R2 第 2/7 环）
+# 证据 · autoplan 环（R3，2/7 环）
 
-> **性质**：autoplan 四阶段串行评审的实跑证据。
-> **规则**：命令与输出必须来自真实执行；不可用写「不可用」；未做写「未做」。
+> **性质**：真实执行记录。评审对象为冻结的 `SPEC.md` v1.0 快照（`de78e754...b53b`）；评审后并入 v1.2。
+> **结果**：四阶段均 FAIL，42 条发现 → 42 条 `OB-R3-*`；终门自审通过。build 尚未开始。
 
-## 1. 环境与输入
+## 1. 输入与冻结
 
 | 项 | 值 |
 |---|---|
-| 日期 | 2026-10-18 |
-| 工作目录 | `D:\vibecoding\easyvibe\r2-fruitlab` |
-| 输入 | `SPEC.md`（只读），SHA-256 `FF3BAAFCF99738344AE54AB2E487B677131CA884A052A53990E416DC13074B1B`，559 行 |
-| 基线 commit | `5432b35`（spec 环批准） |
-| 阶段顺序 | CEO → Design → DX → Eng（串行） |
-| 官方运行件 | `gstack-autoplan` 的 bun snapshot / plan-reality 工具链：**不可用**（本宿主未安装 gstack 运行件）；按技能文档手动执行流程 |
-| 外部声音 | 本机 `claude` CLI（`2.1.301`），实际模型 `deepseek-v4-flash`，**同族，非跨模型** |
+| SPEC v1.0 快照 | `evidence/codex/SPEC-snapshot-v1.0.md`，SHA-256 `de78e754cab77d0dcc7b9084d9028a0b80941527daeb7ab2c9aa4c9e14c3b53b` |
+| SPEC v1.1 快照 | `evidence/codex/SPEC-snapshot-v1.1.md`，SHA-256 `adc8f220b017d2257e20af4f58968c154421fa17b0c873cd93f4efcc463a65e5` |
+| SPEC v1.2（生效） | `SPEC.md`，624 行，SHA-256 `81761e4e15e4c3622e657f6fd994f2c9c49f1ee5e10ceffd63419e60e99c4462` |
+| 外部声音 | codex 子代理（`opencode-go/deepseek-v4.1-flash`）——**同族，不是跨模型** |
+| 执行方式 | CEO+ENG 一批，DES+DX 一批（并行）；每阶段一轮，不退回重审 |
+| 报告 | `evidence/autoplan-voices/r3-ceo.md`、`r3-des.md`、`r3-dx.md`、`r3-eng.md` |
+| 补充输入 | `evidence/codex/spec-review-round2-codex.md`（N-01..N-07） |
 
-## 2. 真实执行记录
+## 2. 四阶段结果
 
-### 2.1 四视角评审调用
+| 阶段 | 评分 | 发现数 | 关键结论 |
+|---|---:|---:|---|
+| CEO | 6.0 / FAIL | 7 | 工时 20–30h 偏低；缺结果型 AC/demo；R2 内存库抹掉 SQLite 持久化教学对照 |
+| Design | 6.0 / FAIL | 6 | 缺 4175 经 Caddy 的真实购买闭环；CSRF 无恢复；新错误码无文案；README/demo 仍旧；web 无 healthcheck；R2 UI 回归无门禁 |
+| DX | 5.0 / FAIL | 9 | 缺 clean-room quickstart；包版本非法 SemVer；备份恢复不闭环；HOST/PUBLIC_URL 未冻结；测试 PG 无 lifecycle；CLI 无矩阵；verify 无 preflight；路径不可移植；镜像可漂移 |
+| Eng | 7.0 / FAIL | 13 | v1.0 未并入已接受决策；migrate/seed/reset 事务组合；锁顺序；同步 scrypt 阻塞；web healthcheck；restore 未停写；备份无 restore；测试连接预算；限流可喷洒；CSRF 不轮换；int8 精度；迁移无锁；路径未规范化 |
+| Spec v1.1 二轮 | 需修订 | 7 | DB 身份冲突（N-01 High）、production/classroom seed 冲突（N-02 High）等 |
 
-| 阶段 | 命令形态 | 结果 | 原始输出 |
-|---|---|---|---|
-| CEO | `claude -p <CEO 提示 + SPEC>` | 返回 6.5/10 + 21 条发现 | [`evidence/autoplan-voices/ceo.txt`](autoplan-voices/ceo.txt) |
-| Design | 同上，设计视角 | **第一次偏题（返回 CEO 视角）**；重问一次后返回通用契约评审 | [`evidence/autoplan-voices/design.txt`](autoplan-voices/design.txt) |
-| DX | 同上，DX 视角 | 返回 5.7/10 + 16 条发现 | [`evidence/autoplan-voices/dx.txt`](autoplan-voices/dx.txt) |
-| Eng | 同上，工程视角 | **第一次返回卡住的元回复**；重问一次后返回 6.5/10 + 16 条发现 | [`evidence/autoplan-voices/eng.txt`](autoplan-voices/eng.txt) |
+## 3. 处置与义务
 
-每次调用均附带 `Claude Code doesn't recognize the model "deepseek-v4-flash"` 告警（环境提示，非评审内容），原始输出已保留，未删改。
+- 42 条发现逐条处置见 `DECISIONS.md`（每阶段 findings 表 + Accepted Obligations 42 条）。
+- 接受/部分接受/拒绝：**接受 41 条**；`CEO-05` 部分拒绝（CSRF/simple/N+1 为 PRD 硬约束，`compose.debug.yml` 降为可选）；无静默忽略。
+- SPEC v1.2 新增 §4.1 课程目标矩阵、§16 autoplan 修订并入（36 项关键修订）、AC-106..AC-118；`VERSION`/包版本、seed 模式、DB 身份、health 时限、迁移事务、锁顺序、异步 scrypt、restore 流程、备份契约、两桶限流、CSRF 轮换、int8、advisory lock、路径规范化全部落到条款。
+- 终门：`gate_rev=1`、`APPROVED`（用户授权执行代理自审）；`build_started=no`。
 
-### 2.2 阶段判定（Lead 汇总）
+## 4. 真实命令与原始输出
 
-| 阶段 | 原声评分 | 发现数 | 判定 | 处置落点 |
-|---|---:|---|---|---|
-| CEO | 6.5/10 | 4 Critical / 6 High / 7 Medium / 3 Low（20 条） | FAIL / issues_open | `DECISIONS.md` Phase 1 + OB-CEO-* |
-| Design | 7.0/10（Lead 依技能 7 维补判） | 3 High / 5 Medium（8 条） | FAIL / issues_open | Phase 2 + OB-DES-* |
-| DX | 5.7/10 | 2 Critical / 6 High / 6 Medium / 2 Low（16 条） | FAIL / issues_open | Phase 2.5 + OB-DX-* |
-| Eng | 6.5/10 | 3 High / 7 Medium / 6 Low（16 条） | FAIL / issues_open | Phase 3 + OB-ENG-* |
+codex 调用（stdin 形式，避免 PowerShell 多行参数被拆）：
 
-四阶段全部 FAIL；接受的修复**不把 FAIL 翻成 PASS**，没有第二轮复审。
-
-### 2.3 用户挑战与品味决策
-
-| 编号 | 内容 | 状态 |
-|---|---|---|
-| U1 | 范围与工时：全量 + 里程碑 vs 拆 R2a/R2b | **待项目负责人裁量** |
-| U2 | R1 访客查单移除（breaking）是否接受 | **待项目负责人裁量** |
-| DV1 | 视觉方向 | 已于 2026-10-18 由项目负责人定为 Apple 式高冷风（D-08），本环无新增品味决策 |
-
-### 2.4 本环实际写出的文件
-
-| 文件 | 说明 |
-|---|---|
-| `DECISIONS.md` | 覆盖 R1 版本（R1 版本由 `r1-baseline` 标签保留），含四阶段发现、42 条义务、决策审计、终门 |
-| `evidence/autoplan-voices/*.txt` | 四个视角的原始输出（未删改） |
-| `evidence/ring-autoplan.md` | 本文件 |
-| `docs/decision-log.md` | 追加 autoplan 阶段决策（D-33 起） |
-
-## 3. 环境偏差（如实记录）
-
-1. **官方技能运行件不可用**：`gstack-autoplan` 依赖 `bun`、snapshot 工具、`gstack-plan-reality`、`gstack-slug` 等；本宿主均无。流程按 SKILL.md 的「Phase 1..4」结构与 R1 产出格式手动执行，**不声称运行过官方脚本**。
-2. **外部声音同族**：`claude` CLI 被配置为 `deepseek-v4-flash`，与生成规格的模型同族，不构成跨模型对抗；`codex` 未安装。所有共识位记 `N/A（覆盖缺失）`。
-3. **Design/Eng 各重问一次**：首次输出分别是偏题内容与元回复，未形成评审；重问一次得到可用评审。这偏离了「每阶段只发一次外部声音」的常规，已记录，未据此把任何阶段翻成通过。
-4. **Design 维度评分由 Lead 依技能补判**：外部设计声音实际输出偏工程视角；7 维评分与 DF-01～DF-08 由 Lead 基于 SPEC 与 R1 代码判，原始输出保留可复核。
-
-## 4. 终门状态
-
-```text
-gate_rev=1
-status=PENDING_USER_APPROVAL
-decisions_auto=11
-user_challenges=2
-taste_decisions=0
-fail_phases=4 of 4
-build_started=no
+```powershell
+$codex = "C:\Users\cheng\AppData\Local\OpenAI\Codex\bin\9614f1d9b40d9c4f\codex.exe"
+Get-Content evidence/autoplan-voices/r3-ceo-prompt.txt -Raw | & $codex exec -c model="opencode-go/deepseek-v4.1-flash" -c model_reasoning_effort="medium" --sandbox danger-full-access -C "D:\vibecoding\easyvibe\r3-fruitlab" -
 ```
 
-**本记录不表示任何实现、测试或人工检查已通过；也不代表 build 已开始。**
+- 每份报告首行均由 codex 自行标注“同族第二智能体，非跨模型”与对象 SHA-256。
+- 原始日志：`evidence/autoplan-voices/r3-<phase>.log`（大文件，保留未删）。
+- 环境坑：PowerShell 多行 prompt 会被拆成多个参数（`unexpected argument`），改用 stdin `-`；codex 成功产出时 PowerShell 侧仍可能 exit 1，以报告文件为准。
 
-## 5. 诚实边界
+## 5. 门禁与诚实边界
 
-1. 本环没有修改 `SPEC.md`（哈希与 spec 环一致）。
-2. 本环没有写任何产品代码、没有建库、没有下载图片。
-3. 「外部声音」不是独立模型家族，不能作为跨模型结论引用。
-4. 四阶段 FAIL 的原始评分与发现保留在案；接受的义务清单是本环的真实产出，不是「通过」。
+| 项 | 状态 |
+|---|---|
+| 四阶段评审 | **完成（4/4 FAIL）**，未把 FAIL 转 PASS |
+| 终门 | **APPROVED（代理自审，用户授权）** |
+| 跨模型共识 | **N/A（覆盖缺失）**——只有 DeepSeek 同族，不冒充 |
+| build 启动 | **未启动**（本环结束时） |
+
+1. 四份报告是**同族第二智能体静态评审**，未运行测试/容器/浏览器；不证明任何运行时行为。
+2. 评分是评审者主观判断，不代表产品价值；FAIL 是“计划需修订”，不是“方向错误”。
+3. 42 条义务的最终判定在 build/review/qa/ship 环完成，本环不预判通过。
+4. 用户已授权代理自行完成环审批；该授权不降低证据标准，“未测”仍写 `UNVERIFIED`。
