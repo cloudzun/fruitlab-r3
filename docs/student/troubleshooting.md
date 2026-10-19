@@ -15,10 +15,12 @@
 
 | 现象 | 处理 |
 |---|---|
-| 页面 403 `host-not-allowed` | 确认用的是**新版镜像** + `DEMO_ALLOW_ANY_HOST=1`；`docker compose pull` 后 `up -d --force-recreate` |
+| 页面 403 `host-not-allowed` | 确认用的是**新版镜像/新版源码** + `DEMO_ALLOW_ANY_HOST=1`；`docker compose pull` 后 `up -d --force-recreate` |
 | 页面打不开 | Killercoda 是否 Traffic 暴露 4175；虚机安全组是否放行 4175 |
-| 首页能开、登录 403 | 旧镜像/旧 override；检查 `DEMO_ALLOW_ANY_HOST`，或设置正确的 `PUBLIC_URL` |
-| API 403 `cross-origin-blocked` | demo 模式应跳过；生产要保证 `PUBLIC_URL` 与浏览器地址一致 |
+| 首页能开、登录 403 | 旧镜像/旧 override；检查 `DEMO_ALLOW_ANY_HOST`；旧克隆先 `git pull` |
+| API 403 `cross-origin-blocked` | 用 demo 模式，或让 `PUBLIC_URL` 与浏览器地址完全一致 |
+| 127.0.0.1 能开，局域网 IP 打不开 | `HOST=0.0.0.0`；防火墙/安全组放行端口；确认同一网段 |
+| localhost 能开、登录 403 | 用 `127.0.0.1`，或 `PUBLIC_URL=http://localhost:<port>`，或开 demo 模式 |
 | `/api/health` 503 | 看 api 日志；数据库未 healthy/密码错 |
 | 购物袋能加、结账无反应 | 打开控制台看 `/api/orders` 响应；大概率未登录或 CSRF |
 

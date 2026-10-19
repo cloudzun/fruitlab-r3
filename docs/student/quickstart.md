@@ -114,6 +114,15 @@ docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
 http://<虚机公网IP>:4175
 ```
 
+同一局域网的其他机器也可以用：
+
+```text
+http://<虚机局域网IP>:4175
+```
+
+> B 的学生 compose 已带 `DEMO_ALLOW_ANY_HOST=1`，两个地址都不需要设置 `PUBLIC_URL`；
+> 局域网访问记得放行 4175 防火墙。
+
 > B 的特点：容器数据在 Docker volume 中；`down` 不删数据，`down -v` 才删。
 > **实测网络**：Docker Hub 可能超时；本文用 Gitee compose 的 ACR 镜像。
 

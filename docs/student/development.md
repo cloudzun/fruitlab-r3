@@ -124,45 +124,56 @@ node cli.mjs db migrate
 node cli.mjs db seed
 ```
 
-### 4.4 本机启动
-
-```bash
-node cli.mjs dev --port 4175
-```
-
-打开：
-
-```text
-http://127.0.0.1:4175
-```
-
-### 4.5 从其他机器访问（实测）
-
-如果 C 跑在虚机上，想用浏览器访问，需要：
-
-1. 安全组放行端口（示例 `4176`）；
-2. 监听 `0.0.0.0`，并设置外部 `PUBLIC_URL`：
+### 4.4 本机 + 局域网启动（推荐，两个地址都可用）
 
 ```bash
 export DATABASE_URL="postgres://fruitlab:fruitlab-demo-pass@127.0.0.1:5432/fruitlab"
 export HOST=0.0.0.0
-export PUBLIC_URL="http://<虚机公网IP>:4176"
+export DEMO_ALLOW_ANY_HOST=1
 export COOKIE_SECURE=0
 
 node cli.mjs dev --port 4176
 ```
 
-打开：
+本机和局域网都可以直接访问：
 
 ```text
-http://<虚机公网IP>:4176
+http://127.0.0.1:4176
+http://<本机局域网IP>:4176      # 例如 http://192.168.1.114:4176
 ```
 
-> `node cli.mjs dev` 只支持 `--port`，所以要用 `HOST=0.0.0.0` 环境变量；
-> 只用 `--port` 不改 HOST 时，默认只监听 `127.0.0.1`，外部访问不了。
-> 长期运行建议用 `nohup`/`systemd`；前台调试直接看日志。
+> 这里用 `DEMO_ALLOW_ANY_HOST=1` 跳过 Host/Origin 白名单，所以不需要设置 `PUBLIC_URL`。
+> 该开关只在**非 production** 生效；生产仍严格校验。
+> 如果 C 目录是旧克隆、没有这个开关，先 `git pull` 更新。
 
-### 4.6 跑测试（本机 PG）
+### 4.5 局域网访问的防火墙
+
+Windows 管理员 PowerShell：
+
+```powershell
+New-NetFirewallRule -DisplayName "FruitLab 4176" -Direction Inbound -Protocol TCP -LocalPort 4176 -Action Allow
+```
+
+Linux：
+
+```bash
+sudo ufw allow 4176/tcp
+```
+
+> 只要 `HOST=0.0.0.0` + 防火墙放行，同一局域网的其他机器就能用 `http://<你的IP>:4176` 访问；
+> `127.0.0.1` 和局域网 IP 可以同时用，不需要改代码/镜像。
+
+### 4.6 严格模式（可选）
+
+如果不用 `DEMO_ALLOW_ANY_HOST=1`，就要让浏览器地址与 `PUBLIC_URL` 完全一致，例如：
+
+```bash
+HOST=0.0.0.0 PUBLIC_URL=http://192.168.1.114:4176 node cli.mjs dev --port 4176
+```
+
+此时 `127.0.0.1` 和局域网 IP **不能同时**免配置使用；只选一个地址。
+
+### 4.7 跑测试（本机 PG）
 
 ```bash
 export TEST_DATABASE_URL="postgres://fruitlab:fruitlab-demo-pass@127.0.0.1:5432/postgres"
@@ -172,7 +183,7 @@ node --test --test-concurrency=4
 > 如果 `fruitlab` 用户没有 CREATEDB，用 postgres 超级用户跑测试，或：
 > `ALTER ROLE fruitlab CREATEDB;`
 
-### 4.7 重置数据
+### 4.8 重置数据
 
 ```bash
 node cli.mjs db reset --yes    # 会先备份

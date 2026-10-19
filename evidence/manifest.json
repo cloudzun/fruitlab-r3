@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T03:26:55.584Z",
+  "generatedAt": "2026-10-19T03:39:09.090Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -353,8 +353,8 @@
     },
     {
       "file": "evidence/r3.5/bc-lab.md",
-      "sha256": "389d0adf55853a34f4b2b616e71fec525e96bcad31a9a292547799c88625e676",
-      "bytes": 3461
+      "sha256": "67257397fc17c502e9451d6a8b1ae4cf574eae8c1997fc672fbac19fb6677e8b",
+      "bytes": 3541
     },
     {
       "file": "evidence/r3.5/bc-lab.txt",
@@ -488,8 +488,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "e7f77514e6a0fc8cd5193cba7214bbd3005d0230d4db0aa363b5309d941a0cd7",
-      "bytes": 1703
+      "sha256": "9bafb9892424cd891c70054b339782b1443de6cc34a0d73c26a89ef3d4d0048e",
+      "bytes": 1704
     },
     {
       "file": "evidence/toolchain-recon.md",

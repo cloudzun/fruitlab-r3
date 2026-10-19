@@ -67,7 +67,7 @@ restart 后订单数 1；三容器 healthy；health 200
 ```bash
 fuser -k 4176/tcp
 node cli.mjs db reset --yes
-HOST=0.0.0.0 PUBLIC_URL=http://120.26.221.64:4176 COOKIE_SECURE=0 \
+HOST=0.0.0.0 DEMO_ALLOW_ANY_HOST=1 COOKIE_SECURE=0 \
   node cli.mjs dev --port 4176
 ```
 
@@ -75,7 +75,7 @@ HOST=0.0.0.0 PUBLIC_URL=http://120.26.221.64:4176 COOKIE_SECURE=0 \
 
 ```text
 health 200 {"ok":true,"db":"up","version":"3.5.0.0",...}
-userA login 200
+userA login 200（127.0.0.1 和 120.26.221.64 两个地址都通过）
 order 201 FL-20261019-112333-KHZL
 home 200
 admin_login 200; admin_products 200（14）; admin_orders 200（1）
@@ -97,11 +97,16 @@ admin_login 200; admin_products 200（14）; admin_orders 200（1）
 # fail 0
 ```
 
-### C 的 Origin 注意
+### C 的双地址验证
 
-用 `BASE=http://127.0.0.1:4176` 调 C 时登录 403 `cross-origin-blocked`；原因是 `PUBLIC_URL` 是公网 `120.26.221.64:4176`。
-改用 `BASE=http://120.26.221.64:4176` 后全部 200/201。
-这是正确行为：**C 远程访问时 PUBLIC_URL 必须与浏览器地址一致**。
+同一进程，`DEMO_ALLOW_ANY_HOST=1`、不设置 `PUBLIC_URL`：
+
+```text
+http://127.0.0.1:4176      health 200 / login 200 / order 200
+http://120.26.221.64:4176  health 200 / login 200 / order 200
+```
+
+局域网/公网访问只需要 `HOST=0.0.0.0` + 防火墙放行端口；两个地址同时可用。
 
 ## 5. 与手册的对齐
 
@@ -109,7 +114,7 @@ admin_login 200; admin_products 200（14）; admin_orders 200（1）
 |---|---|
 | quickstart B：Gitee compose + override | 已按此执行，通过 |
 | development C：Node 22 + PG 16 + migrate/seed | 已按此执行，通过 |
-| C 远程：HOST=0.0.0.0 + PUBLIC_URL + 端口放行 | 已补入手册并验证 |
+| C 双地址：127.0.0.1 + 局域网/公网，`DEMO_ALLOW_ANY_HOST=1` | 已补入手册并验证 |
 | GitHub raw start-demo | 不可用，已标为可选 |
 | Docker Hub | 未作为主路径，手册用 ACR |
 
