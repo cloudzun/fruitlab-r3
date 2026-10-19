@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T23:33:09.127Z",
+  "generatedAt": "2026-10-19T00:24:57.205Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -328,8 +328,13 @@
     },
     {
       "file": "evidence/r3.5/README.md",
-      "sha256": "cfc7b1fa3bc67fa6396506100b534ff594c55e716d7652a828c4b038f96d75e7",
-      "bytes": 2097
+      "sha256": "58c5b30148911db4c3cae8524149bd6eeade18b99d587c88d48ae623798e6654",
+      "bytes": 2350
+    },
+    {
+      "file": "evidence/r3.5/az-vm-demo-test.txt",
+      "sha256": "adfb82b35417526fd423a310f52dd7e99d16957ad236b02e7b48dea8c6490a37",
+      "bytes": 1376
     },
     {
       "file": "evidence/r3.5/azure-vm.json",
@@ -453,8 +458,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "b1d21c8a8b1149c359c4c615d6bfcf8c63f184e211b08ab88f9d3a804e7d9572",
-      "bytes": 1694
+      "sha256": "1b4d84dd55a1a1789ebf36ffb2deba26fefe8faa43de5226d974552337a31fa2",
+      "bytes": 1700
     },
     {
       "file": "evidence/toolchain-recon.md",

@@ -1,10 +1,10 @@
 # 测试计数（唯一权威来源）
 
 - 命令: node --test --test-concurrency=4
-- 时间: 2026-10-18T23:33:09.031Z
-- git: eb2076a9fd608953fecbc3034d4a43c325e5f699
-- git 状态: clean
-- tree hash: 2d8f74f4d9787da6a2a67e3a85b8e80af6265297
+- 时间: 2026-10-19T00:24:57.092Z
+- git: 7d0e225f4d8b47393aa686adabf743a12d7e349d
+- git 状态: 6 dirty path(s)
+- tree hash: 5a4392c79bb34e4b650b94f620966722c8f836ea
 - 结果: tests=138 pass=138 fail=0 skipped=0 todo=0
 
 ## 原始输出（尾部）
@@ -14,31 +14,31 @@
 # Subtest: layout uses 4/3/2/1 product columns and respects reduced motion
 ok 134 - layout uses 4/3/2/1 product columns and respects reduced motion
   ---
-  duration_ms: 0.7988
+  duration_ms: 0.9952
   type: 'test'
   ...
 # Subtest: visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
 ok 135 - visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
   ---
-  duration_ms: 1.4368
+  duration_ms: 1.669
   type: 'test'
   ...
 # Subtest: product cards use local photos, alt text, and stable quantity controls
 ok 136 - product cards use local photos, alt text, and stable quantity controls
   ---
-  duration_ms: 0.9262
+  duration_ms: 0.8656
   type: 'test'
   ...
 # Subtest: retired frontend modules are gone and no file imports them
 ok 137 - retired frontend modules are gone and no file imports them
   ---
-  duration_ms: 2.0096
+  duration_ms: 1.8
   type: 'test'
   ...
 # Subtest: runtime dependency set is exactly pg and no generated build directory exists
 ok 138 - runtime dependency set is exactly pg and no generated build directory exists
   ---
-  duration_ms: 1.0189
+  duration_ms: 1.1019
   type: 'test'
   ...
 1..138
@@ -49,7 +49,7 @@ ok 138 - runtime dependency set is exactly pg and no generated build directory e
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 63964.5378
+# duration_ms 65032.6963
 ```
 
 > 其它文档出现计数时必须引用本文件；不得手写数字。

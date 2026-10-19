@@ -11,6 +11,7 @@
 > **对应课程**：GStack 七环迭代第三幕 + R3.5 部署收口（spec → build/deploy → review+qa → ship）
 > **线上**：<https://fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com>（Azure VM + Caddy TLS，3.5.0.0）
 > **部署/CI**：[docs/deploy-azure.md](docs/deploy-azure.md)、[docs/ci-cd.md](docs/ci-cd.md)、[R3.5-执行记录.md](R3.5-执行记录.md)、[R3.5-retro.md](R3.5-retro.md)
+> **一键复现（Azure VM）**：[`deploy/azure/az-vm-demo.ps1`](deploy/azure/az-vm-demo.ps1)（`-Action plan/up/status/deploy/stop/destroy`；独立资源组，不碰现有生产 VM）
 
 ## 1. 三个版本（课堂并排）
 

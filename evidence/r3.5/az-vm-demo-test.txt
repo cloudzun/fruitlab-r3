@@ -1,0 +1,41 @@
+# az-vm-demo.ps1 端到端测试（2026-10-19，测试 VM 已销毁）
+
+> 目的：验证“一键复现”脚本本身，而不是只验证手工步骤。
+> 测试资源组：`rg-fruitlab-demo-test` / `vm-fruitlab-demo-test`；测试后已 `destroy`（资源组删除完成）。
+
+```text
+动作：az-vm-demo.ps1 -Action up \
+  -ResourceGroup rg-fruitlab-demo-test \
+  -VmName vm-fruitlab-demo-test \
+  -DnsLabel fruitlab-demo-test-20261019
+
+==> 创建资源组 / 创建 VM / 设置 DNS label
+==> 等待 SSH（20.239.153.152）
+==> 安装 Docker + Caddy：setup_exit=0
+==> 生成生产口令（本地 .secrets，已删除测试文件）
+==> 上传部署资产 / 配置 Caddy + TLS
+==> 部署 3.5.0.0
+[deploy] success: 3.5.0.0
+==> HTTPS health：
+{"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,...}
+==> 生产冒烟：
+admin_login=200
+userA_login=401
+create_order=201
+orders_count=1
+URL: https://fruitlab-demo-test-20261019.eastasia.cloudapp.azure.com
+```
+
+销毁：
+
+```text
+-Action destroy -Force
+已提交删除（--no-wait）
+资源组在约 150s 后不存在：final_exists=false
+```
+
+## 结论
+
+- 脚本可从零创建 VM、安装 Docker/Caddy、签发 TLS、部署 3.5.0.0、完成生产冒烟。
+- 测试 VM 已销毁；未留下测试资源组/口令文件。
+- 输出中的管理员口令属于一次性测试环境，未写入本文件。

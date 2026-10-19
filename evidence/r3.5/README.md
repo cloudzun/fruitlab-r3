@@ -14,6 +14,7 @@
 | `prod-smoke.txt` | 生产冒烟：admin 登录 200、userA 401、下单 201、订单数 |
 | `backup-restore.txt` | 备份 → 删订单 → 恢复 → 计数回来 |
 | `rollback.txt` | 3.5 → 3.0 → rollback → 3.5 |
+| `az-vm-demo-test.txt` | `deploy/azure/az-vm-demo.ps1` 从零创建测试 VM → 部署 → 销毁的端到端验证 |
 
 ## 关键结论
 
@@ -24,6 +25,7 @@
 - TLS：Let's Encrypt 证书有效；HTTP 308 → HTTPS；HSTS。
 - 备份/恢复：`after_delete=0` → `after_restore=2`。
 - 回滚：3.0.0.0 → `rollback.sh` → 3.5.0.0，health 版本随之切换。
+- 一键脚本：`deploy/azure/az-vm-demo.ps1` 已在独立测试资源组端到端跑通并销毁（见 `az-vm-demo-test.txt`）。
 
 ## 失败与修复（如实记录）
 

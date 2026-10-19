@@ -13,3 +13,6 @@ backups/
 public/
 dist/
 *.log
+
+# R3.5 Azure demo secrets (local only)
+deploy/azure/.secrets/
