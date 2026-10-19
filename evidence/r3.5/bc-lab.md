@@ -1,6 +1,6 @@
-# 阿里云 B/C 实验记录（2026-10-19）
+# 阿里云 B/C 全面验证（2026-10-19）
 
-> 一台全新阿里云杭州 ECS，同一台机器上同时跑：
+> 一台全新阿里云杭州 ECS，同一台机器同时跑：
 > - **B**：Docker Compose + ACR 公开镜像，`http://120.26.221.64:4175`
 > - **C**：原生 Node 22 + PostgreSQL 16（无 Docker），`http://120.26.221.64:4176`
 
@@ -15,9 +15,9 @@
 | ECS | `i-bp14mbfjkzxq9t2g0nlv`（`ecs.e-c1m2.large`，Ubuntu 24.04.5） |
 | EIP | `eip-bp1cszvyeizza09qn9ams` / `120.26.221.64` |
 
-旧资源已删除：`i-bp1hfqh71we8i4xjf9yy`、`eip-bp1cf4jxnb6864buf5bp3`、旧 VPC/vSwitch/SG 均已清理。
+旧资源已删除：`i-bp1hfqh71we8i4xjf9yy`、`eip-bp1cf4jxnb6864buf5bp3`、旧 VPC/vSwitch/SG。
 
-## 2. 网络实测（重要）
+## 2. 网络实测
 
 | 目标 | 结果 |
 |---|---|
@@ -26,82 +26,96 @@
 | GitHub raw `start-demo.sh` | **不可用**：`curl: (35) Recv failure: Connection reset by peer` |
 | Docker Hub | 未作为 B 主路径；按手册用 ACR |
 
-因此 B 实际采用 **Gitee compose + override**，不是 GitHub `start-demo.sh`；C 用 **Gitee clone**，不是 GitHub。
-
-## 3. B：Docker（Gitee + ACR）
-
-```text
-fruitlab-student-cn-web-1  Up (healthy)
-fruitlab-student-cn-api-1  Up (healthy)
-fruitlab-student-cn-db-1   Up (healthy)
-
-GET http://120.26.221.64:4175/api/health
-{"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,...}
-
-userA login=200
-order=201（FL-20261019-030541-BE3K）
-home=200
-admin_login=200；admin_products=200（14）；admin_orders=200（1）
-```
-
-命令（与手册 quickstart 一致）：
+## 3. B：干净重来（Docker + Gitee + ACR）
 
 ```bash
-curl -fsSL https://gitee.com/cloudzun/fruitlab-r3/raw/main/deploy/student/docker-compose.cn.yml -o docker-compose.yml
-cat > docker-compose.override.yml <<'EOF'
-services:
-  api:
-    environment:
-      DEMO_ALLOW_ANY_HOST: "1"
-EOF
-docker compose -f docker-compose.yml -f docker-compose.override.yml pull
-docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+docker compose ... down -v       # 删卷
+curl Gitee docker-compose.cn.yml
+cat override（DEMO_ALLOW_ANY_HOST=1）
+docker compose ... pull
+docker compose ... up -d
 ```
 
-## 4. C：原生 Node/PostgreSQL（无 Docker）
+结果：
 
 ```text
-node v22.20.0
-psql (PostgreSQL) 16.15
-node cli.mjs dev --port 4176（HOST=0.0.0.0, PUBLIC_URL=http://120.26.221.64:4176）
-
-GET http://120.26.221.64:4176/api/health
-{"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,...}
-
-userA login=200
-order=200（幂等已有订单 FL-20261019-110542-47UN）
-home=200
-admin_login=200；admin_products=200（14）；admin_orders=200（1）
+3 containers Up (healthy)
+health 200 {"ok":true,"db":"up","version":"3.5.0.0",...}
+userA login 200
+order 201 FL-20261019-032107-V9ZP
+home 200
+admin_login 200; admin_products 200（14）; admin_orders 200（1）
 ```
 
-命令（与手册 development C 一致）：
+管理员页面（真实浏览器）：
+
+- 订单面板显示该订单；
+- 海南香蕉库存改为 50 → 保存 → `已保存`；
+- 下架 → 商城 14→13；上架 → 13→14；
+- 库存改回 89 → 保存 → `已保存`。
+
+持久化：
+
+```text
+restart 前订单数 1
+docker compose restart
+restart 后订单数 1；三容器 healthy；health 200
+```
+
+## 4. C：干净重来（Node 22 + PG 16，无 Docker）
 
 ```bash
-apt-get install -y postgresql postgresql-contrib xz-utils
-service postgresql start
-# Node 22.20.0 binary -> /opt/node-v22.20.0-linux-x64
-git clone https://gitee.com/cloudzun/fruitlab-r3.git /root/fruitlab-c
-cd /root/fruitlab-c
-npm ci
-export DATABASE_URL="postgres://fruitlab:fruitlab-demo-pass@127.0.0.1:5432/fruitlab"
-node cli.mjs db migrate
-node cli.mjs db seed
+fuser -k 4176/tcp
+node cli.mjs db reset --yes
 HOST=0.0.0.0 PUBLIC_URL=http://120.26.221.64:4176 COOKIE_SECURE=0 \
   node cli.mjs dev --port 4176
 ```
 
-## 5. 与手册的偏差（已修正）
+结果：
 
-| 偏差 | 手册修正 |
+```text
+health 200 {"ok":true,"db":"up","version":"3.5.0.0",...}
+userA login 200
+order 201 FL-20261019-112333-KHZL
+home 200
+admin_login 200; admin_products 200（14）; admin_orders 200（1）
+```
+
+重启持久化：
+
+```text
+重启前 orders=1
+重启 C 进程
+重启后 orders=1；health 200
+```
+
+测试（本机 PG，无 Docker）：
+
+```text
+# tests 140
+# pass 140
+# fail 0
+```
+
+### C 的 Origin 注意
+
+用 `BASE=http://127.0.0.1:4176` 调 C 时登录 403 `cross-origin-blocked`；原因是 `PUBLIC_URL` 是公网 `120.26.221.64:4176`。
+改用 `BASE=http://120.26.221.64:4176` 后全部 200/201。
+这是正确行为：**C 远程访问时 PUBLIC_URL 必须与浏览器地址一致**。
+
+## 5. 与手册的对齐
+
+| 项 | 结果 |
 |---|---|
-| B 用 Gitee compose，不是 GitHub `start-demo.sh` | quickstart 改为 Gitee 主路径，`start-demo.sh` 标为可选 |
-| C 外部访问不能用裸 `node cli.mjs dev` | development 增加 `HOST=0.0.0.0` + `PUBLIC_URL` + 端口放行 |
-| C 用 Gitee clone，不是 GitHub | development 明确“国内优先 Gitee”，记录 GitHub raw reset |
-| 安全组额外开 4176 | development C 远程访问章节写明 |
+| quickstart B：Gitee compose + override | 已按此执行，通过 |
+| development C：Node 22 + PG 16 + migrate/seed | 已按此执行，通过 |
+| C 远程：HOST=0.0.0.0 + PUBLIC_URL + 端口放行 | 已补入手册并验证 |
+| GitHub raw start-demo | 不可用，已标为可选 |
+| Docker Hub | 未作为主路径，手册用 ACR |
 
 ## 6. 结论
 
-- B 和 C 在同一台 Linux 虚机上可同时运行（不同端口、不同数据源）。
-- B 用容器 Postgres + volume；C 用本机 PostgreSQL 16 服务，不依赖 Docker。
-- 两者商城登录/下单、管理员接口均通过。
-- 这台机器目前保留，供演示/复核；不用时停 ECS 并释放 EIP。
+- B、C 都能在干净状态从零启动。
+- 商城登录/下单、管理员订单/商品、库存保存、上下架、重启持久化均通过。
+- C 不依赖 Docker，140 项测试在本机 PG 上通过。
+- 当前 B/C 都在运行；不用时停 ECS 并释放 EIP。
