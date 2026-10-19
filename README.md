@@ -59,7 +59,7 @@ node cli.mjs dev --port 4175        # 静态 + API（SERVE_STATIC 默认 false�
 
 ```powershell
 node scripts/pgctl.mjs up        # 测试 Postgres（WSL 或原生 Docker）
-node --test --test-concurrency=4 # 138 项：真实 PG + 纯逻辑 + fake DOM + 客户端
+node --test --test-concurrency=4 # 140 项：真实 PG + 纯逻辑 + fake DOM + 客户端
 node scripts/record-test-count.mjs
 node scripts/verify.mjs --quick  # 纯逻辑/静态/编号/链接（无需 Docker）
 node scripts/verify.mjs          # preflight + 测试 + 全部机械检查 + compose 配置

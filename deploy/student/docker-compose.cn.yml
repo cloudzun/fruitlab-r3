@@ -33,6 +33,7 @@ services:
       PUBLIC_URL: ${PUBLIC_URL:-http://127.0.0.1:4175}
       TRUST_PROXY: "1"
       COOKIE_SECURE: "0"
+      DEMO_ALLOW_ANY_HOST: "1"
       DEMO_PASSWORD: demo1234
       SESSION_TTL_SECONDS: "86400"
     depends_on:

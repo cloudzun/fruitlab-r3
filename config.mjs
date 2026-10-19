@@ -82,6 +82,8 @@ export function loadConfig({ env = process.env, databaseUrl } = {}) {
     sessionTtlSeconds: intFromEnv(env, "SESSION_TTL_SECONDS", 86400),
     cookieSecure,
     trustProxy: boolFromEnv(env, "TRUST_PROXY", false),
+    // 学生 demo 专用：仅非 production 允许跳过 Host/Origin 白名单。
+    demoAllowAnyHost: !isProduction && boolFromEnv(env, "DEMO_ALLOW_ANY_HOST", false),
     healthTimeoutMs: intFromEnv(env, "HEALTH_TIMEOUT_MS", 3000),
     demoPassword,
     adminPassword: adminPassword ?? "",

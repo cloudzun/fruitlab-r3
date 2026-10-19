@@ -8,8 +8,9 @@ FruitLab 的用户可见变更记录。
 
 ### Added
 
+- **学生零配置 demo**：`DEMO_ALLOW_ANY_HOST=1`（仅非 production 生效）+ `deploy/student/start-demo.sh`；Killercoda/ECS/Azure/ngrok 不需要设置 `PUBLIC_URL`。
 - **public GitHub 仓库**：<https://github.com/cloudzun/fruitlab-r3>；代码 MIT、文档/证据 CC BY-NC-SA 4.0。
-- **CI**：`.github/workflows/ci.yml`，Node 22 + Postgres 16 服务容器，138 项测试 + 机械校验。
+- **CI**：`.github/workflows/ci.yml`，Node 22 + Postgres 16 服务容器，140 项测试 + 机械校验。
 - **镜像发布**：`.github/workflows/release.yml`，tag `v3.5.*` 构建并推送 Docker Hub + GHCR，记录 digest。
 - **生产部署资产**：`deploy/vps/`（生产 compose、Caddyfile、备份/恢复/部署/回滚脚本、systemd timer）。
 - **Azure VM 部署**：Ubuntu 24.04 + Docker + 宿主机 Caddy 自动 HTTPS；GitHub Actions SSH 部署。

@@ -20,8 +20,8 @@
 
 | 镜像 | digest |
 |---|---|
-| `.../chengzh/fruitlab-r3:3.5.0.0` | `sha256:85e805b38281ede9e138f4b2d2cb9d166ff22ef395913f98926b98865026366d` |
-| `.../chengzh/fruitlab-r3-web:3.5.0.0` | `sha256:7510b39f0d1d687da0b4fbebb355c0e412100cb306bcae55201bbd02a669dd77` |
+| `.../chengzh/fruitlab-r3:3.5.0.0` | `sha256:65ae8a4d10a711f42f4881443e886c34386e980a6829530b64fa57ebd780529f` |
+| `.../chengzh/fruitlab-r3-web:3.5.0.0` | `sha256:b56a2592be8182e7d9cfcfa666a21be5f8e0cc8a0a59d9b3db2e9f2c832ce568` |
 | `.../chengzh/postgres:16-alpine` | `sha256:1a66d744c1b459e13b05a8fca341da84cb63383e99ce262210efee5a319d4551` |
 
 ACR 个人版不接受 Docker Hub 多平台 OCI index（`application/vnd.oci.empty.v1+json`），

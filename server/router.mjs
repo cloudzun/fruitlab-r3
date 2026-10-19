@@ -63,6 +63,9 @@ function originAllowed(config, origin) {
 }
 
 function checkGuards(req, config) {
+  // 学生 demo：浏览器地址可能是 Killercoda/隧道/任意反代域名，不能预知。
+  // 只允许非 production 显式开启；生产仍走下面的严格白名单。
+  if (config.demoAllowAnyHost) return null;
   const host = String(req.headers.host ?? "");
   if (!hostAllowedSets(config).has(host)) return "host-not-allowed";
   const origin = req.headers.origin;

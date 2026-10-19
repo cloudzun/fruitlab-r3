@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T02:21:46.629Z",
+  "generatedAt": "2026-10-19T02:32:47.947Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -333,7 +333,7 @@
     },
     {
       "file": "evidence/r3.5/aliyun-demo.md",
-      "sha256": "1c45df03c74140965858ef1f0f6bbf47b48ec1fa3bf2f40ee08ee0aaf3686b29",
+      "sha256": "a8e9cc44a29d918682a72e6540cc8dd002408c98fadcc1a5e548fa2a5445bc93",
       "bytes": 2336
     },
     {
@@ -352,8 +352,13 @@
       "bytes": 789
     },
     {
+      "file": "evidence/r3.5/demo-any-host.md",
+      "sha256": "54aab4ffb281e629add2fd4651e0a3c47208579f3baf4c56d3782cc8b8cbf6ac",
+      "bytes": 1636
+    },
+    {
       "file": "evidence/r3.5/digests.txt",
-      "sha256": "24b1c1f4db267ee6de3e32340c6499d6c2b67d6fe86d034ce3789cccca05235e",
+      "sha256": "78819ef2e0b4963a78e6199c7a59717d83c401a8f151886458f903e003fd509b",
       "bytes": 878
     },
     {
@@ -378,7 +383,7 @@
     },
     {
       "file": "evidence/r3.5/release-notes.md",
-      "sha256": "4b324abf9d575975ba661d46a59bcc7e46ef2d29e260262d935fb675d827474d",
+      "sha256": "15e5901b0f8b5122b426a60065df8be03d9e441774db0b657d219ca2feb6df6d",
       "bytes": 2028
     },
     {
@@ -473,8 +478,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "1054ae53d8f533762e0100c9ba43d44686c327f6d12f2ff62a5379010ae584a2",
-      "bytes": 1704
+      "sha256": "fe7a1a298c2a6a86dc61783e7dc07c2a6e48e6269ac807cb0feb99174eb590fe",
+      "bytes": 1705
     },
     {
       "file": "evidence/toolchain-recon.md",

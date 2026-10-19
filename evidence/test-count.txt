@@ -1,55 +1,55 @@
 # 测试计数（唯一权威来源）
 
 - 命令: node --test --test-concurrency=4
-- 时间: 2026-10-19T02:21:46.527Z
-- git: a5eaccd14bc64ea15a973e6ab0788db8ff193023
-- git 状态: 4 dirty path(s)
-- tree hash: fcc0d4121be9e45b6e37e88f2b0798a14089276b
-- 结果: tests=138 pass=138 fail=0 skipped=0 todo=0
+- 时间: 2026-10-19T02:32:47.860Z
+- git: 2b6409b80367208856b324822e51f4107e754f93
+- git 状态: 15 dirty path(s)
+- tree hash: 6fd8c9e6dc808daa2dc751211cc8311cb1ced9fa
+- 结果: tests=140 pass=140 fail=0 skipped=0 todo=0
 
 ## 原始输出（尾部）
 
 ```text
   ...
 # Subtest: layout uses 4/3/2/1 product columns and respects reduced motion
-ok 134 - layout uses 4/3/2/1 product columns and respects reduced motion
+ok 136 - layout uses 4/3/2/1 product columns and respects reduced motion
   ---
-  duration_ms: 1.1221
+  duration_ms: 1.0165
   type: 'test'
   ...
 # Subtest: visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
-ok 135 - visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
+ok 137 - visual language forbids gradients, shadows on cards, remote images, emoji, and promo copy
   ---
-  duration_ms: 1.2743
+  duration_ms: 1.2856
   type: 'test'
   ...
 # Subtest: product cards use local photos, alt text, and stable quantity controls
-ok 136 - product cards use local photos, alt text, and stable quantity controls
+ok 138 - product cards use local photos, alt text, and stable quantity controls
   ---
-  duration_ms: 0.7662
+  duration_ms: 0.8816
   type: 'test'
   ...
 # Subtest: retired frontend modules are gone and no file imports them
-ok 137 - retired frontend modules are gone and no file imports them
+ok 139 - retired frontend modules are gone and no file imports them
   ---
-  duration_ms: 1.9777
+  duration_ms: 1.8441
   type: 'test'
   ...
 # Subtest: runtime dependency set is exactly pg and no generated build directory exists
-ok 138 - runtime dependency set is exactly pg and no generated build directory exists
+ok 140 - runtime dependency set is exactly pg and no generated build directory exists
   ---
-  duration_ms: 1.1075
+  duration_ms: 1.0633
   type: 'test'
   ...
-1..138
-# tests 138
+1..140
+# tests 140
 # suites 0
-# pass 138
+# pass 140
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 64451.1589
+# duration_ms 63862.3494
 ```
 
 > 其它文档出现计数时必须引用本文件；不得手写数字。

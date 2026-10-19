@@ -5,7 +5,7 @@
 ## 亮点
 
 - **public GitHub 仓库**：<https://github.com/cloudzun/fruitlab-r3>（代码 MIT，文档/证据 CC BY-NC-SA 4.0）。
-- **CI**：Node 22 + Postgres 16，138/138 测试 + `verify --quick`。
+- **CI**：Node 22 + Postgres 16，140/140 测试 + `verify --quick`。
 - **镜像发布**：tag 触发，Docker Hub + GHCR 双推，记录 digest；版本 tag 不复用。
 - **Azure VM 生产部署**：Ubuntu 24.04 + Docker + 宿主机 Caddy 自动 HTTPS（Let's Encrypt）。
 - **部署流水线**：GitHub Actions SSH → VM；部署前备份、健康检查、失败自动回滚。
@@ -21,8 +21,8 @@
 当前 digest（tag 构建）：
 
 ```text
-api  sha256:14c9b5bb3aa38a890b0e8006813fadd1e5aecb782b03aab05bdba50708599606
-web  sha256:121a2bc3a9b32c8ea17720d513c731d6c6809366ed4b27747f25fea52fa0c7cc
+api  sha256:65ae8a4d10a711f42f4881443e886c34386e980a6829530b64fa57ebd780529f
+web  sha256:b56a2592be8182e7d9cfcfa666a21be5f8e0cc8a0a59d9b3db2e9f2c832ce568
 ```
 
 ## 验证

@@ -8,7 +8,7 @@
 
 ```text
 push main / PR
-  └─ ci.yml：Node 22 + Postgres 16 service + 138 tests + verify --quick
+  └─ ci.yml：Node 22 + Postgres 16 service + 140 tests + verify --quick
 
 tag v3.5.0.0（或手动 release）
   └─ release.yml
@@ -113,7 +113,7 @@ git push origin v3.5.0.0
 | run id | workflow | 结果 |
 |---|---|---|
 | `39174842686` | ci | failure（npmmirror 504） |
-| `39175247654` | ci | success（138/138） |
+| `39175247654` | ci | success（140/140） |
 | `39175675684` | ci | success |
 | `39175688760` | release | success（build+push） |
 | `39176037433` | ci | success |

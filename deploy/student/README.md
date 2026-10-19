@@ -1,7 +1,17 @@
-# 学生本地一键启动（Docker）
+# 学生 demo 启动（Killercoda/Linux + Docker，零配置）
 
 > 两个 compose：默认 Docker Hub，国内专用 ACR。**同一时间只能起一个**（都占 4175）。
-> **详细图文步骤（Windows + Docker Desktop + 商城/管理员操作）**：[`docs/student-manual.md`](../../docs/student-manual.md)
+> **推荐零配置启动**：`start-demo.sh`（自动注入 `DEMO_ALLOW_ANY_HOST=1`，Killercoda/ECS/Azure/ngrok 通用）。
+> **详细上机手册（Killercoda + Docker + 商城/管理员操作）**：[`docs/student-manual.md`](../../docs/student-manual.md)
+
+## 0. 一条命令（Killercoda 里）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cloudzun/fruitlab-r3/main/deploy/student/start-demo.sh -o start-demo.sh
+bash start-demo.sh
+```
+
+Killercoda Traffic 暴露 4175，打开生成的 URL 即可；不需要设置 PUBLIC_URL。
 
 ## 1. 默认：Docker Hub
 
