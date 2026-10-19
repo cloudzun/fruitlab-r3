@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T02:50:13.196Z",
+  "generatedAt": "2026-10-19T03:07:11.334Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -352,6 +352,16 @@
       "bytes": 789
     },
     {
+      "file": "evidence/r3.5/bc-lab.md",
+      "sha256": "b37d554b21371597a927e1e7b38c9daba75306fa0d3b901d51681731d1ae0af5",
+      "bytes": 2605
+    },
+    {
+      "file": "evidence/r3.5/bc-lab.txt",
+      "sha256": "f633a1a12c7078a31bfa2a10a5571f0a818c9cee194a0e98ab1f4f031830e876",
+      "bytes": 709
+    },
+    {
       "file": "evidence/r3.5/demo-any-host.md",
       "sha256": "54aab4ffb281e629add2fd4651e0a3c47208579f3baf4c56d3782cc8b8cbf6ac",
       "bytes": 1636
@@ -478,7 +488,7 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "b3e0cf8d04b7daa5bfbca391cfb07538e51e5b82082e733fad0e6b255b0a1a24",
+      "sha256": "6da0cce20424379b942f1cf581a952a80cc563de355b66c131c66ad820c5a1da",
       "bytes": 1704
     },
     {
