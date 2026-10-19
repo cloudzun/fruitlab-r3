@@ -2,7 +2,7 @@
 
 > 两个 compose：默认 Docker Hub，国内专用 ACR。**同一时间只能起一个**（都占 4175）。
 > **推荐零配置启动**：`start-demo.sh`（自动注入 `DEMO_ALLOW_ANY_HOST=1`，Killercoda/ECS/Azure/ngrok 通用）。
-> **详细上机手册（Killercoda + Docker + 商城/管理员操作）**：[`docs/student-manual.md`](../../docs/student-manual.md)
+> **详细上机手册（入口：A/B/C + overview）**：[`docs/student/README.md`](../../docs/student/README.md)
 
 ## 0. 一条命令（Killercoda 里）
 

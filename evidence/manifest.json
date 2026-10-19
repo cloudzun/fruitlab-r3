@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T02:32:47.947Z",
+  "generatedAt": "2026-10-19T02:50:13.196Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -383,7 +383,7 @@
     },
     {
       "file": "evidence/r3.5/release-notes.md",
-      "sha256": "15e5901b0f8b5122b426a60065df8be03d9e441774db0b657d219ca2feb6df6d",
+      "sha256": "a23ee2361aed7666571e429b8a537c54e3bb6308c2fd21b2f84c9fb276bb8e89",
       "bytes": 2028
     },
     {
@@ -478,8 +478,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "fe7a1a298c2a6a86dc61783e7dc07c2a6e48e6269ac807cb0feb99174eb590fe",
-      "bytes": 1705
+      "sha256": "b3e0cf8d04b7daa5bfbca391cfb07538e51e5b82082e733fad0e6b255b0a1a24",
+      "bytes": 1704
     },
     {
       "file": "evidence/toolchain-recon.md",
