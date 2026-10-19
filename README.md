@@ -13,6 +13,7 @@
 > **部署/CI**：[docs/deploy-azure.md](docs/deploy-azure.md)、[docs/ci-cd.md](docs/ci-cd.md)、[R3.5-执行记录.md](R3.5-执行记录.md)、[R3.5-retro.md](R3.5-retro.md)
 > **一键复现（Azure VM）**：[`deploy/azure/az-vm-demo.ps1`](deploy/azure/az-vm-demo.ps1)（`-Action plan/up/status/deploy/stop/destroy`；独立资源组，不碰现有生产 VM）
 > **国内 Demo（阿里云杭州）**：[`deploy/aliyun/README.md`](deploy/aliyun/README.md)（IP:4175 + HTTP，无域名/TLS；ACR 镜像）
+> **学生本地 Demo（公开镜像）**：[`deploy/student/README.md`](deploy/student/README.md)（`docker compose up -d`，无需登录 ACR）
 
 ## 1. 三个版本（课堂并排）
 

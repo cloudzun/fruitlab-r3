@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T01:21:12.675Z",
+  "generatedAt": "2026-10-19T01:32:17.197Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -382,6 +382,11 @@
       "bytes": 2134
     },
     {
+      "file": "evidence/r3.5/student-public.md",
+      "sha256": "58c63ce99a90cf8d48fead23e9317976d386084d06d1c4a89c37ee7ceb50d59b",
+      "bytes": 1844
+    },
+    {
       "file": "evidence/r3.5/tls.txt",
       "sha256": "53b1dfcae22ba50a8dadeab04aa9d39f405dad63e076e9bbe6f56098546c91d4",
       "bytes": 620
@@ -463,8 +468,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "4a749e3f3b50497e2372f4fe9c80b1d28518580107295d1b0daccba421544510",
-      "bytes": 1704
+      "sha256": "8af4c822758d5a17bafe298a86aedeaeb95ca45e17bc8b4ae6d282d45d495be7",
+      "bytes": 1703
     },
     {
       "file": "evidence/toolchain-recon.md",
