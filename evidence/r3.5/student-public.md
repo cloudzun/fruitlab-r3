@@ -1,54 +1,67 @@
 # 学生端公开镜像验证（2026-10-19）
 
-> 目标：学生本地只有 Docker，不登录阿里云，直接拉三个 ACR 公开镜像并启动。
-> 方法：先 `docker logout` ACR，删除本地 ACR 镜像缓存，再匿名 `docker pull`；随后用 `deploy/student/docker-compose.yml` 启动。
+> 目标：学生本地只有 Docker，不登录任何镜像仓库，能启动。
+> 提供两个 compose：
+> - `deploy/student/docker-compose.yml`：Docker Hub 默认
+> - `deploy/student/docker-compose.cn.yml`：阿里云 ACR 国内专用
 
-## 1. 匿名拉取
+## 1. 默认 Docker Hub（匿名）
+
+```text
+docker logout
+docker rmi chengzh/fruitlab-r3:3.5.0.0 chengzh/fruitlab-r3-web:3.5.0.0
+docker pull chengzh/fruitlab-r3:3.5.0.0      → sha256:14c9b5bb...08599606
+docker pull chengzh/fruitlab-r3-web:3.5.0.0  → sha256:121a2bc3...52fa0c7cc
+
+docker compose -f deploy/student/docker-compose.yml up -d
+fruitlab-student-demo-api-1  Up (healthy)
+fruitlab-student-demo-db-1   Up (healthy)
+fruitlab-student-demo-web-1  Up (healthy)
+
+curl http://127.0.0.1:4175/api/health
+{"ok":true,"db":"up","version":"3.5.0.0",...}
+userA 登录=200；下单=201（FL-20261019-014341-ZJ02）；首页=200
+```
+
+## 2. 国内专用 ACR（匿名）
 
 ```text
 docker logout registry.cn-hangzhou.aliyuncs.com
 docker rmi registry.cn-hangzhou.aliyuncs.com/chengzh/{fruitlab-r3,fruitlab-r3-web,postgres}:...
+docker compose -f deploy/student/docker-compose.cn.yml pull
+→ api / web / postgres 均 Pulled（无登录）
 
-docker pull registry.cn-hangzhou.aliyuncs.com/chengzh/fruitlab-r3:3.5.0.0
-  Digest: sha256:85e805b38281ede9e138f4b2d2cb9d166ff22ef395913f98926b98865026366d
-  Status: Downloaded newer image
+docker compose -f deploy/student/docker-compose.cn.yml up -d
+fruitlab-student-cn-api-1  Up (healthy)
+fruitlab-student-cn-db-1   Up (healthy)
+fruitlab-student-cn-web-1  Up (healthy)
 
-docker pull registry.cn-hangzhou.aliyuncs.com/chengzh/fruitlab-r3-web:3.5.0.0
-  Digest: sha256:7510b39f0d1d687da0b4fbebb355c0e412100cb306bcae55201bbd02a669dd77
-  Status: Downloaded newer image
-
-docker pull registry.cn-hangzhou.aliyuncs.com/chengzh/postgres:16-alpine
-  Digest: sha256:1a66d744c1b459e13b05a8fca341da84cb63383e99ce262210efee5a319d4551
-  Status: Downloaded newer image
+curl http://127.0.0.1:4175/api/health
+{"ok":true,"db":"up","version":"3.5.0.0",...}
 ```
 
-## 2. 学生 compose 启动
+## 3. 学生命令
 
-```text
-docker compose -f deploy/student/docker-compose.yml up -d
+默认 Docker Hub：
 
-fruitlab-student-demo-api-1   Up (healthy)
-fruitlab-student-demo-db-1    Up (healthy)
-fruitlab-student-demo-web-1   Up (healthy)
-
-GET http://127.0.0.1:4175/api/health
-{"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true,...}
+```powershell
+curl.exe -fsSL https://raw.githubusercontent.com/cloudzun/fruitlab-r3/main/deploy/student/docker-compose.yml -o fruitlab-student.yml
+docker compose -f fruitlab-student.yml up -d
 ```
 
-## 3. 业务闭环
+国内 ACR：
 
-```text
-userA login=200
-create_order=201（FL-20261019-013052-HHNY）
-home=200
+```powershell
+curl.exe -fsSL https://raw.githubusercontent.com/cloudzun/fruitlab-r3/main/deploy/student/docker-compose.cn.yml -o fruitlab-student-cn.yml
+docker compose -f fruitlab-student-cn.yml up -d
 ```
+
+打开 http://127.0.0.1:4175，账号 `userA/demo1234`。
+两者都占 4175，同一时间只能起一个；切换前先 `down`。
 
 ## 4. 结论
 
-- 三个 ACR 仓库已公开；学生**不需要 docker login / 阿里云账号**。
-- 学生本地命令：
-  ```bash
-  docker compose -f deploy/student/docker-compose.yml up -d
-  # http://127.0.0.1:4175，userA/demo1234
-  ```
-- 本地验证用的 student 栈已启动；ECS 公网 demo 仍为 <http://116.62.60.211:4175>。
+- Docker Hub 两个业务镜像公开；`postgres:16-alpine` 官方公开。
+- ACR 三个仓库已公开；匿名拉取成功。
+- 默认 compose 与国内 compose 都实测通过，不需要 `docker login`。
+- 当前本机保留默认 Docker Hub 栈运行；ECS 公网 demo 仍为 <http://116.62.60.211:4175>。

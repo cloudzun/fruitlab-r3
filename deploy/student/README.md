@@ -1,18 +1,38 @@
 # 学生本地一键启动（Docker）
 
-> 前提：安装 Docker Desktop（Windows/macOS）或 Docker Engine（Linux），有网络能访问阿里云 ACR。
-> **不需要登录阿里云**（前提：ACR 三个仓库已设为“公开”）。
+> 两个 compose：默认 Docker Hub，国内专用 ACR。**同一时间只能起一个**（都占 4175）。
 
-## 启动
+## 1. 默认：Docker Hub
 
 ```bash
-cd fruitlab-r3
 docker compose -f deploy/student/docker-compose.yml up -d
 ```
 
-打开 **http://127.0.0.1:4175**。
+镜像：
 
-账号：
+- `chengzh/fruitlab-r3:3.5.0.0`
+- `chengzh/fruitlab-r3-web:3.5.0.0`
+- `postgres:16-alpine`（Docker Hub 官方）
+
+不需要登录 Docker Hub。
+
+## 2. 国内专用：阿里云 ACR
+
+```bash
+docker compose -f deploy/student/docker-compose.cn.yml up -d
+```
+
+镜像：
+
+- `registry.cn-hangzhou.aliyuncs.com/chengzh/fruitlab-r3:3.5.0.0`
+- `registry.cn-hangzhou.aliyuncs.com/chengzh/fruitlab-r3-web:3.5.0.0`
+- `registry.cn-hangzhou.aliyuncs.com/chengzh/postgres:16-alpine`
+
+不需要登录阿里云，三个仓库已公开。
+
+## 3. 打开
+
+**http://127.0.0.1:4175**
 
 | 账号 | 口令 | 角色 |
 |---|---|---|
@@ -20,7 +40,7 @@ docker compose -f deploy/student/docker-compose.yml up -d
 | `userB` | `demo1234` | 普通用户 |
 | `admin` | `demo1234` | 管理员 |
 
-## 检查
+## 4. 检查
 
 ```bash
 docker compose -f deploy/student/docker-compose.yml ps
@@ -33,31 +53,26 @@ curl http://127.0.0.1:4175/api/health
 {"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true}
 ```
 
-## 停止 / 重置
+## 5. 切换/停止
 
 ```bash
-# 停止，保留数据
+# 停默认
 docker compose -f deploy/student/docker-compose.yml down
 
-# 停止并删数据（重新 seed）
+# 停国内
+docker compose -f deploy/student/docker-compose.cn.yml down
+
+# 连数据一起删
 docker compose -f deploy/student/docker-compose.yml down -v
+docker compose -f deploy/student/docker-compose.cn.yml down -v
 ```
 
-## 镜像来源
-
-三个镜像都在阿里云 ACR 公共仓库：
-
-- `registry.cn-hangzhou.aliyuncs.com/chengzh/fruitlab-r3:3.5.0.0`
-- `registry.cn-hangzhou.aliyuncs.com/chengzh/fruitlab-r3-web:3.5.0.0`
-- `registry.cn-hangzhou.aliyuncs.com/chengzh/postgres:16-alpine`
-
-如果镜像仓库不是公开的，`docker compose pull` 会报 `pull access denied`；需要先把 ACR 仓库设为“公开”。
-
-## 常见问题
+## 6. 常见问题
 
 | 现象 | 处理 |
 |---|---|
-| `pull access denied` | ACR 仓库未公开；到 ACR 控制台把三个仓库设为公开 |
-| 4175 被占用 | 改 compose 的 `4175:8080` 左侧端口，并同步 `PUBLIC_URL` |
-| 页面能开但 API 403 `host-not-allowed` | 用 `127.0.0.1:4175` 打开；改端口时同步 `PUBLIC_URL` |
-| 需要完全离线 | 先在能联网的机器 `docker pull` 三个镜像，`docker save` 后拷给学生 `docker load` |
+| Docker Hub 拉取慢/失败 | 改用 `docker-compose.cn.yml`（阿里云 ACR） |
+| ACR `pull access denied` | 确认三个 ACR 仓库已公开；或先 `docker login` ACR |
+| 4175 被占用 | 先 `down` 当前 compose；或改端口并同步 `PUBLIC_URL` |
+| API 403 `host-not-allowed` | 用 `127.0.0.1:4175` 打开；改端口时同步 `PUBLIC_URL` |
+| 完全离线 | 在有网机器 `docker pull` 三个镜像，`docker save`，学生机 `docker load` |
