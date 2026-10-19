@@ -1,6 +1,7 @@
 # 阿里云杭州 Demo（IP + 端口，无域名/无 TLS）
 
-> 当前演示：**<http://116.62.60.211:4175>**
+> **状态：演示资源已删除（2026-10-19）**；以下内容仅作复现记录，不要照抄 IP/资源 ID。
+> 原演示：`http://116.62.60.211:4175`（已下线）
 > 账号：`userA` / `userB` / `admin`，口令 `demo1234`（`APP_ENV=development`）。
 > 镜像仓库：`registry.cn-hangzhou.aliyuncs.com/chengzh/{fruitlab-r3,fruitlab-r3-web,postgres}`。
 > 仅课堂/内部 demo：HTTP 明文、安全组 22/4175 全开；演示完请 stop/destroy。

@@ -9,10 +9,10 @@
 > **形态**：PostgreSQL 16 + L1（router → services → repositories）+ L2（Caddy web / Node api / Postgres db）
 > **依赖**：运行时恰好 `{pg}`（R1/R2 仍为零依赖，互不影响）
 > **对应课程**：GStack 七环迭代第三幕 + R3.5 部署收口（spec → build/deploy → review+qa → ship）
-> **线上**：<https://fruitlab-r3-chengzh-sea.eastasia.cloudapp.azure.com>（Azure VM + Caddy TLS，3.5.0.0）
-> **部署/CI**：[docs/deploy-azure.md](docs/deploy-azure.md)、[docs/ci-cd.md](docs/ci-cd.md)、[R3.5-执行记录.md](R3.5-执行记录.md)、[R3.5-retro.md](R3.5-retro.md)
+> **线上（演示资源已删除）**：Azure VM Demo 已清理，保留部署/复现记录：[docs/deploy-azure.md](docs/deploy-azure.md)（3.5.0.0）
+> **部署/CI**：[docs/deploy-azure.md](docs/deploy-azure.md)、[docs/ci-cd.md](docs/ci-cd.md)、[R3.5-执行记录.md](R3.5-执行记录.md)、[R3.5-retro.md](R3.5-retro.md)、[R3.5-总结.md](R3.5-总结.md)
 > **一键复现（Azure VM）**：[`deploy/azure/az-vm-demo.ps1`](deploy/azure/az-vm-demo.ps1)（`-Action plan/up/status/deploy/stop/destroy`；独立资源组，不碰现有生产 VM）
-> **国内 Demo（阿里云杭州）**：[`deploy/aliyun/README.md`](deploy/aliyun/README.md)（IP:4175 + HTTP，无域名/TLS；ACR 镜像）
+> **历史 Demo（阿里云杭州，资源已删除）**：[`deploy/aliyun/README.md`](deploy/aliyun/README.md)（IP:4175 + HTTP，无域名/TLS；ACR 镜像；仅保留复现记录）
 > **学生本地 Demo（公开镜像）**：[`deploy/student/README.md`](deploy/student/README.md)（`docker compose up -d`，无需登录 ACR）
 > **学生文档入口（A/B/C + overview）**：[`docs/student/README.md`](docs/student/README.md)（快速测试、克隆开发、排错）
 

@@ -1,5 +1,6 @@
 # 一键复现 Azure VM 演示（R3.5）
 
+> **状态：Azure 演示资源已删除；脚本保留用于复现。**
 > 脚本：`deploy/azure/az-vm-demo.ps1`
 > 目标：在**独立资源组**里从零创建 Azure VM，安装 Docker + Caddy，部署 `3.5.0.0`，并跑生产冒烟。
 > 默认 `rg-fruitlab-demo` / `vm-fruitlab-demo`，**不会影响**现有 `rg-fruitlab-r3` 生产 VM。

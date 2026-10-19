@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T03:39:09.090Z",
+  "generatedAt": "2026-10-19T03:46:40.079Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -488,8 +488,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "9bafb9892424cd891c70054b339782b1443de6cc34a0d73c26a89ef3d4d0048e",
-      "bytes": 1704
+      "sha256": "d642cb3f4774162f5d142444fc75e489fb1ed37af5ea67d8a8a816c4d6411156",
+      "bytes": 1702
     },
     {
       "file": "evidence/toolchain-recon.md",
