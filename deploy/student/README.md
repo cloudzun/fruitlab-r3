@@ -1,6 +1,7 @@
 # 学生本地一键启动（Docker）
 
 > 两个 compose：默认 Docker Hub，国内专用 ACR。**同一时间只能起一个**（都占 4175）。
+> **详细图文步骤（Windows + Docker Desktop + 商城/管理员操作）**：[`docs/student-manual.md`](../../docs/student-manual.md)
 
 ## 1. 默认：Docker Hub
 
