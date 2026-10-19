@@ -1,13 +1,15 @@
 # 快速测试（A Killercoda / B Linux 虚机）
 
-> 目标：10–20 分钟内把 FruitLab 跑起来，完成一次商城下单和管理员改库存。
-> 两个环境都使用 Docker + `start-demo.sh`，命令基本一致；区别只在“怎么准备机器/怎么暴露端口”。
+> 目标：10–20 分钟把 FruitLab 跑起来，完成一次商城下单和管理员改库存。
+> A/B 都用 Docker + **Gitee compose**（国内可达）；A 临时，B 持久。
 
-## 0. 共同前提
+## 0. 网络前提（实测）
 
-- 能访问 Gitee（下载 compose）和 Docker Hub / 阿里云 ACR（拉镜像）
-- 不需要域名、不需要 HTTPS 配置
-- 应用使用 `DEMO_ALLOW_ANY_HOST=1`（仅非 production），**不需要设置 PUBLIC_URL**
+- **Gitee 可达**：下载 compose；
+- **阿里云 ACR 可达**：拉三个公开镜像（B 实测走 ACR，Docker Hub 未作为主路径）；
+- **GitHub raw 不一定可达**：阿里云 ECS 实测 `raw.githubusercontent.com` 会 `Connection reset`。
+  所以本文**不依赖 GitHub**；如果要用 `start-demo.sh`，需先确认 GitHub 可访问。
+- 不需要域名、HTTPS 配置；应用用 `DEMO_ALLOW_ANY_HOST=1`，不需要设置 `PUBLIC_URL`。
 
 ## 1. A. Killercoda 沙盒（快速、不持久）
 
@@ -49,11 +51,20 @@ Killercoda 页面 → **Traffic**（或 **Ports**）→ 输入 `4175` → Open/A
 mkdir -p ~/fruitlab-demo
 cd ~/fruitlab-demo
 
-curl -fsSL https://raw.githubusercontent.com/cloudzun/fruitlab-r3/main/deploy/student/start-demo.sh -o start-demo.sh
-bash start-demo.sh
+curl -fsSL https://gitee.com/cloudzun/fruitlab-r3/raw/main/deploy/student/docker-compose.cn.yml -o docker-compose.yml
+
+cat > docker-compose.override.yml <<'EOF'
+services:
+  api:
+    environment:
+      DEMO_ALLOW_ANY_HOST: "1"
+EOF
+
+docker compose -f docker-compose.yml -f docker-compose.override.yml pull
+docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
 ```
 
-看到健康检查 `{"ok":true,...}` 后，打开 **1.3 复制的 Killercoda 地址**。
+打开 **1.3 复制的 Killercoda 地址**。
 
 > A 的特点：**实例结束/过期后数据消失**。要长期运行，用 B。
 
@@ -69,7 +80,7 @@ bash start-demo.sh
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y docker.io docker-compose-v2
+sudo apt-get install -y docker.io docker-compose-v2 git curl ca-certificates
 sudo service docker start
 sudo usermod -aG docker "$USER"
 newgrp docker
@@ -84,8 +95,17 @@ docker compose version
 mkdir -p ~/fruitlab-demo
 cd ~/fruitlab-demo
 
-curl -fsSL https://raw.githubusercontent.com/cloudzun/fruitlab-r3/main/deploy/student/start-demo.sh -o start-demo.sh
-bash start-demo.sh
+curl -fsSL https://gitee.com/cloudzun/fruitlab-r3/raw/main/deploy/student/docker-compose.cn.yml -o docker-compose.yml
+
+cat > docker-compose.override.yml <<'EOF'
+services:
+  api:
+    environment:
+      DEMO_ALLOW_ANY_HOST: "1"
+EOF
+
+docker compose -f docker-compose.yml -f docker-compose.override.yml pull
+docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
 ```
 
 浏览器打开：
@@ -95,21 +115,21 @@ http://<虚机公网IP>:4175
 ```
 
 > B 的特点：容器数据在 Docker volume 中；`down` 不删数据，`down -v` 才删。
-> 长期运行/改代码请看 [`development.md`](development.md)。
+> **实测网络**：Docker Hub 可能超时；本文用 Gitee compose 的 ACR 镜像。
 
 ## 3. 检查
 
 ```bash
-docker compose -f docker-compose.yml ps
+docker compose -f docker-compose.yml -f docker-compose.override.yml ps
 curl -sS http://127.0.0.1:4175/api/health
 ```
 
 期望：
 
 ```text
-fruitlab-student-...-api-1  Up (healthy)
-fruitlab-student-...-db-1   Up (healthy)
-fruitlab-student-...-web-1  Up (healthy)
+fruitlab-student-cn-api-1  Up (healthy)
+fruitlab-student-cn-db-1   Up (healthy)
+fruitlab-student-cn-web-1  Up (healthy)
 
 {"ok":true,"db":"up","version":"3.5.0.0","schemaVersion":2,"seeded":true}
 ```
@@ -147,7 +167,18 @@ docker compose -f docker-compose.yml -f docker-compose.override.yml down
 docker compose -f docker-compose.yml -f docker-compose.override.yml down -v
 ```
 
-## 7. 验收
+## 7. 可选：start-demo.sh
+
+只有确认 GitHub 可达时：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cloudzun/fruitlab-r3/main/deploy/student/start-demo.sh -o start-demo.sh
+bash start-demo.sh
+```
+
+> 阿里云 ECS 实测 GitHub raw 可能 reset；失败就用上面的 Gitee 主路径。
+
+## 8. 验收
 
 - [ ] 三容器 healthy
 - [ ] `/api/health` 返回 `version: 3.5.0.0`

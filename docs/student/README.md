@@ -20,8 +20,10 @@
 | 安装成本 | 最低（浏览器） | 中（装 Docker） | 高（Node 22 + PostgreSQL 16） |
 | 持久化 | **不持久**，实例过期即消失 | 持久（磁盘/卷） | 持久（本机 PG） |
 | 适合开发 | 不适合 | 适合 | 适合（无 Docker 时） |
-| 启动方式 | Traffic 开 4175 → `start-demo.sh` | 安全组开 4175 → `start-demo.sh` | `node cli.mjs dev` |
+| 启动方式 | Traffic 开 4175 → Gitee compose + override | 安全组开 4175 → Gitee compose + override | `node cli.mjs dev` |
 | 推荐场景 | 快速测试 | 长期运行/课堂 | 克隆研究/二次开发 |
+
+> 网络实测：Gitee/ACR 可达；GitHub raw 在阿里云 ECS 可能 `Connection reset`，因此快速测试主路径不依赖 GitHub。
 
 ## 快速入口
 

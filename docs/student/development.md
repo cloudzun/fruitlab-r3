@@ -12,19 +12,21 @@
 
 两者代码相同，区别只在“数据库怎么来、服务怎么起”。
 
-## 1. 克隆仓库
+## 1. 克隆仓库（国内优先 Gitee）
+
+```bash
+git clone https://gitee.com/cloudzun/fruitlab-r3.git
+cd fruitlab-r3
+```
+
+GitHub 可达时也可以：
 
 ```bash
 git clone https://github.com/cloudzun/fruitlab-r3.git
 cd fruitlab-r3
 ```
 
-国内 GitHub 慢时可用 Gitee：
-
-```bash
-git clone https://gitee.com/cloudzun/fruitlab-r3.git
-cd fruitlab-r3
-```
+> 实测：阿里云 ECS 访问 GitHub raw 可能 `Connection reset`；Gitee clone 正常。
 
 ## 2. 代码结构
 
@@ -82,20 +84,34 @@ node scripts/pgctl.mjs down
 
 ## 4. C：纯本地无 Docker
 
-### 4.1 安装
+### 4.1 安装 Node 22 + PostgreSQL 16（Ubuntu 24.04 实测）
 
-- Node.js **22**
-- PostgreSQL **16**（本机服务，监听 5432 或自定义）
-- 可选：`psql`、`createdb`
+```bash
+sudo apt-get update
+sudo apt-get install -y postgresql postgresql-contrib xz-utils
+sudo service postgresql start
+
+cd /tmp
+curl -fsSL https://nodejs.org/dist/v22.20.0/node-v22.20.0-linux-x64.tar.xz -o node22.tar.xz
+sudo tar -xJf node22.tar.xz -C /opt
+sudo ln -sf /opt/node-v22.20.0-linux-x64/bin/node /usr/local/bin/node
+sudo ln -sf /opt/node-v22.20.0-linux-x64/bin/npm /usr/local/bin/npm
+sudo ln -sf /opt/node-v22.20.0-linux-x64/bin/npx /usr/local/bin/npx
+
+node --version      # v22.20.0
+psql --version      # 16.x
+```
+
+> 国内下载 nodejs.org 慢时，可用国内镜像；只要保证 Node 22 即可。
 
 ### 4.2 建库
 
 ```bash
-sudo -u postgres createuser -P fruitlab
+sudo -u postgres psql -c "CREATE USER fruitlab WITH PASSWORD 'fruitlab-demo-pass' CREATEDB;"
 sudo -u postgres createdb -O fruitlab fruitlab
 ```
 
-记下密码；下面用 `DATABASE_URL`。
+> 测试夹具需要 `CREATEDB`；生产环境不要用 demo 密码。
 
 ### 4.3 安装依赖 + 迁移 + seed
 
@@ -103,12 +119,12 @@ sudo -u postgres createdb -O fruitlab fruitlab
 cd fruitlab-r3
 npm ci
 
-export DATABASE_URL="postgres://fruitlab:你的密码@127.0.0.1:5432/fruitlab"
+export DATABASE_URL="postgres://fruitlab:fruitlab-demo-pass@127.0.0.1:5432/fruitlab"
 node cli.mjs db migrate
 node cli.mjs db seed
 ```
 
-### 4.4 启动
+### 4.4 本机启动
 
 ```bash
 node cli.mjs dev --port 4175
@@ -120,19 +136,43 @@ node cli.mjs dev --port 4175
 http://127.0.0.1:4175
 ```
 
-### 4.5 跑测试（本机 PG）
+### 4.5 从其他机器访问（实测）
 
-测试夹具会为每个用例创建独立数据库，需要 `CREATEDB` 权限：
+如果 C 跑在虚机上，想用浏览器访问，需要：
+
+1. 安全组放行端口（示例 `4176`）；
+2. 监听 `0.0.0.0`，并设置外部 `PUBLIC_URL`：
 
 ```bash
-export TEST_DATABASE_URL="postgres://fruitlab:你的密码@127.0.0.1:5432/postgres"
+export DATABASE_URL="postgres://fruitlab:fruitlab-demo-pass@127.0.0.1:5432/fruitlab"
+export HOST=0.0.0.0
+export PUBLIC_URL="http://<虚机公网IP>:4176"
+export COOKIE_SECURE=0
+
+node cli.mjs dev --port 4176
+```
+
+打开：
+
+```text
+http://<虚机公网IP>:4176
+```
+
+> `node cli.mjs dev` 只支持 `--port`，所以要用 `HOST=0.0.0.0` 环境变量；
+> 只用 `--port` 不改 HOST 时，默认只监听 `127.0.0.1`，外部访问不了。
+> 长期运行建议用 `nohup`/`systemd`；前台调试直接看日志。
+
+### 4.6 跑测试（本机 PG）
+
+```bash
+export TEST_DATABASE_URL="postgres://fruitlab:fruitlab-demo-pass@127.0.0.1:5432/postgres"
 node --test --test-concurrency=4
 ```
 
-> 如果 `fruitlab` 用户没有 CREATEDB，用 postgres 超级用户跑测试，或给权限：
+> 如果 `fruitlab` 用户没有 CREATEDB，用 postgres 超级用户跑测试，或：
 > `ALTER ROLE fruitlab CREATEDB;`
 
-### 4.6 重置数据
+### 4.7 重置数据
 
 ```bash
 node cli.mjs db reset --yes    # 会先备份
@@ -163,3 +203,4 @@ node cli.mjs db reset --yes    # 会先备份
 - 改 API 行为时同步 `docs/contracts.md`、`docs/error-catalog.md`。
 - 改前端时真实浏览器验证，fake DOM 不能替代布局/焦点。
 - A（Killercoda）不要用来开发；实例过期会丢文件和数据库。
+- 国内网络：GitHub raw 可能被 reset；优先用 Gitee 下载/克隆。
