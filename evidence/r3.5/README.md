@@ -15,6 +15,7 @@
 | `backup-restore.txt` | 备份 → 删订单 → 恢复 → 计数回来 |
 | `rollback.txt` | 3.5 → 3.0 → rollback → 3.5 |
 | `az-vm-demo-test.txt` | `deploy/azure/az-vm-demo.ps1` 从零创建测试 VM → 部署 → 销毁的端到端验证 |
+| `aliyun-demo.md` | 阿里云杭州 ECS + IP:4175 + HTTP + ACR 镜像的实测证据 |
 
 ## 关键结论
 

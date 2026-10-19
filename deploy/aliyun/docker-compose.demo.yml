@@ -1,0 +1,61 @@
+name: fruitlab-aliyun-demo
+
+services:
+  db:
+    image: registry.cn-hangzhou.aliyuncs.com/chengzh/postgres:16-alpine
+    environment:
+      POSTGRES_USER: fruitlab
+      POSTGRES_DB: fruitlab
+      POSTGRES_PASSWORD: fruitlab-demo-pass
+    volumes:
+      - fruitlab-demo-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fruitlab -d fruitlab"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    image: registry.cn-hangzhou.aliyuncs.com/chengzh/fruitlab-r3:3.5.0.0
+    environment:
+      DATABASE_URL: postgres://fruitlab:fruitlab-demo-pass@db:5432/fruitlab
+      APP_ENV: development
+      HOST: 0.0.0.0
+      PORT: "3000"
+      SERVE_STATIC: "0"
+      PUBLIC_URL: http://116.62.60.211:4175
+      TRUST_PROXY: "1"
+      COOKIE_SECURE: "0"
+      DEMO_PASSWORD: demo1234
+      SESSION_TTL_SECONDS: "86400"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  web:
+    image: registry.cn-hangzhou.aliyuncs.com/chengzh/fruitlab-r3-web:3.5.0.0
+    ports:
+      - "4175:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  fruitlab-demo-pgdata:
+    name: fruitlab-demo-pgdata

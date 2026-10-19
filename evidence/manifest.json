@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T00:24:57.205Z",
+  "generatedAt": "2026-10-19T01:21:12.675Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -328,8 +328,13 @@
     },
     {
       "file": "evidence/r3.5/README.md",
-      "sha256": "58c5b30148911db4c3cae8524149bd6eeade18b99d587c88d48ae623798e6654",
-      "bytes": 2350
+      "sha256": "3d6268539bc67ba5edb3a77365dcaa2266169456c3c219c69805a714c54c6dd1",
+      "bytes": 2438
+    },
+    {
+      "file": "evidence/r3.5/aliyun-demo.md",
+      "sha256": "1c45df03c74140965858ef1f0f6bbf47b48ec1fa3bf2f40ee08ee0aaf3686b29",
+      "bytes": 2336
     },
     {
       "file": "evidence/r3.5/az-vm-demo-test.txt",
@@ -458,8 +463,8 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "1b4d84dd55a1a1789ebf36ffb2deba26fefe8faa43de5226d974552337a31fa2",
-      "bytes": 1700
+      "sha256": "4a749e3f3b50497e2372f4fe9c80b1d28518580107295d1b0daccba421544510",
+      "bytes": 1704
     },
     {
       "file": "evidence/toolchain-recon.md",
