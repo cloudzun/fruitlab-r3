@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T02:02:04.280Z",
+  "generatedAt": "2026-10-19T02:21:46.629Z",
   "files": [
     {
       "file": "evidence/assets-manifest.json",
@@ -367,6 +367,11 @@
       "bytes": 932
     },
     {
+      "file": "evidence/r3.5/killercoda.md",
+      "sha256": "cdf31512093d03359186fee9031b744ea420e48fd43020e1d29cde1781e03bb3",
+      "bytes": 1341
+    },
+    {
       "file": "evidence/r3.5/prod-smoke.txt",
       "sha256": "1a54fa85a259e94ab0e777bf32681627c4a3f451ffb1d04351850eaaca43f83a",
       "bytes": 604
@@ -468,7 +473,7 @@
     },
     {
       "file": "evidence/test-count.txt",
-      "sha256": "e7a63e04f827e90c12d520d24270fccc6a7e24b5d2c35afd4008d502e8d93055",
+      "sha256": "1054ae53d8f533762e0100c9ba43d44686c327f6d12f2ff62a5379010ae584a2",
       "bytes": 1704
     },
     {

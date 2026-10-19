@@ -30,7 +30,7 @@ services:
       HOST: 0.0.0.0
       PORT: "3000"
       SERVE_STATIC: "0"
-      PUBLIC_URL: http://127.0.0.1:4175
+      PUBLIC_URL: ${PUBLIC_URL:-http://127.0.0.1:4175}
       TRUST_PROXY: "1"
       COOKIE_SECURE: "0"
       DEMO_PASSWORD: demo1234
